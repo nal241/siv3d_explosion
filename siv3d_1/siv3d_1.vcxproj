@@ -123,6 +123,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="PhysicsWorld.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -333,6 +334,8 @@
     <Xml Include="App\example\xml\test.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BulletSiv3DUtils.h" />
+    <ClInclude Include="PhysicsObject.h" />
     <ClInclude Include="PhysicsWorld.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
