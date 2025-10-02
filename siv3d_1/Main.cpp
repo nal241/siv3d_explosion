@@ -9,11 +9,11 @@ void Main() {
 	// 物理エンジンの準備
 	PhysicsWorld world;
 
-	btRigidBody* tmp = world.addBox(btVector3(50.0f, 0.5f, 50.0f), btVector3(0, -1, 0), 0.0f);
-	tmp->setRestitution(1.0f);
+	auto tmp = world.addBox(BoxDesc{s3d::Vec3(100.f, 1.f, 100.f), s3d::Vec3(0, -1, 0), 0.0f });
+	tmp->getRigidBody()->setRestitution(1.0f);
 
-	btRigidBody* fallingBox = world.addBox(btVector3(0.5f, 0.5f, 0.5f), btVector3(0, 10, 0), 10.0f);
-	fallingBox->setRestitution(0.7f);
+	auto fallingBox = world.addBox(BoxDesc{ s3d::Vec3(1.f, 1.f, 1.f), s3d::Vec3(0, 10, 0), 10.0f });
+	fallingBox->getRigidBody()->setRestitution(0.7f);
 
 	// Background color (remove SRGB curve for a linear workflow)
 	const ColorF backgroundColor = ColorF{ 0.4, 0.6, 0.8 }.removeSRGBCurve();
@@ -41,42 +41,28 @@ void Main() {
 			const ScopedRenderTarget3D target{ renderTexture.clear(backgroundColor) };
 			// 位置の取得
 			btTransform trans;
-			fallingBox->getMotionState()->getWorldTransform(trans);
-			btVector3 pos = trans.getOrigin();
+			fallingBox->draw();
 
-			// BulletのbtTransformをSiv3DのMat4に変換
-			const btVector3& origin = trans.getOrigin();
-			const btQuaternion& rotation = trans.getRotation();
+			auto pos = fallingBox->getRigidBody()->getCenterOfMassTransform().getOrigin();
 
-			// Siv3DのVec3とQuaternionに変換
-			const Vec3 position(origin.getX(), origin.getY(), origin.getZ());
-			const Quaternion quat(rotation.getX(), rotation.getY(), rotation.getZ(), rotation.getW());
+            // 位置の表示
+            Print << U"box position: {:.2F}, {:.2F}, {:.2F}"_fmt(pos.x(), pos.y(), pos.z());
 
-			// 描画用のMat4を作成 (位置と回転を適用)
-			const Mat4x4 drawMatrix = Mat4x4::Translate(position) * Mat4x4::Rotate(quat);
+            Plane{0.f, -0.5f, 0.f, 64 }.draw(uvChecker);
+        }
 
-			const Vec3 boxSize(1.0f, 1.0f, 1.0f);
-			Box(boxSize).draw(drawMatrix, Palette::Orange);
+        // [2D rendering]
+        {
+            // Flush 3D rendering commands before multisample resolve
+            Graphics3D::Flush();
 
-			// 位置の表示
-			Print << U"box position: {:.2F}, {:.2F}, {:.2F}"_fmt(pos.x(), pos.y(), pos.z());
+            // Multisample resolve
+            renderTexture.resolve();
 
-			Plane{0.f, -0.5f, 0.f, 64 }.draw(uvChecker);
-		}
-
-		// [2D rendering]
-		{
-			// Flush 3D rendering commands before multisample resolve
-			Graphics3D::Flush();
-
-			// Multisample resolve
-			renderTexture.resolve();
-
-			// Transfer renderTexture to the current 2D scene (default scene)
-			Shader::LinearToScreen(renderTexture);
-		}
-
-	}
+            // Transfer renderTexture to the current 2D scene (default scene)
+            Shader::LinearToScreen(renderTexture);
+        }
+    }
 }
 
 

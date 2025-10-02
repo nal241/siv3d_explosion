@@ -1,4 +1,5 @@
 ﻿#include "PhysicsWorld.h"
+#include "PhysicsObject.h"
 
 // コンストラクタ：ワールドのセットアップを行う
 PhysicsWorld::PhysicsWorld() {
@@ -16,7 +17,7 @@ PhysicsWorld::PhysicsWorld() {
 // デストラクタ：確保した全てのリソースを解放する
 PhysicsWorld::~PhysicsWorld() {
 	// 1. 剛体をワールドから削除し、メモリを解放
-	for (int i = m_rigidBodies.size() - 1; i >= 0; i--) {
+	for (int i = m_rigidBodies.size() - 1; i-- > 0;) {
 		btRigidBody* body = m_rigidBodies[i];
 		m_dynamicsWorld->removeRigidBody(body);
 		// btRigidBodyをdeleteすると、関連するbtMotionStateも自動でdeleteされる
@@ -25,7 +26,7 @@ PhysicsWorld::~PhysicsWorld() {
 	m_rigidBodies.clear();
 
 	// 2. 衝突形状のメモリを解放
-	for (int i = m_collisionShapes.size() - 1; i >= 0; i--) {
+	for (size_t i = m_collisionShapes.size() - 1; i-- > 0;) {
 		delete m_collisionShapes[i];
 	}
 	m_collisionShapes.clear();
@@ -44,49 +45,21 @@ void PhysicsWorld::step(float deltaTime) {
 }
 
 // 箱を追加する
-btRigidBody* PhysicsWorld::addBox(const btVector3& size, const btVector3& position, float mass) {
-	btCollisionShape* shape = new btBoxShape(size);
-	m_collisionShapes.push_back(shape); // 解放漏れがないようにリストに保持
-
-	btTransform transform;
-	transform.setIdentity();
-	transform.setOrigin(position);
-	btDefaultMotionState* motionState = new btDefaultMotionState(transform);
-
-	btVector3 localInertia(0, 0, 0);
-	if (mass != 0.0f) {
-		shape->calculateLocalInertia(mass, localInertia);
-	}
-
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
-	btRigidBody* body = new btRigidBody(rbInfo);
-
-	m_dynamicsWorld->addRigidBody(body);
-	m_rigidBodies.push_back(body); // 解放漏れがないようにリストに保持
-
-	return body;
+std::unique_ptr<PhysicsObject> PhysicsWorld::addBox(const BoxDesc& desc)
+{
+    auto obj = std::make_unique<PhysicsObject>(desc);
+    m_dynamicsWorld->addRigidBody(obj->getRigidBody());
+    m_rigidBodies.push_back(obj->getRigidBody());
+    // 必要なら m_collisionShapes.push_back(obj->getShape());
+    return obj;
 }
 
 // 球を追加する
-btRigidBody* PhysicsWorld::addSphere(float radius, const btVector3& position, float mass) {
-	btCollisionShape* shape = new btSphereShape(radius);
-	m_collisionShapes.push_back(shape);
-
-	btTransform transform;
-	transform.setIdentity();
-	transform.setOrigin(position);
-	btDefaultMotionState* motionState = new btDefaultMotionState(transform);
-
-	btVector3 localInertia(0, 0, 0);
-	if (mass != 0.0f) {
-		shape->calculateLocalInertia(mass, localInertia);
-	}
-
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
-	btRigidBody* body = new btRigidBody(rbInfo);
-
-	m_dynamicsWorld->addRigidBody(body);
-	m_rigidBodies.push_back(body);
-
-	return body;
+std::unique_ptr<PhysicsObject> PhysicsWorld::addSphere(const SphereDesc& desc)
+{
+    auto obj = std::make_unique<PhysicsObject>(desc);
+    m_dynamicsWorld->addRigidBody(obj->getRigidBody());
+    m_rigidBodies.push_back(obj->getRigidBody());
+    // 必要なら m_collisionShapes.push_back(obj->getShape());
+    return obj;
 }
