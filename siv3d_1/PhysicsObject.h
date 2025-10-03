@@ -17,20 +17,24 @@ struct SphereDesc {
 };
 class PhysicsObject
 {
+	// Object は PhysicsWorldで管理する。
+	friend class PhysicsWorld;
+
 public:
-	PhysicsObject(BoxDesc desc);
-	PhysicsObject(SphereDesc desc);
+
 	~PhysicsObject();
 
 	void update();
 	void draw();
 	void setPosition(const s3d::Vec3& pos);
 	void setRotation(const s3d::Vec3& rot);
+	void setRestitution(float restitution);
 
 	s3d::Vec3 getPosition() const;
 	s3d::Vec3 getRotation() const;
 
 	void applyForce(const s3d::Vec3& force);
+	void applyImpulse(const s3d::Vec3& impulse);
 
 	btRigidBody* getRigidBody() const { return m_body; }
 
@@ -38,6 +42,8 @@ private:
 	btRigidBody* m_body = nullptr;
 	btCollisionShape* m_shape = nullptr;
 
+	PhysicsObject(BoxDesc desc);
+	PhysicsObject(SphereDesc desc);
 	void init(btCollisionShape* shape, float mass, const s3d::Vec3& position);
 };
 

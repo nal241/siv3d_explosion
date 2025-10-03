@@ -16,8 +16,6 @@ PhysicsObject::PhysicsObject(SphereDesc desc)
 
 PhysicsObject::~PhysicsObject()
 {
-    delete m_body;
-    delete m_shape;
 }
 
 void PhysicsObject::draw()
@@ -41,6 +39,16 @@ void PhysicsObject::draw()
         s3d::Sphere sphere(position, radius);
         sphere.draw(s3d::Palette::Orange);
     }
+}
+
+void PhysicsObject::setRestitution(float restitution)
+{
+	m_body->setRestitution(restitution);
+}
+
+void PhysicsObject::applyImpulse(const s3d::Vec3& impulse)
+{
+	m_body->applyCentralImpulse(ToBtVector3(impulse));
 }
 
 void PhysicsObject::init(btCollisionShape* shape, float mass, const s3d::Vec3& position)

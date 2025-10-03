@@ -17,19 +17,20 @@ PhysicsWorld::PhysicsWorld() {
 // デストラクタ：確保した全てのリソースを解放する
 PhysicsWorld::~PhysicsWorld() {
 	// 1. 剛体をワールドから削除し、メモリを解放
-	for (int i = m_rigidBodies.size() - 1; i-- > 0;) {
+	for (size_t i = m_rigidBodies.size(); i-- > 0;) {
 		btRigidBody* body = m_rigidBodies[i];
 		m_dynamicsWorld->removeRigidBody(body);
 		// btRigidBodyをdeleteすると、関連するbtMotionStateも自動でdeleteされる
+		delete body->getCollisionShape();
 		delete body;
 	}
 	m_rigidBodies.clear();
 
 	// 2. 衝突形状のメモリを解放
-	for (size_t i = m_collisionShapes.size() - 1; i-- > 0;) {
-		delete m_collisionShapes[i];
-	}
-	m_collisionShapes.clear();
+	//for (size_t i = m_collisionShapes.size(); i-- > 0;) {
+	//	delete m_collisionShapes[i];
+	//}
+	//m_collisionShapes.clear();
 
 	// 3. ワールドのコアコンポーネントを解放 (作成と逆順)
 	delete m_dynamicsWorld;
@@ -47,19 +48,17 @@ void PhysicsWorld::step(float deltaTime) {
 // 箱を追加する
 std::unique_ptr<PhysicsObject> PhysicsWorld::addBox(const BoxDesc& desc)
 {
-    auto obj = std::make_unique<PhysicsObject>(desc);
+    auto obj = std::unique_ptr<PhysicsObject>(new PhysicsObject(desc));
     m_dynamicsWorld->addRigidBody(obj->getRigidBody());
     m_rigidBodies.push_back(obj->getRigidBody());
-    // 必要なら m_collisionShapes.push_back(obj->getShape());
     return obj;
 }
 
 // 球を追加する
 std::unique_ptr<PhysicsObject> PhysicsWorld::addSphere(const SphereDesc& desc)
 {
-    auto obj = std::make_unique<PhysicsObject>(desc);
+    auto obj = std::unique_ptr<PhysicsObject>(new PhysicsObject(desc));
     m_dynamicsWorld->addRigidBody(obj->getRigidBody());
     m_rigidBodies.push_back(obj->getRigidBody());
-    // 必要なら m_collisionShapes.push_back(obj->getShape());
     return obj;
 }
