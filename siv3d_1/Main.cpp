@@ -10,10 +10,10 @@ void Main() {
 	PhysicsWorld world;
 
 	auto tmp = world.addBox(BoxDesc{s3d::Vec3(100.f, 1.f, 100.f), s3d::Vec3(0, -1, 0), 0.0f });
-	tmp->getRigidBody()->setRestitution(1.0f);
+	tmp->setRestitution(1.0f);
 
 	auto fallingBox = world.addBox(BoxDesc{ s3d::Vec3(1.f, 1.f, 1.f), s3d::Vec3(0, 10, 0), 10.0f });
-	fallingBox->getRigidBody()->setRestitution(0.7f);
+	fallingBox->setRestitution(0.7f);
 
 	// Background color (remove SRGB curve for a linear workflow)
 	const ColorF backgroundColor = ColorF{ 0.4, 0.6, 0.8 }.removeSRGBCurve();
@@ -24,11 +24,30 @@ void Main() {
 
 	const Texture uvChecker{ U"example/texture/uv.png", TextureDesc::MippedSRGB };
 
-
+	Array<std::unique_ptr<PhysicsObject>> boxes;
 	// システムループ
 	while (System::Update()) {
 		ClearPrint();
 		camera.update(2.0);
+
+		// スペースキーでキューブを発射
+		if (KeySpace.down())
+		{
+			// カメラの位置と前方ベクトルを取得
+			Vec3 camPos = camera.getEyePosition();
+			Vec3 camForward = camera.getLookAtVector();
+
+			// キューブの初期位置（カメラの少し前）
+			Vec3 cubePos = camPos + camForward * 2.0;
+
+			// キューブ生成
+			auto shotBox = world.addBox(BoxDesc{ Vec3(1.f, 1.f, 1.f), cubePos, 5.0f });
+			shotBox->setRestitution(0.7f);
+
+			// 前方へインパルスを加える
+			shotBox->applyImpulse(camForward * 100.0); // 30.0は速度調整
+			boxes.push_back(std::move(shotBox));
+		}
 
 		// worldのステップを進める
 		world.step(1.0f / 120.0f);
@@ -49,6 +68,10 @@ void Main() {
             Print << U"box position: {:.2F}, {:.2F}, {:.2F}"_fmt(pos.x(), pos.y(), pos.z());
 
             Plane{0.f, -0.5f, 0.f, 64 }.draw(uvChecker);
+
+			for (auto& box : boxes) {
+				box->draw();
+			}
         }
 
         // [2D rendering]
