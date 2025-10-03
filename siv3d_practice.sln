@@ -5,8 +5,6 @@ VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "siv3d_bullet", "siv3d_bullet\siv3d_bullet.vcxproj", "{5FD7B3BB-112B-470D-988A-5BD2BC273FEB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "siv3d_bullet2", "siv3d_bullet_test\siv3d_bullet2.vcxproj", "{87853413-FDEC-405D-B421-473218111D95}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -17,10 +15,6 @@ Global
 		{5FD7B3BB-112B-470D-988A-5BD2BC273FEB}.Debug|x64.Build.0 = Debug|x64
 		{5FD7B3BB-112B-470D-988A-5BD2BC273FEB}.Release|x64.ActiveCfg = Release|x64
 		{5FD7B3BB-112B-470D-988A-5BD2BC273FEB}.Release|x64.Build.0 = Release|x64
-		{87853413-FDEC-405D-B421-473218111D95}.Debug|x64.ActiveCfg = Debug|x64
-		{87853413-FDEC-405D-B421-473218111D95}.Debug|x64.Build.0 = Debug|x64
-		{87853413-FDEC-405D-B421-473218111D95}.Release|x64.ActiveCfg = Release|x64
-		{87853413-FDEC-405D-B421-473218111D95}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
