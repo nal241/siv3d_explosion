@@ -31,7 +31,7 @@ void PhysicsObject::draw()
     {
         s3d::Vec3 size = ToSiv3DVec3(boxShape->getHalfExtentsWithMargin()) * 2.0;
         s3d::OrientedBox obox(position, size, rotation);
-        obox.draw(s3d::Palette::Skyblue);
+        obox.draw(m_color);
     }
     else if (auto sphereShape = dynamic_cast<btSphereShape*>(m_shape))
     {
