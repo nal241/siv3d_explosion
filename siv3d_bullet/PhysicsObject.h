@@ -17,6 +17,13 @@ struct SphereDesc
 	s3d::Vec3 position;
 	float mass;
 };
+
+enum class ShapeType
+{
+	Box,
+	Sphere,
+};
+
 class PhysicsObject
 {
 public:
@@ -27,6 +34,8 @@ public:
 	PhysicsObject &operator=(const PhysicsObject &) = delete;
 	PhysicsObject(PhysicsObject &&) = default;
 	PhysicsObject &operator=(PhysicsObject &&) = default;
+
+	PhysicsObject(PhysicsWorld *world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass, const s3d::Vec3 &position);
 
 	void update();
 	void draw();
@@ -53,9 +62,7 @@ private:
 	std::unique_ptr<btMotionState> m_motionState;
 
 	PhysicsWorld *m_world = nullptr;
+	ShapeType m_shapeType;
 	// 描画
-	Color m_color = s3d::Palette::White;
-
-	PhysicsObject(PhysicsWorld *world, std::unique_ptr<btCollisionShape> shape, float mass, const s3d::Vec3 &position);
-	void init(btCollisionShape *shape, float mass, const s3d::Vec3 &position);
+	Color m_color = s3d::Linear::Palette::White;
 };

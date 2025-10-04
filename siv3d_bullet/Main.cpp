@@ -1,8 +1,34 @@
-﻿#include <Siv3D.hpp> // Siv3D v0.6.16
+#include <Siv3D.hpp> // Siv3D v0.6.16
 
 #include <btBulletDynamicsCommon.h>
 
 #include "PhysicsWorld.h"
+
+namespace
+{
+	// World settings
+	constexpr double WallLength = 10.0;
+	constexpr double WallThickness = 1.0;
+	constexpr float WallRestitution = 1.0f;
+
+	// Camera settings
+	constexpr double CameraSpeed = 20.0;
+	constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
+	constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
+	constexpr double CameraFov = 30_deg;
+
+	// Cube settings
+	constexpr s3d::Vec3 CubeSize{1.0, 1.0, 1.0};
+	constexpr float CubeMass = 5.0f;
+	constexpr float CubeRestitution = 0.7f;
+	constexpr double CubeLaunchImpulse = 30.0;
+
+	// Sphere settings
+	constexpr float SphereRadius = 0.5f;
+	constexpr float SphereMass = 5.0f;
+	constexpr float SphereRestitution = 0.7f;
+	constexpr double SphereLaunchImpulse = 20.0;
+}
 
 void Main()
 {
@@ -10,23 +36,20 @@ void Main()
 	// 物理エンジンの準備
 	PhysicsWorld world;
 
-	double wallLength = 10.0;
-	double wallThickness = 1.0;
-
-	auto floor = world.createBox(BoxDesc{s3d::Vec3(wallLength, wallThickness, wallLength), s3d::Vec3(wallLength / 2, -wallThickness / 2, wallLength / 2), 0.0f});
-	floor->setRestitution(1.0f);
+	auto floor = world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength), s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
+	floor->setRestitution(WallRestitution);
 	floor->setColor(ColorF{0.15, 0.15, 0.15}); // 床：明るいグレー
 
-	auto wall_l = world.createBox(BoxDesc{s3d::Vec3(wallThickness, wallLength, wallLength), s3d::Vec3(-wallThickness / 2, wallLength / 2, wallLength / 2), 0.0f});
-	wall_l->setRestitution(1.0f);
+	auto wall_l = world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength), s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
+	wall_l->setRestitution(WallRestitution);
 	wall_l->setColor(ColorF{0.3, 0.7, 0.4}); // 左壁：緑系
 
-	auto wall_r = world.createBox(BoxDesc{s3d::Vec3(wallThickness, wallLength, wallLength), s3d::Vec3(wallLength + wallThickness / 2, wallLength / 2, wallLength / 2), 0.0f});
-	wall_r->setRestitution(1.0f);
+	auto wall_r = world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength), s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
+	wall_r->setRestitution(WallRestitution);
 	wall_r->setColor(ColorF{0.4, 0.5, 0.9}); // 右壁：青系
 
-	auto wall_b = world.createBox(BoxDesc{s3d::Vec3(wallLength, wallLength, wallThickness), s3d::Vec3(wallLength / 2, wallLength / 2, wallLength + wallThickness / 2), 0.0f});
-	wall_b->setRestitution(1.0f);
+	auto wall_b = world.createBox(BoxDesc{s3d::Vec3(WallLength, WallLength, WallThickness), s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2), 0.0f});
+	wall_b->setRestitution(WallRestitution);
 	wall_b->setColor(ColorF{0.9, 0.5, 0.4}); // 奥壁：赤系
 
 	// Background color (remove SRGB curve for a linear workflow)
@@ -34,7 +57,7 @@ void Main()
 
 	// カメラの設定
 	const MSRenderTexture renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes};
-	DebugCamera3D camera{renderTexture.size(), 30_deg, Vec3{5, 15, -20}, Vec3{5, 0, 10}};
+	DebugCamera3D camera{renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
 
 	const Texture uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
 
@@ -44,7 +67,7 @@ void Main()
 	{
 		ClearPrint();
 		Print << U"cube num:{}"_fmt(boxes.size());
-		camera.update(20.0);
+		camera.update(CameraSpeed);
 
 		// スペースキーでキューブを発射
 		if (KeySpace.down())
@@ -57,11 +80,11 @@ void Main()
 			Vec3 cubePos = camPos + camForward * 20.0;
 
 			// キューブ生成
-			auto shotBox = world.createBox(BoxDesc{Vec3(1.f, 1.f, 1.f), cubePos, 5.0f});
-			shotBox->setRestitution(0.7f);
+			auto shotBox = world.createBox(BoxDesc{CubeSize, cubePos, CubeMass});
+			shotBox->setRestitution(CubeRestitution);
 
 			// 前方へインパルスを加える
-			shotBox->applyImpulse(camForward * 30.0); // 30.0は速度調整
+			shotBox->applyImpulse(camForward * CubeLaunchImpulse); // 30.0は速度調整
 			boxes.push_back(std::move(shotBox));
 		}
 
@@ -74,10 +97,10 @@ void Main()
 			// 球の初期位置（カメラの少し前）
 			Vec3 spherePos = camPos + camForward * 20.0;
 			// 球生成
-			auto shotSphere = world.createSphere(SphereDesc{0.5f, spherePos, 5.0f});
-			shotSphere->setRestitution(0.7f);
+			auto shotSphere = world.createSphere(SphereDesc{SphereRadius, spherePos, SphereMass});
+			shotSphere->setRestitution(SphereRestitution);
 			// 前方へインパルスを加える
-			shotSphere->applyImpulse(camForward * 20.0); // 20.0は速度調整
+			shotSphere->applyImpulse(camForward * SphereLaunchImpulse); // 20.0は速度調整
 			boxes.push_back(std::move(shotSphere));
 		}
 
