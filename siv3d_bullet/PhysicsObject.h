@@ -30,6 +30,8 @@ public:
 	void setRotation(const s3d::Vec3& rot);
 	void setRestitution(float restitution);
 
+	void setColor(const Color& color) { m_color = color; }
+
 	s3d::Vec3 getPosition() const;
 	s3d::Vec3 getRotation() const;
 
@@ -41,6 +43,7 @@ public:
 private:
 	btRigidBody* m_body = nullptr;
 	btCollisionShape* m_shape = nullptr;
+	Color m_color = s3d::Palette::White;
 
 	PhysicsObject(BoxDesc desc);
 	PhysicsObject(SphereDesc desc);
