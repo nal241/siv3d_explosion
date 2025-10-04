@@ -1,0 +1,28 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+ColumnLimit: 120
+
+# 波括弧のスタイル
+BreakBeforeBraces: Allman
+
+# スペースの入れ方
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceAfterCStyleCast: true
+
+# ポインタ/参照の位置
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# 名前空間関連
+NamespaceIndentation: All
+
+IncludeBlocks: Preserve
+SortIncludes: false
+
+# コメント
+AlignTrailingComments: true   # 行末コメントを整列する

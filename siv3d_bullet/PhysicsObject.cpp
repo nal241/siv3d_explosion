@@ -5,7 +5,8 @@
 #include "BulletSiv3DUtils.h"
 #include "PhysicsWorld.h"
 
-PhysicsObject::PhysicsObject(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass, const s3d::Vec3& position)
+PhysicsObject::PhysicsObject(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass,
+                             const s3d::Vec3& position)
     : m_world(world), m_shape(std::move(shape)), m_shapeType(type)
 {
     btTransform transform;
@@ -69,12 +70,6 @@ void PhysicsObject::draw()
     }
 }
 
-void PhysicsObject::setRestitution(float restitution)
-{
-    m_body->setRestitution(restitution);
-}
+void PhysicsObject::setRestitution(float restitution) { m_body->setRestitution(restitution); }
 
-void PhysicsObject::applyImpulse(const s3d::Vec3 &impulse)
-{
-    m_body->applyCentralImpulse(ToBtVector3(impulse));
-}
+void PhysicsObject::applyImpulse(const s3d::Vec3& impulse) { m_body->applyCentralImpulse(ToBtVector3(impulse)); }

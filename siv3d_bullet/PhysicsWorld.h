@@ -6,22 +6,22 @@
 
 class PhysicsWorld
 {
-public:
+  public:
     PhysicsWorld();
     ~PhysicsWorld();
 
     // 削除禁止
-    PhysicsWorld(const PhysicsWorld &) = delete;
-    PhysicsWorld &operator=(const PhysicsWorld &) = delete;
+    PhysicsWorld(const PhysicsWorld&) = delete;
+    PhysicsWorld& operator=(const PhysicsWorld&) = delete;
 
     // シミュレーションを1ステップ進める
     void step(float deltaTime);
 
     // オブジェクト追加（unique_ptrで返す）
-    std::unique_ptr<PhysicsObject> createBox(const BoxDesc &desc);
-    std::unique_ptr<PhysicsObject> createSphere(const SphereDesc &desc);
+    std::unique_ptr<PhysicsObject> createBox(const BoxDesc& desc);
+    std::unique_ptr<PhysicsObject> createSphere(const SphereDesc& desc);
 
-private:
+  private:
     friend class PhysicsObject;
 
     // Bulletのコアコンポーネント
@@ -32,9 +32,9 @@ private:
     std::unique_ptr<btDiscreteDynamicsWorld> m_dynamicsWorld;
 
     // 作成したオブジェクトを管理
-    s3d::HashSet<PhysicsObject *> m_registeredObjects;
+    s3d::HashSet<PhysicsObject*> m_registeredObjects;
 
     // PhysicsObjectからの通知メソッド
-    void registerObject(PhysicsObject *obj);
-    void unregisterObject(PhysicsObject *obj);
+    void registerObject(PhysicsObject* obj);
+    void unregisterObject(PhysicsObject* obj);
 };
