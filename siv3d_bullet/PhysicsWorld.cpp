@@ -2,10 +2,6 @@
 #include "PhysicsObject.h"
 #include "BulletSiv3dUtils.h"
 
-#include "PhysicsWorld.h"
-#include "PhysicsObject.h"
-#include "BulletSiv3dUtils.h"
-
 namespace
 {
     constexpr double GravityY = -9.81;
