@@ -36,27 +36,34 @@ void Main()
     // 物理エンジンの準備
     PhysicsWorld world;
 
+    Array<std::unique_ptr<PhysicsObject>> physicsObjects;
+
     auto floor = world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
                                          s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
     floor->setRestitution(WallRestitution);
-    floor->setColor(ColorF{0.15, 0.15, 0.15}); // 床：明るいグレー
+    floor->setColor(s3d::Linear::Palette::Silver);
 
     auto wall_l = world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
                                           s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
     wall_l->setRestitution(WallRestitution);
-    wall_l->setColor(ColorF{0.3, 0.7, 0.4}); // 左壁：緑系
+    wall_l->setColor(s3d::Linear::Palette::Powderblue);
 
     auto wall_r =
         world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
                                 s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
     wall_r->setRestitution(WallRestitution);
-    wall_r->setColor(ColorF{0.4, 0.5, 0.9}); // 右壁：青系
+    wall_r->setColor(s3d::Linear::Palette::Powderblue);
 
     auto wall_b =
         world.createBox(BoxDesc{s3d::Vec3(WallLength, WallLength, WallThickness),
                                 s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2), 0.0f});
     wall_b->setRestitution(WallRestitution);
-    wall_b->setColor(ColorF{0.9, 0.5, 0.4}); // 奥壁：赤系
+    wall_b->setColor(s3d::Linear::Palette::Powderblue);
+
+    physicsObjects.push_back(std::move(floor));
+    physicsObjects.push_back(std::move(wall_l));
+    physicsObjects.push_back(std::move(wall_r));
+    physicsObjects.push_back(std::move(wall_b));
 
     // Background color (remove SRGB curve for a linear workflow)
     const ColorF backgroundColor = ColorF{0.4, 0.6, 0.8}.removeSRGBCurve();
@@ -67,13 +74,17 @@ void Main()
 
     const Texture uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
 
-    Array<std::unique_ptr<PhysicsObject>> boxes;
     // システムループ
     while (System::Update())
     {
         ClearPrint();
-        Print << U"cube num:{}"_fmt(boxes.size());
+        Print << U"Object num:{}"_fmt(physicsObjects.size());
+        Print << Profiler::FPS();
         camera.update(CameraSpeed);
+        for (auto& object : physicsObjects)
+        {
+            object->update();
+        }
 
         // スペースキーでキューブを発射
         if (KeySpace.down())
@@ -88,10 +99,11 @@ void Main()
             // キューブ生成
             auto shotBox = world.createBox(BoxDesc{CubeSize, cubePos, CubeMass});
             shotBox->setRestitution(CubeRestitution);
+            shotBox->setColor(s3d::Linear::Palette::Gainsboro);
 
             // 前方へインパルスを加える
-            shotBox->applyImpulse(camForward * CubeLaunchImpulse); // 30.0は速度調整
-            boxes.push_back(std::move(shotBox));
+            shotBox->applyImpulse(camForward * CubeLaunchImpulse);
+            physicsObjects.push_back(std::move(shotBox));
         }
 
         // oキーでsphereを発射
@@ -105,13 +117,19 @@ void Main()
             // 球生成
             auto shotSphere = world.createSphere(SphereDesc{SphereRadius, spherePos, SphereMass});
             shotSphere->setRestitution(SphereRestitution);
+            shotSphere->setColor(s3d::Linear::Palette::Lightsteelblue);
+
             // 前方へインパルスを加える
             shotSphere->applyImpulse(camForward * SphereLaunchImpulse); // 20.0は速度調整
-            boxes.push_back(std::move(shotSphere));
+            physicsObjects.push_back(std::move(shotSphere));
         }
 
         // worldのステップを進める
         world.step(Scene::DeltaTime());
+
+        // 座標が一定以下ならオブジェクトを削除
+        physicsObjects.remove_if([](const std::unique_ptr<PhysicsObject>& obj)
+                                 { return obj->getPosition().y < -10.0; });
 
         // Set up a camera in the current 3D scene
         Graphics3D::SetCameraTransform(camera);
@@ -120,17 +138,11 @@ void Main()
         {
             const ScopedRenderTarget3D target{renderTexture.clear(backgroundColor)};
 
-            // 位置の表示
-            // Print << U"box position: {:.2F}, {:.2F}, {:.2F}"_fmt(pos.x(), pos.y(), pos.z());
-
-            floor->draw();
-            wall_b->draw();
-            wall_l->draw();
-            wall_r->draw();
-
-            for (auto& box : boxes)
+            // for debug
+            // Plane{64}.draw(uvChecker);
+            for (auto& object : physicsObjects)
             {
-                box->draw();
+                object->draw();
             }
         }
 
