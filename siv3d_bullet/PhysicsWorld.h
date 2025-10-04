@@ -34,8 +34,6 @@ private:
     // 作成したオブジェクトを管理
     s3d::HashSet<PhysicsObject *> m_registeredObjects;
 
-    void addObject(PhysicsObject &obj);
-
     // PhysicsObjectからの通知メソッド
     void registerObject(PhysicsObject *obj);
     void unregisterObject(PhysicsObject *obj);
