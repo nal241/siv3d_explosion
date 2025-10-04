@@ -64,6 +64,22 @@ void Main() {
 			boxes.push_back(std::move(shotBox));
 		}
 
+		// oキーでsphereを発射
+		if (KeyO.down())
+		{
+			// カメラの位置と前方ベクトルを取得
+			Vec3 camPos = camera.getEyePosition();
+			Vec3 camForward = camera.getLookAtVector();
+			// 球の初期位置（カメラの少し前）
+			Vec3 spherePos = camPos + camForward * 20.0;
+			// 球生成
+			auto shotSphere = world.addSphere(SphereDesc{ 0.5f, spherePos, 5.0f });
+			shotSphere->setRestitution(0.7f);
+			// 前方へインパルスを加える
+			shotSphere->applyImpulse(camForward * 20.0); // 20.0は速度調整
+			boxes.push_back(std::move(shotSphere));
+		}
+
 		// worldのステップを進める
 		world.step(Scene::DeltaTime());
 
