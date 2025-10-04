@@ -46,8 +46,8 @@ class PhysicsObject
 
     void setColor(const Color& color) { m_color = color; }
 
-    s3d::Vec3 getPosition() const;
-    s3d::Vec3 getRotation() const;
+    s3d::Vec3 getPosition() const { return m_position; }
+    s3d::Quaternion getRotation() const { return m_rotation; }
 
     void applyForce(const s3d::Vec3& force);
     void applyImpulse(const s3d::Vec3& impulse);
@@ -64,6 +64,10 @@ class PhysicsObject
 
     PhysicsWorld* m_world = nullptr;
     ShapeType m_shapeType;
+
+    s3d::Vec3 m_position;
+    s3d::Quaternion m_rotation;
+
     // 描画
     Color m_color = s3d::Linear::Palette::White;
 };
