@@ -41,21 +41,23 @@ PhysicsObject::~PhysicsObject()
     }
 }
 
-void PhysicsObject::draw()
-{
-    // Bulletから位置・回転を取得
+void PhysicsObject::update()
+{ // Bulletから位置・回転を取得し、メンバー変数にキャッシュする
     btTransform transform;
     m_body->getMotionState()->getWorldTransform(transform);
-    s3d::Vec3 position = ToSiv3DVec3(transform.getOrigin());
-    s3d::Quaternion rotation = ToSiv3DQuaternion(transform.getRotation());
+    m_position = ToSiv3DVec3(transform.getOrigin());
+    m_rotation = ToSiv3DQuaternion(transform.getRotation());
+}
 
+void PhysicsObject::draw()
+{
     switch (m_shapeType)
     {
     case ShapeType::Box:
     {
         auto boxShape = static_cast<btBoxShape*>(m_shape.get());
         s3d::Vec3 size = ToSiv3DVec3(boxShape->getHalfExtentsWithMargin()) * 2.0;
-        s3d::OrientedBox obox(position, size, rotation);
+        s3d::OrientedBox obox(m_position, size, m_rotation);
         obox.draw(m_color);
         break;
     }
@@ -63,7 +65,7 @@ void PhysicsObject::draw()
     {
         auto sphereShape = static_cast<btSphereShape*>(m_shape.get());
         double radius = sphereShape->getRadius();
-        s3d::Sphere sphere(position, radius);
+        s3d::Sphere sphere(m_position, radius);
         sphere.draw(m_color);
         break;
     }
