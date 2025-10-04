@@ -5,8 +5,8 @@
 #include "BulletSiv3DUtils.h"
 #include "PhysicsWorld.h"
 
-PhysicsObject::PhysicsObject(PhysicsWorld *world, std::unique_ptr<btCollisionShape> shape, float mass, const s3d::Vec3 &position)
-    : m_world(world), m_shape(std::move(shape))
+PhysicsObject::PhysicsObject(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass, const s3d::Vec3& position)
+    : m_world(world), m_shape(std::move(shape)), m_shapeType(type)
 {
     btTransform transform;
     transform.setIdentity();
@@ -48,18 +48,24 @@ void PhysicsObject::draw()
     s3d::Vec3 position = ToSiv3DVec3(transform.getOrigin());
     s3d::Quaternion rotation = ToSiv3DQuaternion(transform.getRotation());
 
-    // 箱か球か判定
-    if (auto boxShape = dynamic_cast<btBoxShape *>(m_shape.get()))
+    switch (m_shapeType)
     {
+    case ShapeType::Box:
+    {
+        auto boxShape = static_cast<btBoxShape*>(m_shape.get());
         s3d::Vec3 size = ToSiv3DVec3(boxShape->getHalfExtentsWithMargin()) * 2.0;
         s3d::OrientedBox obox(position, size, rotation);
         obox.draw(m_color);
+        break;
     }
-    else if (auto sphereShape = dynamic_cast<btSphereShape *>(m_shape.get()))
+    case ShapeType::Sphere:
     {
+        auto sphereShape = static_cast<btSphereShape*>(m_shape.get());
         double radius = sphereShape->getRadius();
         s3d::Sphere sphere(position, radius);
-        sphere.draw(s3d::Palette::Orange);
+        sphere.draw(m_color);
+        break;
+    }
     }
 }
 
