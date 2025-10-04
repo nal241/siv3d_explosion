@@ -3,19 +3,41 @@
 #include <Siv3D.hpp>
 
 #include "BulletSiv3DUtils.h"
+#include "PhysicsWorld.h"
 
-PhysicsObject::PhysicsObject(BoxDesc desc)
+PhysicsObject::PhysicsObject(PhysicsWorld *world, std::unique_ptr<btCollisionShape> shape, float mass, const s3d::Vec3 &position)
+    : m_world(world), m_shape(std::move(shape))
 {
-    init(new btBoxShape(ToBtVector3(desc.size * 0.5)), desc.mass, desc.position);
-}
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(ToBtVector3(position));
 
-PhysicsObject::PhysicsObject(SphereDesc desc)
-{
-    init(new btSphereShape(desc.radius), desc.mass, desc.position);
+    m_motionState = std::make_unique<btDefaultMotionState>(transform);
+
+    btVector3 localInertia(0, 0, 0);
+    if (mass != 0.0f)
+    {
+        m_shape->calculateLocalInertia(mass, localInertia);
+    }
+
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, m_motionState.get(), m_shape.get(), localInertia);
+
+    m_body = std::make_unique<btRigidBody>(rbInfo);
+
+    // Worldに登録
+    if (m_world)
+    {
+        m_world->registerObject(this);
+    }
 }
 
 PhysicsObject::~PhysicsObject()
 {
+    if (m_world)
+    {
+        m_world->unregisterObject(this);
+        m_world = nullptr;
+    }
 }
 
 void PhysicsObject::draw()
@@ -27,13 +49,13 @@ void PhysicsObject::draw()
     s3d::Quaternion rotation = ToSiv3DQuaternion(transform.getRotation());
 
     // 箱か球か判定
-    if (auto boxShape = dynamic_cast<btBoxShape*>(m_shape))
+    if (auto boxShape = dynamic_cast<btBoxShape *>(m_shape.get()))
     {
         s3d::Vec3 size = ToSiv3DVec3(boxShape->getHalfExtentsWithMargin()) * 2.0;
         s3d::OrientedBox obox(position, size, rotation);
         obox.draw(m_color);
     }
-    else if (auto sphereShape = dynamic_cast<btSphereShape*>(m_shape))
+    else if (auto sphereShape = dynamic_cast<btSphereShape *>(m_shape.get()))
     {
         double radius = sphereShape->getRadius();
         s3d::Sphere sphere(position, radius);
@@ -43,27 +65,10 @@ void PhysicsObject::draw()
 
 void PhysicsObject::setRestitution(float restitution)
 {
-	m_body->setRestitution(restitution);
+    m_body->setRestitution(restitution);
 }
 
-void PhysicsObject::applyImpulse(const s3d::Vec3& impulse)
+void PhysicsObject::applyImpulse(const s3d::Vec3 &impulse)
 {
-	m_body->applyCentralImpulse(ToBtVector3(impulse));
-}
-
-void PhysicsObject::init(btCollisionShape* shape, float mass, const s3d::Vec3& position)
-{
-	m_shape = shape;
-	btTransform transform;
-	transform.setIdentity();
-	transform.setOrigin(ToBtVector3(position));
-	btDefaultMotionState* motionState = new btDefaultMotionState(transform);
-
-	btVector3 localInertia(0, 0, 0);
-	if (mass != 0.0f) {
-		m_shape->calculateLocalInertia(mass, localInertia);
-	}
-
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, m_shape, localInertia);
-	m_body = new btRigidBody(rbInfo);
+    m_body->applyCentralImpulse(ToBtVector3(impulse));
 }

@@ -1,33 +1,42 @@
 ﻿#pragma once
 
 #include <btBulletDynamicsCommon.h>
+
 #include "PhysicsObject.h"
 
-class PhysicsWorld {
+class PhysicsWorld
+{
 public:
-    // コンストラクタで初期化
     PhysicsWorld();
-    // デストラクタで後片付け
     ~PhysicsWorld();
+
+    // 削除禁止
+    PhysicsWorld(const PhysicsWorld &) = delete;
+    PhysicsWorld &operator=(const PhysicsWorld &) = delete;
 
     // シミュレーションを1ステップ進める
     void step(float deltaTime);
 
-    // オブジェクト追加（Siv3D型・スマートポインタで返す）
-    std::unique_ptr<PhysicsObject> addBox(const BoxDesc& desc);
-    std::unique_ptr<PhysicsObject> addSphere(const SphereDesc& desc);
+    // オブジェクト追加（unique_ptrで返す）
+    std::unique_ptr<PhysicsObject> createBox(const BoxDesc &desc);
+    std::unique_ptr<PhysicsObject> createSphere(const SphereDesc &desc);
 
 private:
+    friend class PhysicsObject;
+
     // Bulletのコアコンポーネント
-    btDefaultCollisionConfiguration* m_collisionConfiguration;
-    btCollisionDispatcher* m_dispatcher;
-    btBroadphaseInterface* m_broadphase;
-    btSequentialImpulseConstraintSolver* m_solver;
-    btDiscreteDynamicsWorld* m_dynamicsWorld;
+    std::unique_ptr<btDefaultCollisionConfiguration> m_collisionConfig;
+    std::unique_ptr<btCollisionDispatcher> m_dispatcher;
+    std::unique_ptr<btDbvtBroadphase> m_broadphase;
+    std::unique_ptr<btSequentialImpulseConstraintSolver> m_solver;
+    std::unique_ptr<btDiscreteDynamicsWorld> m_dynamicsWorld;
 
-    // 作成したオブジェクトを管理するためのリスト
-    std::vector<btCollisionShape*> m_collisionShapes;
-    std::vector<btRigidBody*> m_rigidBodies;
+    // 作成したオブジェクトを管理
+    s3d::HashSet<PhysicsObject *> m_registeredObjects;
 
-    void addObject(PhysicsObject& obj);
+    void addObject(PhysicsObject &obj);
+
+    // PhysicsObjectからの通知メソッド
+    void registerObject(PhysicsObject *obj);
+    void unregisterObject(PhysicsObject *obj);
 };
