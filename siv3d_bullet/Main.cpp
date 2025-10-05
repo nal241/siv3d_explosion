@@ -28,6 +28,13 @@ namespace
     constexpr float SphereMass = 5.0f;
     constexpr float SphereRestitution = 0.7f;
     constexpr double SphereLaunchImpulse = 20.0;
+
+    // Cylinder settings
+    constexpr float CylinderRadius = 0.5f;
+    constexpr float CylinderHeight = 0.2f;
+    constexpr float CylinderMass = 1.0f;
+    constexpr float CylinderRestitution = 0.1f;
+    constexpr double CylinderLaunchImpulse = 20.0;
 } // namespace
 
 void Main()
@@ -74,7 +81,8 @@ void Main()
 
     const Texture uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
 
-	// 音声ファイルの読み込み
+    const Model model{U"model/coin.obj"};
+	  // 音声ファイルの読み込み
     // 効果音ラボから音源は取得
     Audio cubeShootSound{U"example/sounds/shoot.mp3"};
     Audio sphereShootSound{U"example/sounds/shoot.mp3"};
@@ -139,6 +147,25 @@ void Main()
 			// 球発射音を再生
             sphereShootSound.playOneShot();
 		}
+
+        if (KeyC.down())
+        {
+            // カメラの位置と前方ベクトルを取得
+            Vec3 camPos = camera.getEyePosition();
+            Vec3 camForward = camera.getLookAtVector();
+            // 円柱の初期位置（カメラの少し前）
+            Vec3 cylinderPos = camPos + camForward * 20.0;
+            // モデル付き円柱（コイン）を生成
+            auto shotCoin =
+                world.createModelObject(CylinderDesc{CylinderRadius, CylinderHeight, cylinderPos, CylinderMass}, model);
+            shotCoin->setRestitution(CylinderRestitution);
+            shotCoin->setFriction(0.3f);
+            shotCoin->setDamping(0.1f, 0.5f);
+
+            // 前方へインパルスを加える
+            shotCoin->applyImpulse(camForward * CylinderLaunchImpulse);
+            physicsObjects.push_back(std::move(shotCoin));
+        }
 
         // worldのステップを進める
         world.step(Scene::DeltaTime());

@@ -20,6 +20,8 @@ class PhysicsWorld
     // オブジェクト追加（unique_ptrで返す）
     std::unique_ptr<PhysicsObject> createBox(const BoxDesc& desc);
     std::unique_ptr<PhysicsObject> createSphere(const SphereDesc& desc);
+    std::unique_ptr<PhysicsObject> createCylinder(const CylinderDesc& desc);
+    std::unique_ptr<PhysicsObject> createModelObject(const CylinderDesc& desc, const s3d::Model& model);
 
   private:
     friend class PhysicsObject;
