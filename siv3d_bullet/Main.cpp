@@ -1,4 +1,4 @@
-#include <Siv3D.hpp> // Siv3D v0.6.16
+﻿#include <Siv3D.hpp> // Siv3D v0.6.16
 
 #include <btBulletDynamicsCommon.h>
 
@@ -74,6 +74,14 @@ void Main()
 
     const Texture uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
 
+	// 音声ファイルの読み込み
+    // 効果音ラボから音源は取得
+    Audio cubeShootSound{U"example/sounds/shoot.mp3"};
+    Audio sphereShootSound{U"example/sounds/shoot.mp3"};
+
+    // 音量の初期値（0.0 ～ 1.0）
+    double volume = 0.5;
+
     // システムループ
     while (System::Update())
     {
@@ -104,7 +112,12 @@ void Main()
             // 前方へインパルスを加える
             shotBox->applyImpulse(camForward * CubeLaunchImpulse);
             physicsObjects.push_back(std::move(shotBox));
-        }
+
+			// キューブ発射音を再生
+            // Play()は重複再生しないため、
+            // playOneShot()で多重再生する
+            cubeShootSound.playOneShot();
+		}
 
         // oキーでsphereを発射
         if (KeyO.down())
@@ -122,7 +135,10 @@ void Main()
             // 前方へインパルスを加える
             shotSphere->applyImpulse(camForward * SphereLaunchImpulse); // 20.0は速度調整
             physicsObjects.push_back(std::move(shotSphere));
-        }
+
+			// 球発射音を再生
+            sphereShootSound.playOneShot();
+		}
 
         // worldのステップを進める
         world.step(Scene::DeltaTime());
