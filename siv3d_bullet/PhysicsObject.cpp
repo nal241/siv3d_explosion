@@ -51,27 +51,46 @@ void PhysicsObject::update()
 
 void PhysicsObject::draw()
 {
-    switch (m_shapeType)
+    if (m_model)
     {
-    case ShapeType::Box:
-    {
-        auto boxShape = static_cast<btBoxShape*>(m_shape.get());
-        s3d::Vec3 size = ToSiv3DVec3(boxShape->getHalfExtentsWithMargin()) * 2.0;
-        s3d::OrientedBox obox(m_position, size, m_rotation);
-        obox.draw(m_color);
-        break;
+        m_model->draw(m_position, m_rotation);
     }
-    case ShapeType::Sphere:
+    else
     {
-        auto sphereShape = static_cast<btSphereShape*>(m_shape.get());
-        double radius = sphereShape->getRadius();
-        s3d::Sphere sphere(m_position, radius);
-        sphere.draw(m_color);
-        break;
-    }
+        switch (m_shapeType)
+        {
+        case ShapeType::Box:
+        {
+            auto boxShape = static_cast<btBoxShape*>(m_shape.get());
+            s3d::Vec3 size = ToSiv3DVec3(boxShape->getHalfExtentsWithMargin()) * 2.0;
+            s3d::OrientedBox obox(m_position, size, m_rotation);
+            obox.draw(m_color);
+            break;
+        }
+        case ShapeType::Sphere:
+        {
+            auto sphereShape = static_cast<btSphereShape*>(m_shape.get());
+            double radius = sphereShape->getRadius();
+            s3d::Sphere sphere(m_position, radius);
+            sphere.draw(m_color);
+            break;
+        }
+        case ShapeType::Cylinder:
+        {
+            auto cylinderShape = static_cast<btCylinderShape*>(m_shape.get());
+            double radius = cylinderShape->getRadius();
+            double height = cylinderShape->getHalfExtentsWithMargin().getY() * 2;
+            s3d::Cylinder cylinder(m_position, radius, height, m_rotation);
+            cylinder.draw(m_color);
+            break;
+        }
+        }
     }
 }
 
 void PhysicsObject::setRestitution(float restitution) { m_body->setRestitution(restitution); }
+
+void PhysicsObject::setFriction(float friction) { m_body->setFriction(friction); };
+void PhysicsObject::setDamping(float lin_damping, float ang_damping) { m_body->setDamping(lin_damping, ang_damping); };
 
 void PhysicsObject::applyImpulse(const s3d::Vec3& impulse) { m_body->applyCentralImpulse(ToBtVector3(impulse)); }

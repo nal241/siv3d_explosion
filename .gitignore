@@ -400,6 +400,7 @@ gmon.out
 # example Wavefront .obj files
 !**/example/obj/
 !**/example/obj/*.obj
+!**/model/*.obj
 
 # Ignore compiled binaries
 **/App/*.app
