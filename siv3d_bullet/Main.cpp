@@ -1,4 +1,4 @@
-#include <Siv3D.hpp> // Siv3D v0.6.16
+﻿#include <Siv3D.hpp> // Siv3D v0.6.16
 
 #include <btBulletDynamicsCommon.h>
 
@@ -28,6 +28,13 @@ namespace
     constexpr float SphereMass = 5.0f;
     constexpr float SphereRestitution = 0.7f;
     constexpr double SphereLaunchImpulse = 20.0;
+
+    // Cylinder settings
+    constexpr float CylinderRadius = 0.5f;
+    constexpr float CylinderHeight = 0.2f;
+    constexpr float CylinderMass = 1.0f;
+    constexpr float CylinderRestitution = 0.1f;
+    constexpr double CylinderLaunchImpulse = 20.0;
 } // namespace
 
 void Main()
@@ -73,6 +80,8 @@ void Main()
     DebugCamera3D camera{renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
 
     const Texture uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
+
+    const Model model{U"model/coin.obj"};
 
     // システムループ
     while (System::Update())
@@ -122,6 +131,25 @@ void Main()
             // 前方へインパルスを加える
             shotSphere->applyImpulse(camForward * SphereLaunchImpulse); // 20.0は速度調整
             physicsObjects.push_back(std::move(shotSphere));
+        }
+
+        if (KeyC.down())
+        {
+            // カメラの位置と前方ベクトルを取得
+            Vec3 camPos = camera.getEyePosition();
+            Vec3 camForward = camera.getLookAtVector();
+            // 円柱の初期位置（カメラの少し前）
+            Vec3 cylinderPos = camPos + camForward * 20.0;
+            // モデル付き円柱（コイン）を生成
+            auto shotCoin =
+                world.createModelObject(CylinderDesc{CylinderRadius, CylinderHeight, cylinderPos, CylinderMass}, model);
+            shotCoin->setRestitution(CylinderRestitution);
+            shotCoin->setFriction(0.3f);
+            shotCoin->setDamping(0.1f, 0.5f);
+
+            // 前方へインパルスを加える
+            shotCoin->applyImpulse(camForward * CylinderLaunchImpulse);
+            physicsObjects.push_back(std::move(shotCoin));
         }
 
         // worldのステップを進める

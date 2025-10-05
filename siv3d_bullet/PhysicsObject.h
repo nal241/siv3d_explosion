@@ -18,10 +18,19 @@ struct SphereDesc
     float mass;
 };
 
+struct CylinderDesc
+{
+    float radius;
+    float height;
+    s3d::Vec3 position;
+    float mass;
+};
+
 enum class ShapeType
 {
     Box,
     Sphere,
+    Cylinder,
 };
 
 class PhysicsObject
@@ -43,8 +52,11 @@ class PhysicsObject
     void setPosition(const s3d::Vec3& pos);
     void setRotation(const s3d::Vec3& rot);
     void setRestitution(float restitution);
+    void setFriction(float friction);
+    void setDamping(float lin_damping, float ang_damping);
 
     void setColor(const Color& color) { m_color = color; }
+    void setModel(const s3d::Model& model) { m_model = model; }
 
     s3d::Vec3 getPosition() const { return m_position; }
     s3d::Quaternion getRotation() const { return m_rotation; }
@@ -69,5 +81,6 @@ class PhysicsObject
     s3d::Quaternion m_rotation;
 
     // 描画
+    s3d::Optional<s3d::Model> m_model;
     Color m_color = s3d::Linear::Palette::White;
 };
