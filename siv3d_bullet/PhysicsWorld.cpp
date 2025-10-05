@@ -5,8 +5,8 @@
 namespace
 {
     constexpr double GravityY = -9.81;
-    constexpr int SolverIterations = 20;
-    constexpr int MaxSubSteps = 10;
+    constexpr int SolverIterations = 10;
+    constexpr int MaxSubSteps = 5;
 } // namespace
 
 // コンストラクタ：ワールドのセットアップを行う
@@ -46,6 +46,22 @@ std::unique_ptr<PhysicsObject> PhysicsWorld::createSphere(const SphereDesc& desc
 {
     auto shape = std::make_unique<btSphereShape>(desc.radius);
     return std::make_unique<PhysicsObject>(this, std::move(shape), ShapeType::Sphere, desc.mass, desc.position);
+}
+
+// 円柱を作成する
+std::unique_ptr<PhysicsObject> PhysicsWorld::createCylinder(const CylinderDesc& desc)
+{
+    auto shape = std::make_unique<btCylinderShape>(btVector3{desc.radius, desc.height * 0.5, desc.radius});
+    return std::make_unique<PhysicsObject>(this, std::move(shape), ShapeType::Cylinder, desc.mass, desc.position);
+}
+
+// モデル付きのオブジェクトを作成する
+std::unique_ptr<PhysicsObject> PhysicsWorld::createModelObject(const CylinderDesc& desc, const s3d::Model& model)
+{
+    auto shape = std::make_unique<btCylinderShape>(btVector3{desc.radius, desc.height * 0.5, desc.radius});
+    auto obj = std::make_unique<PhysicsObject>(this, std::move(shape), ShapeType::Cylinder, desc.mass, desc.position);
+    obj->setModel(model);
+    return obj;
 }
 
 void PhysicsWorld::registerObject(PhysicsObject* obj)
