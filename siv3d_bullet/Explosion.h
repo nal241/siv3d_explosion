@@ -13,9 +13,16 @@ public:
     void draw() const override;
 
 private:
-	// 物理エンジン
+    // 爆発関数
+    void explode(PhysicsObject* bomb, double radius);
+
+    // 物理エンジン
     PhysicsWorld m_world;
     Array<std::unique_ptr<PhysicsObject>> m_physicsObjects;
+
+    // 爆弾オブジェクト（特別に管理）
+    PhysicsObject* m_bomb = nullptr; // ポインタで保持（配列内のオブジェクトを参照）
+    
 
     // 背景色
 	// Gameと違う色を設定
@@ -34,4 +41,7 @@ private:
 
 	Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
     Model m_model{U"model/coin.obj"};
+
+	// ★ 効果音
+    Audio m_explosionSound{U"example/explosion1.mp3"};
 };
