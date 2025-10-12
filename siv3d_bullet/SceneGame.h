@@ -28,4 +28,6 @@ private:
     Model m_model{U"model/coin.obj"};
 
     Player m_player;
+
+    void createStage();
 };
