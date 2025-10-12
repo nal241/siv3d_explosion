@@ -126,6 +126,7 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="PhysicsWorld.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="SceneGame.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -339,6 +340,7 @@
     <ClInclude Include="BulletSiv3DUtils.h" />
     <ClInclude Include="PhysicsObject.h" />
     <ClInclude Include="PhysicsWorld.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="SceneCommon.h" />
     <ClInclude Include="SceneGame.h" />
     <ClInclude Include="stdafx.h" />

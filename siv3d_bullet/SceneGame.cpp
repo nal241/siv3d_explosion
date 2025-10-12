@@ -12,29 +12,11 @@ namespace
     constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
     constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
     constexpr double CameraFov = 30_deg;
-
-    // Cube settings
-    constexpr s3d::Vec3 CubeSize{1.0, 1.0, 1.0};
-    constexpr float CubeMass = 5.0f;
-    constexpr float CubeRestitution = 0.7f;
-    constexpr double CubeLaunchImpulse = 30.0;
-
-    // Sphere settings
-    constexpr float SphereRadius = 0.5f;
-    constexpr float SphereMass = 5.0f;
-    constexpr float SphereRestitution = 0.7f;
-    constexpr double SphereLaunchImpulse = 20.0;
-
-    // Cylinder settings
-    constexpr float CylinderRadius = 0.5f;
-    constexpr float CylinderHeight = 0.2f;
-    constexpr float CylinderMass = 1.0f;
-    constexpr float CylinderRestitution = 0.1f;
-    constexpr double CylinderLaunchImpulse = 20.0;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
-    : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes}
+    : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
+      m_player(&m_camera, m_model)
 {
 
     auto floor = m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
@@ -85,70 +67,8 @@ void SceneGame::update()
         object->update();
     }
 
-    // スペースキーでキューブを発射
-    if (KeySpace.down())
-    {
-        // カメラの位置と前方ベクトルを取得
-        Vec3 camPos = m_camera.getEyePosition();
-        Vec3 camForward = m_camera.getLookAtVector();
-
-        // キューブの初期位置（カメラの少し前）
-        Vec3 cubePos = camPos + camForward * 20.0;
-
-        // キューブ生成
-        auto shotBox = m_world.createBox(BoxDesc{CubeSize, cubePos, CubeMass});
-        shotBox->setRestitution(CubeRestitution);
-        shotBox->setColor(s3d::Linear::Palette::Gainsboro);
-
-        // 前方へインパルスを加える
-        shotBox->applyImpulse(camForward * CubeLaunchImpulse);
-        m_physicsObjects.push_back(std::move(shotBox));
-
-        // キューブ発射音を再生
-        // Play()は重複再生しないため、
-        // playOneShot()で多重再生する
-        m_cubeShootSound.playOneShot();
-    }
-
-    // oキーでsphereを発射
-    if (KeyO.down())
-    {
-        // カメラの位置と前方ベクトルを取得
-        Vec3 camPos = m_camera.getEyePosition();
-        Vec3 camForward = m_camera.getLookAtVector();
-        // 球の初期位置（カメラの少し前）
-        Vec3 spherePos = camPos + camForward * 20.0;
-        // 球生成
-        auto shotSphere = m_world.createSphere(SphereDesc{SphereRadius, spherePos, SphereMass});
-        shotSphere->setRestitution(SphereRestitution);
-        shotSphere->setColor(s3d::Linear::Palette::Lightsteelblue);
-
-        // 前方へインパルスを加える
-        shotSphere->applyImpulse(camForward * SphereLaunchImpulse); // 20.0は速度調整
-        m_physicsObjects.push_back(std::move(shotSphere));
-
-        // 球発射音を再生
-        m_sphereShootSound.playOneShot();
-    }
-
-    if (KeyC.down())
-    {
-        // カメラの位置と前方ベクトルを取得
-        Vec3 camPos = m_camera.getEyePosition();
-        Vec3 camForward = m_camera.getLookAtVector();
-        // 円柱の初期位置（カメラの少し前）
-        Vec3 cylinderPos = camPos + camForward * 20.0;
-        // モデル付き円柱（コイン）を生成
-        auto shotCoin =
-            m_world.createModelObject(CylinderDesc{CylinderRadius, CylinderHeight, cylinderPos, CylinderMass}, m_model);
-        shotCoin->setRestitution(CylinderRestitution);
-        shotCoin->setFriction(0.3f);
-        shotCoin->setDamping(0.1f, 0.5f);
-
-        // 前方へインパルスを加える
-        shotCoin->applyImpulse(camForward * CylinderLaunchImpulse);
-        m_physicsObjects.push_back(std::move(shotCoin));
-    }
+    // TODO: player
+    m_player.handleInput(m_world, m_physicsObjects);
 
     // worldのステップを進める
     m_world.step(Scene::DeltaTime());
