@@ -58,6 +58,7 @@ void SceneGame::update()
 {
     ClearPrint();
     Print << U"Object num:{}"_fmt(m_physicsObjects.size());
+    Print << U"Tキーで爆発用のシーンへ移動";
     Print << Profiler::FPS();
 
     m_camera.update(CameraSpeed);
