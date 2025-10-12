@@ -2,6 +2,7 @@
 
 #include "SceneCommon.h"
 #include "SceneGame.h"
+#include "Explosion.h"
 
 void Main()
 {
@@ -9,6 +10,9 @@ void Main()
     // manager.add<Title>(State::Title);
     manager.add<SceneGame>(State::Game);
     // manager.add<Ranking>(State::Ranking);
+
+	// 爆発用のシーン
+    manager.add<Explosion>(State::Explosion);
 
     // システムループ
     while (System::Update())
