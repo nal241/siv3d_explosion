@@ -30,6 +30,8 @@ PhysicsObject::PhysicsObject(PhysicsWorld* world, std::unique_ptr<btCollisionSha
     {
         m_world->registerObject(this);
     }
+
+    update();
 }
 
 PhysicsObject::~PhysicsObject()

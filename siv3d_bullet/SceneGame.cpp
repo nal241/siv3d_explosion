@@ -18,40 +18,11 @@ SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
       m_player(&m_camera, m_model)
 {
+    // stage作成
+    createStage();
 
-    auto floor = m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
-                                           s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
-    floor->setRestitution(WallRestitution);
-    floor->setColor(s3d::Linear::Palette::Silver);
-
-    auto wall_l = m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
-                                            s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
-    wall_l->setRestitution(WallRestitution);
-    wall_l->setColor(s3d::Linear::Palette::Powderblue);
-
-    auto wall_r =
-        m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
-                                  s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
-    wall_r->setRestitution(WallRestitution);
-    wall_r->setColor(s3d::Linear::Palette::Powderblue);
-
-    auto wall_b =
-        m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallLength, WallThickness),
-                                  s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2), 0.0f});
-    wall_b->setRestitution(WallRestitution);
-    wall_b->setColor(s3d::Linear::Palette::Powderblue);
-
-    m_physicsObjects.push_back(std::move(floor));
-    m_physicsObjects.push_back(std::move(wall_l));
-    m_physicsObjects.push_back(std::move(wall_r));
-    m_physicsObjects.push_back(std::move(wall_b));
-
+    // カメラ設定
     m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
-
-    for (auto& object : m_physicsObjects)
-    {
-        object->update();
-    }
 }
 
 void SceneGame::update()
@@ -68,7 +39,6 @@ void SceneGame::update()
         object->update();
     }
 
-    // TODO: player
     m_player.handleInput(m_world, m_physicsObjects);
 
     // worldのステップを進める
@@ -77,11 +47,11 @@ void SceneGame::update()
     // 座標が一定以下ならオブジェクトを削除
     m_physicsObjects.remove_if([](const std::unique_ptr<PhysicsObject>& obj) { return obj->getPosition().y < -10.0; });
 
-	// Tキーで爆発用のシーンへ移動
-	if (KeyT.down())
-	{
+    // Tキーで爆発用のシーンへ移動
+    if (KeyT.down())
+    {
         changeScene(State::Explosion, 1.0s);
-	}
+    }
 }
 
 void SceneGame::draw() const
@@ -112,4 +82,34 @@ void SceneGame::draw() const
         // Transfer renderTexture to the current 2D scene (default scene)
         Shader::LinearToScreen(m_renderTexture);
     }
+}
+
+void SceneGame::createStage()
+{
+    auto floor = m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
+                                           s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
+    floor->setRestitution(WallRestitution);
+    floor->setColor(s3d::Linear::Palette::Silver);
+
+    auto wall_l = m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
+                                            s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
+    wall_l->setRestitution(WallRestitution);
+    wall_l->setColor(s3d::Linear::Palette::Powderblue);
+
+    auto wall_r =
+        m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
+                                  s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
+    wall_r->setRestitution(WallRestitution);
+    wall_r->setColor(s3d::Linear::Palette::Powderblue);
+
+    auto wall_b =
+        m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallLength, WallThickness),
+                                  s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2), 0.0f});
+    wall_b->setRestitution(WallRestitution);
+    wall_b->setColor(s3d::Linear::Palette::Powderblue);
+
+    m_physicsObjects.push_back(std::move(floor));
+    m_physicsObjects.push_back(std::move(wall_l));
+    m_physicsObjects.push_back(std::move(wall_r));
+    m_physicsObjects.push_back(std::move(wall_b));
 }
