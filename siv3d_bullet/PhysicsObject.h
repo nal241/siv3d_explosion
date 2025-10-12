@@ -35,7 +35,7 @@ enum class ShapeType
 
 class PhysicsObject
 {
-  public:
+public:
     ~PhysicsObject();
 
     // 削除禁止（moveのみ許可）
@@ -69,7 +69,7 @@ class PhysicsObject
 
     // btRigidBody *getRigidBody() const { return m_body; }
 
-  private:
+private:
     // Object は PhysicsWorldで管理する。
     friend class PhysicsWorld;
 

@@ -6,11 +6,11 @@
 
 class PhysicsWorld
 {
-  public:
+public:
     PhysicsWorld();
     ~PhysicsWorld();
 
-    // 削除禁止
+    // 削除の禁止
     PhysicsWorld(const PhysicsWorld&) = delete;
     PhysicsWorld& operator=(const PhysicsWorld&) = delete;
 
@@ -23,7 +23,7 @@ class PhysicsWorld
     std::unique_ptr<PhysicsObject> createCylinder(const CylinderDesc& desc);
     std::unique_ptr<PhysicsObject> createModelObject(const CylinderDesc& desc, const s3d::Model& model);
 
-  private:
+private:
     friend class PhysicsObject;
 
     // Bulletのコアコンポーネント
