@@ -24,8 +24,8 @@ private:
     const MSRenderTexture m_renderTexture;
     DebugCamera3D m_camera;
 
-    Player m_player;
-
     Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
     Model m_model{U"model/coin.obj"};
+
+    Player m_player;
 };
