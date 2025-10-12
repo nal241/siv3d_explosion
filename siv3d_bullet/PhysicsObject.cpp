@@ -94,3 +94,19 @@ void PhysicsObject::setFriction(float friction) { m_body->setFriction(friction);
 void PhysicsObject::setDamping(float lin_damping, float ang_damping) { m_body->setDamping(lin_damping, ang_damping); };
 
 void PhysicsObject::applyImpulse(const s3d::Vec3& impulse) { m_body->applyCentralImpulse(ToBtVector3(impulse)); }
+
+// ★ 質量を取得
+float PhysicsObject::getMass() const
+{
+    if (!m_body)
+        return 0.0f;
+
+    // 質量の逆数から質量を計算
+    float invMass = m_body->getInvMass();
+
+    // invMass が 0 なら、質量は無限大（静止オブジェクト）
+    if (invMass == 0.0f)
+        return 0.0f;
+
+    return 1.0f / invMass;
+}
