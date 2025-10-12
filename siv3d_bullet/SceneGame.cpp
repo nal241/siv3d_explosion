@@ -1,4 +1,4 @@
-#include "SceneGame.h"
+﻿#include "SceneGame.h"
 
 namespace
 {
@@ -75,6 +75,12 @@ void SceneGame::update()
 
     // 座標が一定以下ならオブジェクトを削除
     m_physicsObjects.remove_if([](const std::unique_ptr<PhysicsObject>& obj) { return obj->getPosition().y < -10.0; });
+
+	// Tキーで爆発用のシーンへ移動
+	if (KeyT.down())
+	{
+        changeScene(State::Explosion, 1.0s);
+	}
 }
 
 void SceneGame::draw() const

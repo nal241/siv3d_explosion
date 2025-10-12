@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Siv3D.hpp>
 
 // シーンのステート
@@ -7,6 +7,7 @@ enum class State
     Title,
     Game,
     Result,
+	Explosion,
 };
 
 // 共有するデータ
