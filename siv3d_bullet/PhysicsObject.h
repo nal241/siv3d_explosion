@@ -1,6 +1,8 @@
 ﻿#pragma once
-#include <btBulletDynamicsCommon.h>
 #include <Siv3D.hpp>
+#include <btBulletDynamicsCommon.h>
+
+#include "GameObject.h"
 
 class PhysicsWorld;
 
@@ -33,14 +35,12 @@ enum class ShapeType
     Cylinder,
 };
 
-class PhysicsObject
+class PhysicsObject : public GameObject
 {
 public:
-    using IDType = uint64;
-
     ~PhysicsObject();
 
-    // 削除禁止（moveのみ許可）
+    // move のみ許可
     PhysicsObject(const PhysicsObject&) = delete;
     PhysicsObject& operator=(const PhysicsObject&) = delete;
     PhysicsObject(PhysicsObject&&) = default;
@@ -49,23 +49,14 @@ public:
     PhysicsObject(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass,
                   const s3d::Vec3& position);
 
-    void update();
-    void draw();
-    void setPosition(const s3d::Vec3& pos);
-    void setRotation(const s3d::Vec3& rot);
+    void update() override;
+    void draw() const override;
+
     void setRestitution(float restitution);
     void setFriction(float friction);
     void setDamping(float lin_damping, float ang_damping);
 
-    void setColor(const Color& color) { m_color = color; }
-    void setModel(const s3d::Model& model) { m_model = model; }
-
-    s3d::Vec3 getPosition() const { return m_position; }
-    s3d::Quaternion getRotation() const { return m_rotation; }
     float getMass() const;
-    IDType getID() const { return m_id; }
-
-    // btRigidBody *getRigidBody() const { return m_body; }
 
     void applyForce(const s3d::Vec3& force);
     void applyImpulse(const s3d::Vec3& impulse);
@@ -74,20 +65,10 @@ private:
     // Object は PhysicsWorldで管理する。
     friend class PhysicsWorld;
 
-    static inline IDType s_nextID = 0;
-    IDType m_id = s_nextID++;
-
     std::unique_ptr<btCollisionShape> m_shape;
     std::unique_ptr<btRigidBody> m_body;
     std::unique_ptr<btMotionState> m_motionState;
 
     PhysicsWorld* m_world = nullptr;
     ShapeType m_shapeType;
-
-    s3d::Vec3 m_position;
-    s3d::Quaternion m_rotation;
-
-    // 描画
-    s3d::Optional<s3d::Model> m_model;
-    Color m_color = s3d::Linear::Palette::White;
 };

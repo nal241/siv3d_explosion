@@ -8,6 +8,7 @@ class Player
 public:
     Player(DebugCamera3D* camera, Model& coinModel);
 
+    // void handleInput(PhysicsWorld& world, HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects);
     void handleInput(PhysicsWorld& world, HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>>& objects);
     void setCamera(DebugCamera3D* camera);
 
@@ -28,6 +29,7 @@ private:
 
     void launchObject(ObjectType type, PhysicsWorld& world,
                       HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>>& objects);
+    //   HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects);
 
     // 効果音ラボから音源は取得
     Audio m_shootSound{U"example/sounds/shoot.mp3"};
