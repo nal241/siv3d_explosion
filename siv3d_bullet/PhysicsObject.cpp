@@ -43,8 +43,9 @@ PhysicsObject::~PhysicsObject()
     }
 }
 
+// Bulletから位置・回転を取得し、メンバー変数にキャッシュする
 void PhysicsObject::update()
-{ // Bulletから位置・回転を取得し、メンバー変数にキャッシュする
+{
     btTransform transform;
     m_body->getMotionState()->getWorldTransform(transform);
     m_position = ToSiv3DVec3(transform.getOrigin());
