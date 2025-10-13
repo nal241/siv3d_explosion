@@ -16,7 +16,7 @@ public:
 
 private:
     PhysicsWorld m_world;
-    Array<std::unique_ptr<PhysicsObject>> m_physicsObjects;
+    HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>> m_physicsObjects;
 
     // Background color (remove SRGB curve for a linear workflow)
     ColorF m_backgroundColor = ColorF{0.4, 0.6, 0.8}.removeSRGBCurve();
