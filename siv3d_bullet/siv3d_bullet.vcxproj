@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Explosion.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="PhysicsWorld.cpp" />
@@ -340,6 +341,7 @@
   <ItemGroup>
     <ClInclude Include="BulletSiv3DUtils.h" />
     <ClInclude Include="Explosion.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="PhysicsObject.h" />
     <ClInclude Include="PhysicsWorld.h" />
     <ClInclude Include="Player.h" />

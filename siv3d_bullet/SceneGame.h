@@ -1,6 +1,5 @@
-#pragma once
+﻿#pragma once
 #include "SceneCommon.h"
-
 #include "PhysicsWorld.h"
 #include "Player.h"
 
@@ -17,6 +16,7 @@ public:
 private:
     PhysicsWorld m_world;
     HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>> m_physicsObjects;
+    // HashTable<GameObject::IDType, std::unique_ptr<GameObject>> m_physicsObjects;
 
     // Background color (remove SRGB curve for a linear workflow)
     ColorF m_backgroundColor = ColorF{0.4, 0.6, 0.8}.removeSRGBCurve();

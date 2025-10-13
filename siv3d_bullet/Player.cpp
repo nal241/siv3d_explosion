@@ -1,4 +1,4 @@
-#include "Player.h"
+﻿#include "Player.h"
 
 namespace
 {
@@ -25,6 +25,7 @@ namespace
 
 Player::Player(DebugCamera3D* camera, Model& coinModel) : m_camera(camera), m_coinModel(coinModel) {}
 
+// void Player::handleInput(PhysicsWorld& world, HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects)
 void Player::handleInput(PhysicsWorld& world, HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>>& objects)
 {
 
@@ -48,6 +49,7 @@ void Player::handleInput(PhysicsWorld& world, HashTable<PhysicsObject::IDType, s
 
 void Player::launchObject(ObjectType type, PhysicsWorld& world,
                           HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>>& objects)
+//   HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects)
 { // カメラの位置と前方ベクトルを取得
     assert(m_camera != nullptr && "Camera pointer must not be null. Did you forget to call setCamera?");
     Vec3 camPos = m_camera->getEyePosition();

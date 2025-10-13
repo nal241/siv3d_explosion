@@ -1,12 +1,10 @@
 ﻿#include "PhysicsObject.h"
 
-#include <Siv3D.hpp>
-
 #include "BulletSiv3DUtils.h"
 #include "PhysicsWorld.h"
 
 PhysicsObject::PhysicsObject(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass,
-                             const s3d::Vec3& position)
+                             const Vec3& position)
     : m_world(world), m_shape(std::move(shape)), m_shapeType(type)
 {
     btTransform transform;
@@ -43,7 +41,7 @@ PhysicsObject::~PhysicsObject()
     }
 }
 
-// Bulletから位置・回転を取得し、メンバー変数にキャッシュする
+// Bulletから位置・回転を取得し、親クラスのメンバー変数にキャッシュする
 void PhysicsObject::update()
 {
     btTransform transform;
@@ -52,12 +50,14 @@ void PhysicsObject::update()
     m_rotation = ToSiv3DQuaternion(transform.getRotation());
 }
 
-void PhysicsObject::draw()
+void PhysicsObject::draw() const
 {
+    // モデルがある場合は、親クラスの共通描画処理を呼ぶ
     if (m_model)
     {
-        m_model->draw(m_position, m_rotation);
+        GameObject::draw();
     }
+    // モデルがない場合は、物理形状を描画する
     else
     {
         switch (m_shapeType)
@@ -96,7 +96,9 @@ void PhysicsObject::setRestitution(float restitution) { m_body->setRestitution(r
 void PhysicsObject::setFriction(float friction) { m_body->setFriction(friction); };
 void PhysicsObject::setDamping(float lin_damping, float ang_damping) { m_body->setDamping(lin_damping, ang_damping); };
 
-void PhysicsObject::applyImpulse(const s3d::Vec3& impulse) { m_body->applyCentralImpulse(ToBtVector3(impulse)); }
+void PhysicsObject::applyForce(const Vec3& force) { m_body->applyCentralForce(ToBtVector3(force)); }
+
+void PhysicsObject::applyImpulse(const Vec3& impulse) { m_body->applyCentralImpulse(ToBtVector3(impulse)); }
 
 // ★ 質量を取得
 float PhysicsObject::getMass() const
