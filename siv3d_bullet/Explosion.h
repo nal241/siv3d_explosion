@@ -21,20 +21,20 @@ public:
 
 private:
     // 爆発関数
-    void explode(PhysicsObject* bomb, double radius);
+    void explode(GameObject* bomb, double radius);
     // 物理エンジン
     PhysicsWorld m_world;
-    HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>> m_physicsObjects;
+    HashTable<GameObject::IDType, std::unique_ptr<GameObject>> m_gameObjects;
     // 爆弾オブジェクト
-    PhysicsObject* m_bomb = nullptr;
+    GameObject* m_bomb = nullptr;
     // 描画用
     MSRenderTexture m_renderTexture;
     DebugCamera3D m_camera;
     // プレイヤー
     Player m_player;
-    Model m_model;
+    Model m_model{U"model/coin.obj"};
     Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
-    // ★ 3D空間のパーティクルシステム
+    // 3D空間のパーティクルシステム
     Array<Particle3D> m_particles;
     static constexpr Vec3 Gravity{0, -5.0, 0};
     // 効果音
