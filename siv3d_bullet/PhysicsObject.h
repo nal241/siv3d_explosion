@@ -36,6 +36,8 @@ enum class ShapeType
 class PhysicsObject
 {
 public:
+    using IDType = uint64;
+
     ~PhysicsObject();
 
     // 削除禁止（moveのみ許可）
@@ -61,6 +63,7 @@ public:
     s3d::Vec3 getPosition() const { return m_position; }
     s3d::Quaternion getRotation() const { return m_rotation; }
     float getMass() const;
+    IDType getID() const { return m_id; }
 
     // btRigidBody *getRigidBody() const { return m_body; }
 
@@ -70,6 +73,9 @@ public:
 private:
     // Object は PhysicsWorldで管理する。
     friend class PhysicsWorld;
+
+    static inline IDType s_nextID = 0;
+    IDType m_id = s_nextID++;
 
     std::unique_ptr<btCollisionShape> m_shape;
     std::unique_ptr<btRigidBody> m_body;

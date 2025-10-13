@@ -18,7 +18,7 @@ private:
 
     // 物理エンジン
     PhysicsWorld m_world;
-    Array<std::unique_ptr<PhysicsObject>> m_physicsObjects;
+    HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>> m_physicsObjects;
 
     // 爆弾オブジェクト（特別に管理）
     PhysicsObject* m_bomb = nullptr; // ポインタで保持（配列内のオブジェクトを参照）
