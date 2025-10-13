@@ -60,14 +60,12 @@ public:
 
     s3d::Vec3 getPosition() const { return m_position; }
     s3d::Quaternion getRotation() const { return m_rotation; }
+    float getMass() const;
+
+    // btRigidBody *getRigidBody() const { return m_body; }
 
     void applyForce(const s3d::Vec3& force);
     void applyImpulse(const s3d::Vec3& impulse);
-
-	// 爆弾ように追加
-	float getMass() const;
-
-    // btRigidBody *getRigidBody() const { return m_body; }
 
 private:
     // Object は PhysicsWorldで管理する。
