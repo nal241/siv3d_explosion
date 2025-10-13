@@ -34,7 +34,7 @@ void SceneGame::update()
 
     m_camera.update(CameraSpeed);
 
-    for (auto& object : m_physicsObjects)
+    for (auto const& [id, object] : m_physicsObjects)
     {
         object->update();
     }
@@ -45,7 +45,21 @@ void SceneGame::update()
     m_world.step(Scene::DeltaTime());
 
     // 座標が一定以下ならオブジェクトを削除
-    m_physicsObjects.remove_if([](const std::unique_ptr<PhysicsObject>& obj) { return obj->getPosition().y < -10.0; });
+    {
+        Array<PhysicsObject::IDType> objectsToRemove;
+        for (const auto& [id, object] : m_physicsObjects)
+        {
+            if (object->getPosition().y < -10.0)
+            {
+                objectsToRemove.push_back(id);
+            }
+        }
+
+        for (const auto& id : objectsToRemove)
+        {
+            m_physicsObjects.erase(id);
+        }
+    }
 
     // Tキーで爆発用のシーンへ移動
     if (KeyT.down())
@@ -65,7 +79,7 @@ void SceneGame::draw() const
 
         // for debug
         // Plane{64}.draw(uvChecker);
-        for (auto& object : m_physicsObjects)
+        for (auto const& [id, object] : m_physicsObjects)
         {
             object->draw();
         }
@@ -108,8 +122,8 @@ void SceneGame::createStage()
     wall_b->setRestitution(WallRestitution);
     wall_b->setColor(s3d::Linear::Palette::Powderblue);
 
-    m_physicsObjects.push_back(std::move(floor));
-    m_physicsObjects.push_back(std::move(wall_l));
-    m_physicsObjects.push_back(std::move(wall_r));
-    m_physicsObjects.push_back(std::move(wall_b));
+    m_physicsObjects.emplace(floor->getID(), std::move(floor));
+    m_physicsObjects.emplace(wall_l->getID(), std::move(wall_l));
+    m_physicsObjects.emplace(wall_r->getID(), std::move(wall_r));
+    m_physicsObjects.emplace(wall_b->getID(), std::move(wall_b));
 }
