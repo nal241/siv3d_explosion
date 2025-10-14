@@ -2,21 +2,16 @@
 
 namespace
 {
-    // World settings（SceneGameと同じ）
     constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
     constexpr float WallRestitution = 1.0f;
-
-    // Camera settings（SceneGameと同じ）
     constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
     constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
     constexpr double CameraFov = 30_deg;
-
-    // Bomb settings
-    constexpr double BombRadius = 0.5;           // 爆弾の半径
-    constexpr s3d::Vec3 BombPosition{5, 0.5, 5}; // 床の中央、少し浮かせる
-    constexpr float BombMass = 0.0f;             // 爆弾の質量
+    constexpr double BombRadius = 0.5;
+    constexpr s3d::Vec3 BombPosition{5, 0.5, 5};
+    constexpr float BombMass = 0.0f;
 } // namespace
 
 Explosion::Explosion(const InitData& init)
@@ -25,6 +20,7 @@ Explosion::Explosion(const InitData& init)
 {
     Print << U"Explosion Scene Initialized";
 
+    // 床、壁、爆弾、テストキューブの作成（既存のコードと同じ）
     auto floor = m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
                                            s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
     floor->setRestitution(WallRestitution);
@@ -47,40 +43,44 @@ Explosion::Explosion(const InitData& init)
     wall_b->setRestitution(WallRestitution);
     wall_b->setColor(s3d::Linear::Palette::Powderblue);
 
-    // ★ 爆弾を作成（床の中央に配置）
     auto bomb = m_world.createSphere(SphereDesc{BombRadius, BombPosition, BombMass});
     bomb->setRestitution(0.0f);
-    bomb->setColor(ColorF{0.1, 0.1, 0.1}); // 黒色
-
-    // 爆弾のポインタを保存
+    bomb->setColor(ColorF{0.1, 0.1, 0.1});
     m_bomb = bomb.get();
 
-    // ★ テスト用のキューブを爆弾の周りに配置
     for (int i = 0; i < 8; i++)
     {
         double angle = i * (Math::TwoPi / 8);
         double distance = 3.0;
 
-        Vec3 position{5 + Math::Cos(angle) * distance,
-                      1.0, // 床から1メートル上
-                      5 + Math::Sin(angle) * distance};
+        Vec3 position{5 + Math::Cos(angle) * distance, 1.0, 5 + Math::Sin(angle) * distance};
 
         auto testBox = m_world.createBox(BoxDesc{Vec3{0.5, 0.5, 0.5}, position, 2.0f});
         testBox->setRestitution(0.5f);
         testBox->setColor(HSV{i * 45, 0.7, 0.9});
 
-        m_physicsObjects.emplace(testBox->getID(), std::move(testBox));
+        auto id = testBox->getID();
+        m_physicsObjects.emplace(id, std::move(testBox));
     }
 
-    m_physicsObjects.emplace(floor->getID(), std::move(floor));
-    m_physicsObjects.emplace(wall_l->getID(), std::move(wall_l));
-    m_physicsObjects.emplace(wall_r->getID(), std::move(wall_r));
-    m_physicsObjects.emplace(wall_b->getID(), std::move(wall_b));
-    m_physicsObjects.emplace(bomb->getID(), std::move(bomb)); // 爆弾も追加
+    auto floorID = floor->getID();
+    m_physicsObjects.emplace(floorID, std::move(floor));
+
+    auto wallLID = wall_l->getID();
+    m_physicsObjects.emplace(wallLID, std::move(wall_l));
+
+    auto wallRID = wall_r->getID();
+    m_physicsObjects.emplace(wallRID, std::move(wall_r));
+
+    auto wallBID = wall_b->getID();
+    m_physicsObjects.emplace(wallBID, std::move(wall_b));
+
+    auto bombID = bomb->getID();
+    m_physicsObjects.emplace(bombID, std::move(bomb));
 
     m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
 
-    for (auto const& [id, object] : m_physicsObjects)
+    for (auto& [id, object] : m_physicsObjects)
     {
         object->update();
     }
@@ -89,47 +89,74 @@ Explosion::Explosion(const InitData& init)
 void Explosion::update()
 {
     ClearPrint();
-    Print << U"Object num:{}"_fmt(m_physicsObjects.size());
+    Print << U"Object num: {}"_fmt(m_physicsObjects.size());
+    Print << U"Particles: {}"_fmt(m_particles.size());
     Print << Profiler::FPS();
-    // カメラを更新（マウスで視点を動かせる）
+
     m_camera.update(CameraSpeed);
 
+    // ★ パーティクルを更新
+    const double deltaTime = Scene::DeltaTime();
+
+    for (auto& particle : m_particles)
+    {
+        if (!particle.active)
+            continue;
+
+        // 速度を更新（重力を適用）
+        particle.velocity += Gravity * deltaTime;
+
+        // 位置を更新
+        particle.position += particle.velocity * deltaTime;
+
+        // 寿命を減らす
+        particle.life -= deltaTime;
+
+        // 寿命が尽きたら非アクティブに
+        if (particle.life <= 0.0)
+        {
+            particle.active = false;
+        }
+    }
+
+    // 非アクティブなパーティクルを削除
+    m_particles.remove_if([](const Particle3D& p) { return !p.active; });
+
     // 物理オブジェクトの位置を更新
-    for (auto const& [id, object] : m_physicsObjects)
+    for (auto& [id, object] : m_physicsObjects)
     {
         object->update();
     }
 
-    // TODO: player
+    // プレイヤー入力
     m_player.handleInput(m_world, m_physicsObjects);
 
-    // worldのステップを進める
-    m_world.step(Scene::DeltaTime());
+    // 物理エンジンを更新
+    m_world.step(deltaTime);
 
-    // 座標が一定以下ならオブジェクトを削除
+    // 削除対象のIDを集める
+    Array<PhysicsObject::IDType> toRemove;
+    for (const auto& [id, object] : m_physicsObjects)
     {
-        Array<PhysicsObject::IDType> objectsToRemove;
-        for (const auto& [id, object] : m_physicsObjects)
+        if (object->getPosition().y < -10.0)
         {
-            if (object->getPosition().y < -10.0)
-            {
-                objectsToRemove.push_back(id);
-            }
-        }
-
-        for (const auto& id : objectsToRemove)
-        {
-            m_physicsObjects.erase(id);
+            toRemove.push_back(id);
         }
     }
 
-    // ★ Pキーで爆発
+    // 削除実行
+    for (const auto& id : toRemove)
+    {
+        m_physicsObjects.erase(id);
+    }
+
+    // Pキーで爆発
     if (KeyP.down() && m_bomb != nullptr)
     {
-        explode(m_bomb, 5.0); // 半径5メートルの爆発
+        explode(m_bomb, 5.0);
     }
 
-    // Tキーでゲームのシーンへ移動
+    // Tキーでゲームシーンへ戻る
     if (KeyT.down())
     {
         changeScene(State::Game, 1.0s);
@@ -138,54 +165,62 @@ void Explosion::update()
 
 void Explosion::draw() const
 {
-    // Set up a camera in the current 3D scene
     Graphics3D::SetCameraTransform(m_camera);
 
     // [3D rendering]
     {
         const ScopedRenderTarget3D target{m_renderTexture.clear(m_backgroundColor)};
 
-        // for debug
-        // Plane{64}.draw(uvChecker);
-        for (auto const& [id, object] : m_physicsObjects)
+        // 3Dオブジェクトを描画
+        for (const auto& [id, object] : m_physicsObjects)
         {
             object->draw();
+        }
+
+        // ★ 3D空間にパーティクルを描画（加算ブレンドで光らせる）
+        {
+            const ScopedRenderStates3D blend{BlendState::Additive};
+
+            for (const auto& particle : m_particles)
+            {
+                if (!particle.active)
+                    continue;
+
+                // 寿命に応じて透明度を変化
+                const double alpha = particle.life;
+                const ColorF color = particle.color.withAlpha(alpha).removeSRGBCurve();
+
+                // 球として描画
+                Sphere{particle.position, particle.size}.draw(color);
+            }
         }
     }
 
     // [2D rendering]
     {
-        // Flush 3D rendering commands before multisample resolve
         Graphics3D::Flush();
-
-        // Multisample resolve
         m_renderTexture.resolve();
-
-        // Transfer renderTexture to the current 2D scene (default scene)
         Shader::LinearToScreen(m_renderTexture);
 
-        // ★ UI を描画
+        // UI を描画
         {
-            // 半透明の背景パネル
-            Rect{20, 20, 500, 120}.draw(ColorF{0.0, 0.0, 0.0, 0.7});
+            Rect{20, 20, 500, 150}.draw(ColorF{0.0, 0.0, 0.0, 0.7});
 
-            // タイトル
-            m_titleFont(U"これは爆発用のシーンです").draw(30, 30, ColorF{1.0, 0.7, 0.0}); // オレンジ色
+            m_titleFont(U"これは爆発用のシーンです").draw(30, 30, ColorF{1.0, 0.7, 0.0});
 
-            // 操作説明
-            m_instructionFont(U"T：ゲームシーンへ戻る").draw(30, 85, ColorF{1.0, 1.0, 1.0}); // 白色
-            m_instructionFont(U"P：爆発させる").draw(30, 115, ColorF{1.0, 1.0, 1.0});        // 白色
+            m_instructionFont(U"P：爆発させる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
+
+            m_instructionFont(U"T：ゲームシーンへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
         }
     }
 }
 
-// ★ 爆発関数の実装
 void Explosion::explode(PhysicsObject* bomb, double radius)
 {
     if (!bomb)
         return;
 
-    // ★ 爆発音を再生
+    // 爆発音を再生
     m_explosionSound.playOneShot();
 
     // 爆弾の中心位置を取得
@@ -194,45 +229,51 @@ void Explosion::explode(PhysicsObject* bomb, double radius)
     Print << U"💥 Explosion at {}"_fmt(bombCenter);
     Print << U"Radius: {}"_fmt(radius);
 
-    // すべてのオブジェクトをチェック
-    for (auto const& [id, object] : m_physicsObjects)
+    // ★ 3D空間にパーティクルを生成（50個）
+    for (int32 i = 0; i < 50; ++i)
     {
-        // 爆弾自身はスキップ
+        // 球状にランダムな方向
+        const double theta = Random(0.0, Math::TwoPi);
+        const double phi = Random(0.0, Math::Pi);
+        const double speed = Random(3.0, 8.0);
+
+        Vec3 direction{Math::Sin(phi) * Math::Cos(theta), Math::Sin(phi) * Math::Sin(theta), Math::Cos(phi)};
+
+        Particle3D particle{.position = bombCenter,
+                            .velocity = direction * speed,
+                            .color = HSV{Random(0.0, 60.0), Random(0.7, 1.0), 1.0},
+                            .size = Random(0.2, 0.5),
+                            .life = Random(0.8, 1.5),
+                            .active = true};
+
+        m_particles << particle;
+    }
+
+    Print << U"   Created {} particles"_fmt(50);
+
+    // 物理演算：オブジェクトに力を加える
+    for (auto& [id, object] : m_physicsObjects)
+    {
         if (object.get() == bomb)
             continue;
 
-        // 静止オブジェクト（質量0）はスキップ
         if (object->getMass() == 0.0f)
             continue;
 
-        // オブジェクトの位置を取得
         Vec3 objectPos = object->getPosition();
-
-        // 爆弾からオブジェクトへのベクトル
         Vec3 direction = objectPos - bombCenter;
-
-        // 距離を計算
         double distance = direction.length();
 
-        // 爆発半径内にあるかチェック
-        if (distance < radius)
+        if (distance < radius && distance > 0.01)
         {
-            // 方向ベクトルを正規化
             Vec3 normalizedDirection = direction.normalized();
-
-            // 距離に応じて力を減衰（近いほど強い）
-            double falloff = 1.0 - (distance / radius); // 0.0 ～ 1.0
-
-            // 爆発力を計算
-            double explosionForce = 100.0 * falloff; // 基本力 × 減衰
-
-            // 力のベクトル
+            double falloff = 1.0 - (distance / radius);
+            double explosionForce = 500.0 * falloff;
             Vec3 force = normalizedDirection * explosionForce;
 
-            // 力を加える
             object->applyImpulse(force);
 
-            Print << U"  → Hit object at distance {:.2f}, force: {:.2f}"_fmt(distance, explosionForce);
+            Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
         }
     }
 }
