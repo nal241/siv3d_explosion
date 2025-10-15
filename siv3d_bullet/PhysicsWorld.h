@@ -2,7 +2,7 @@
 
 #include <btBulletDynamicsCommon.h>
 
-#include "PhysicsObject.h"
+#include "PhysicsBody.h"
 
 class PhysicsWorld
 {
@@ -18,13 +18,12 @@ public:
     void step(float deltaTime);
 
     // オブジェクト追加（unique_ptrで返す）
-    std::unique_ptr<PhysicsObject> createBox(const BoxDesc& desc);
-    std::unique_ptr<PhysicsObject> createSphere(const SphereDesc& desc);
-    std::unique_ptr<PhysicsObject> createCylinder(const CylinderDesc& desc);
-    std::unique_ptr<PhysicsObject> createModelObject(const CylinderDesc& desc, const s3d::Model& model);
+    std::unique_ptr<PhysicsBody> createBox(const BoxDesc& desc);
+    std::unique_ptr<PhysicsBody> createSphere(const SphereDesc& desc);
+    std::unique_ptr<PhysicsBody> createCylinder(const CylinderDesc& desc);
 
 private:
-    friend class PhysicsObject;
+    friend class PhysicsBody;
 
     // Bulletのコアコンポーネント
     std::unique_ptr<btDefaultCollisionConfiguration> m_collisionConfig;
@@ -34,9 +33,9 @@ private:
     std::unique_ptr<btDiscreteDynamicsWorld> m_dynamicsWorld;
 
     // 作成したオブジェクトを管理
-    s3d::HashSet<PhysicsObject*> m_registeredObjects;
+    s3d::HashSet<PhysicsBody*> m_registeredObjects;
 
     // PhysicsObjectからの通知メソッド
-    void registerObject(PhysicsObject* obj);
-    void unregisterObject(PhysicsObject* obj);
+    void registerObject(PhysicsBody* obj);
+    void unregisterObject(PhysicsBody* obj);
 };

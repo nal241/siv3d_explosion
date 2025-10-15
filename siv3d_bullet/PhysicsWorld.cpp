@@ -1,5 +1,5 @@
 ﻿#include "PhysicsWorld.h"
-#include "PhysicsObject.h"
+#include "PhysicsBody.h"
 #include "BulletSiv3dUtils.h"
 
 namespace
@@ -35,42 +35,33 @@ PhysicsWorld::~PhysicsWorld()
 // シミュレーションを進める
 void PhysicsWorld::step(float deltaTime) { m_dynamicsWorld->stepSimulation(deltaTime, MaxSubSteps); }
 // 箱を作成する
-std::unique_ptr<PhysicsObject> PhysicsWorld::createBox(const BoxDesc& desc)
+std::unique_ptr<PhysicsBody> PhysicsWorld::createBox(const BoxDesc& desc)
 {
     auto shape = std::make_unique<btBoxShape>(ToBtVector3(desc.size * 0.5));
-    return std::make_unique<PhysicsObject>(this, std::move(shape), ShapeType::Box, desc.mass, desc.position);
+    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Box, desc.mass, desc.position);
 }
 
 // 球を作成する
-std::unique_ptr<PhysicsObject> PhysicsWorld::createSphere(const SphereDesc& desc)
+std::unique_ptr<PhysicsBody> PhysicsWorld::createSphere(const SphereDesc& desc)
 {
     auto shape = std::make_unique<btSphereShape>(desc.radius);
-    return std::make_unique<PhysicsObject>(this, std::move(shape), ShapeType::Sphere, desc.mass, desc.position);
+    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Sphere, desc.mass, desc.position);
 }
 
 // 円柱を作成する
-std::unique_ptr<PhysicsObject> PhysicsWorld::createCylinder(const CylinderDesc& desc)
+std::unique_ptr<PhysicsBody> PhysicsWorld::createCylinder(const CylinderDesc& desc)
 {
     auto shape = std::make_unique<btCylinderShape>(btVector3{desc.radius, desc.height * 0.5, desc.radius});
-    return std::make_unique<PhysicsObject>(this, std::move(shape), ShapeType::Cylinder, desc.mass, desc.position);
+    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Cylinder, desc.mass, desc.position);
 }
 
-// モデル付きのオブジェクトを作成する
-std::unique_ptr<PhysicsObject> PhysicsWorld::createModelObject(const CylinderDesc& desc, const s3d::Model& model)
-{
-    auto shape = std::make_unique<btCylinderShape>(btVector3{desc.radius, desc.height * 0.5, desc.radius});
-    auto obj = std::make_unique<PhysicsObject>(this, std::move(shape), ShapeType::Cylinder, desc.mass, desc.position);
-    obj->setModel(model);
-    return obj;
-}
-
-void PhysicsWorld::registerObject(PhysicsObject* obj)
+void PhysicsWorld::registerObject(PhysicsBody* obj)
 {
     m_registeredObjects.insert(obj);
     m_dynamicsWorld->addRigidBody(obj->m_body.get());
 }
 
-void PhysicsWorld::unregisterObject(PhysicsObject* obj)
+void PhysicsWorld::unregisterObject(PhysicsBody* obj)
 {
     if (m_registeredObjects.erase(obj) > 0)
     {

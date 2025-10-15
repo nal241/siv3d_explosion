@@ -1,15 +1,16 @@
-#include "Player.h"
+﻿#include "Player.h"
+#include "GameObject.h"
 
 namespace
 {
     // Cube settings
     constexpr s3d::Vec3 CubeSize{1.0, 1.0, 1.0};
-    constexpr float CubeMass = 5.0f;
+    constexpr float CubeMass = 0.3f;
     constexpr float CubeRestitution = 0.7f;
 
     // Sphere settings
     constexpr float SphereRadius = 0.5f;
-    constexpr float SphereMass = 5.0f;
+    constexpr float SphereMass = 0.3f;
     constexpr float SphereRestitution = 0.7f;
 
     // Coin settings
@@ -25,9 +26,8 @@ namespace
 
 Player::Player(DebugCamera3D* camera, Model& coinModel) : m_camera(camera), m_coinModel(coinModel) {}
 
-void Player::handleInput(PhysicsWorld& world, HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>>& objects)
+void Player::handleInput(PhysicsWorld& world, HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects)
 {
-
     // スペースキーでキューブを発射
     if (m_inputs.shootBox.down())
     {
@@ -47,7 +47,7 @@ void Player::handleInput(PhysicsWorld& world, HashTable<PhysicsObject::IDType, s
 }
 
 void Player::launchObject(ObjectType type, PhysicsWorld& world,
-                          HashTable<PhysicsObject::IDType, std::unique_ptr<PhysicsObject>>& objects)
+                          HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects)
 { // カメラの位置と前方ベクトルを取得
     assert(m_camera != nullptr && "Camera pointer must not be null. Did you forget to call setCamera?");
     Vec3 camPos = m_camera->getEyePosition();
@@ -57,44 +57,46 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world,
     Vec3 initialPos = camPos + camForward * 20.0;
 
     // オブジェクト生成
-    std::unique_ptr<PhysicsObject> newObject;
+    std::unique_ptr<PhysicsBody> newPhysicsBody;
+    auto newGameObject = std::make_unique<GameObject>();
+
     switch (type)
     {
     case ObjectType::Box:
     {
         // キューブ生成
-        newObject = world.createBox(BoxDesc{CubeSize, initialPos, CubeMass});
-        newObject->setRestitution(CubeRestitution);
-        newObject->setColor(s3d::Linear::Palette::Gainsboro);
+        newPhysicsBody = world.createBox(BoxDesc{CubeSize, initialPos, CubeMass});
+        newPhysicsBody->setRestitution(CubeRestitution);
+        newGameObject->setColor(s3d::Linear::Palette::Gainsboro);
         break;
     }
     case ObjectType::Sphere:
     {
         // 球生成
-        newObject = world.createSphere(SphereDesc{SphereRadius, initialPos, SphereMass});
-        newObject->setRestitution(SphereRestitution);
-        newObject->setColor(s3d::Linear::Palette::Lightsteelblue);
+        newPhysicsBody = world.createSphere(SphereDesc{SphereRadius, initialPos, SphereMass});
+        newPhysicsBody->setRestitution(SphereRestitution);
+        newGameObject->setColor(s3d::Linear::Palette::Lightsteelblue);
         break;
     }
     case ObjectType::Coin:
     {
         // モデル付き円柱（コイン）を生成
-        newObject = world.createModelObject(CylinderDesc{CoinRadius, CoinHeight, initialPos, CoinMass}, m_coinModel);
-        newObject->setRestitution(CoinRestitution);
-        newObject->setFriction(CoinFriction);
-        newObject->setDamping(0.1f, 0.5f);
+        newPhysicsBody = world.createCylinder(CylinderDesc{CoinRadius, CoinHeight, initialPos, CoinMass});
+        newPhysicsBody->setRestitution(CoinRestitution);
+        newPhysicsBody->setFriction(CoinFriction);
+        newPhysicsBody->setDamping(0.1f, 0.5f);
+        newGameObject->setModel(m_coinModel);
         break;
     }
     }
 
     // 前方へインパルスを加える
-    if (newObject)
+    if (newPhysicsBody)
     {
-        newObject->applyImpulse(camForward * LaunchImpulse);
-        objects.emplace(newObject->getID(), std::move(newObject));
+        newPhysicsBody->applyImpulse(camForward * LaunchImpulse);
+        newGameObject->setPhysicsBody(std::move(newPhysicsBody));
+        objects.emplace(newGameObject->getID(), std::move(newGameObject));
         // 発射音を再生
-        // Play()は重複再生しないため、
-        // playOneShot()で多重再生する
         m_shootSound.playOneShot();
     }
 }
