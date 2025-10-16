@@ -1,5 +1,6 @@
 ﻿#include "Player.h"
 #include "GameObject.h"
+#include "Renderers.h"
 
 namespace
 {
@@ -67,7 +68,8 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world,
         // キューブ生成
         newPhysicsBody = world.createBox(BoxDesc{CubeSize, initialPos, CubeMass});
         newPhysicsBody->setRestitution(CubeRestitution);
-        newGameObject->setColor(s3d::Linear::Palette::Gainsboro);
+        newGameObject->setRenderer(
+            std::make_unique<PhysicsShapeRenderer>(newPhysicsBody.get(), s3d::Linear::Palette::Gainsboro));
         break;
     }
     case ObjectType::Sphere:
@@ -75,7 +77,8 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world,
         // 球生成
         newPhysicsBody = world.createSphere(SphereDesc{SphereRadius, initialPos, SphereMass});
         newPhysicsBody->setRestitution(SphereRestitution);
-        newGameObject->setColor(s3d::Linear::Palette::Lightsteelblue);
+        newGameObject->setRenderer(
+            std::make_unique<PhysicsShapeRenderer>(newPhysicsBody.get(), s3d::Linear::Palette::Lightsteelblue));
         break;
     }
     case ObjectType::Coin:
@@ -85,7 +88,7 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world,
         newPhysicsBody->setRestitution(CoinRestitution);
         newPhysicsBody->setFriction(CoinFriction);
         newPhysicsBody->setDamping(0.1f, 0.5f);
-        newGameObject->setModel(m_coinModel);
+        newGameObject->setRenderer(std::make_unique<ModelRenderer>(m_coinModel));
         break;
     }
     }
