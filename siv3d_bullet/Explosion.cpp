@@ -2,6 +2,7 @@
 
 namespace
 {
+    // === シーン設定 ===
     constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
     constexpr float WallRestitution = 1.0f;
@@ -9,9 +10,28 @@ namespace
     constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
     constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
     constexpr double CameraFov = 30_deg;
+
+    // === 爆弾設定 ===
     constexpr double BombRadius = 0.5;
     constexpr s3d::Vec3 BombPosition{5, 0.5, 5};
     constexpr float BombMass = 0.0f;
+
+	// === パーティクル設定 ===
+    constexpr int32 ParticleCount = 50;           // 1回の爆発で生成するパーティクル数
+    constexpr double MinParticleSpeed = 3.0;      // パーティクルの最小初速（m/s）
+    constexpr double MaxParticleSpeed = 8.0;      // パーティクルの最大初速（m/s）
+    constexpr double MinParticleSize = 0.2;       // パーティクルの最小サイズ（m）
+    constexpr double MaxParticleSize = 0.5;       // パーティクルの最大サイズ（m）
+    constexpr double MinParticleLife = 0.8;       // パーティクルの最小寿命（秒）
+    constexpr double MaxParticleLife = 1.5;       // パーティクルの最大寿命（秒）
+    constexpr double MinParticleHue = 0.0;        // パーティクルの色相の最小値
+    constexpr double MaxParticleHue = 60.0;       // パーティクルの色相の最大値（オレンジ～赤）
+    constexpr double MinParticleSaturation = 0.7; // パーティクルの彩度の最小値
+    constexpr double MaxParticleSaturation = 1.0; // パーティクルの彩度の最大値
+
+    // === 爆発の物理パラメータ ===
+    constexpr double ExplosionBasePower = 10.0;  // 爆発の基本威力
+    constexpr double ExplosionMinDistance = 0.01; // これ以下の距離では力を加えない（ゼロ除算防止）
 } // namespace
 
 Explosion::Explosion(const InitData& init)
@@ -250,28 +270,35 @@ void Explosion::explode(GameObject* bomb, double radius)
     Print << U"💥 Explosion at {}"_fmt(bombCenter);
     Print << U"Radius: {}"_fmt(radius);
 
-    // 3D空間にパーティクルを生成（50個）
-    for (int32 i = 0; i < 50; ++i)
+    // === パーティクル生成 ===
+    for (int32 i = 0; i < ParticleCount; ++i)
     {
         // 球状にランダムな方向
         const double theta = Random(0.0, Math::TwoPi);
         const double phi = Random(0.0, Math::Pi);
-        const double speed = Random(3.0, 8.0);
+        const double speed = Random(MinParticleSpeed, MaxParticleSpeed);
+
         Vec3 direction{Math::Sin(phi) * Math::Cos(theta), Math::Sin(phi) * Math::Sin(theta), Math::Cos(phi)};
+
         Particle3D particle{.position = bombCenter,
                             .velocity = direction * speed,
-                            .color = HSV{Random(0.0, 60.0), Random(0.7, 1.0), 1.0},
-                            .size = Random(0.2, 0.5),
-                            .life = Random(0.8, 1.5),
+                            .color = HSV{Random(MinParticleHue, MaxParticleHue),
+                                         Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
+                            .size = Random(MinParticleSize, MaxParticleSize),
+                            .life = Random(MinParticleLife, MaxParticleLife),
                             .active = true};
+
         m_particles << particle;
     }
 
-    Print << U"   Created {} particles"_fmt(50);
+    Print << U"   Created {} particles"_fmt(ParticleCount);
 
-    // 物理演算：オブジェクトに力を加える
+    // === 物理演算：オブジェクトに力を加える ===
+    int32 hitCount = 0;
+
     for (auto& [id, object] : m_gameObjects)
     {
+        // 爆弾自身はスキップ
         if (object.get() == bomb)
             continue;
 
@@ -284,16 +311,20 @@ void Explosion::explode(GameObject* bomb, double radius)
         Vec3 direction = objectPos - bombCenter;
         double distance = direction.length();
 
-        if (distance < radius && distance > 0.01)
+        // 範囲内かつ有効な距離の場合のみ力を加える
+        if (distance < radius && distance > ExplosionMinDistance)
         {
             Vec3 normalizedDirection = direction.normalized();
             double falloff = 1.0 - (distance / radius);
-            double explosionForce = 500.0 * falloff;
+            double explosionForce = ExplosionBasePower * falloff;
             Vec3 force = normalizedDirection * explosionForce;
 
             body->applyImpulse(force);
+            hitCount++;
 
             Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
         }
     }
+
+    Print << U"   Hit {} objects"_fmt(hitCount);
 }
