@@ -232,6 +232,8 @@ void Explosion::draw() const
 
                 // 寿命に応じて透明度を変化
                 const double alpha = particle.life;
+				// リニアレンダリング用なのでremoveSRGBCurve()でsRGBカーブを除去
+				// 参考: https://zenn.dev/reputeless/books/siv3d-documentation/viewer/tutorial-3d
                 const ColorF color = particle.color.withAlpha(alpha).removeSRGBCurve();
 
                 // 球として描画
