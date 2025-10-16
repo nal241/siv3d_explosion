@@ -13,16 +13,7 @@ void GameObject::draw() const
 {
     if (m_renderer)
     {
-        // モデルがあればモデルで描画
-        if (m_model)
-        {
-            m_renderer->draw(m_position, m_rotation, m_model);
-        }
-        // なければ物理形状でデバッグ描画
-        else if (m_physicsBody)
-        {
-            m_renderer->drawDebugShape(m_position, m_rotation, m_physicsBody.get());
-        }
+        m_renderer->draw(m_position, m_rotation);
     }
 }
 
@@ -31,7 +22,7 @@ void GameObject::setPhysicsBody(std::unique_ptr<PhysicsBody> physicsBody)
     m_physicsBody = std::move(physicsBody);
 }
 
-void GameObject::setRenderer(std::unique_ptr<Renderer> renderer)
+void GameObject::setRenderer(std::unique_ptr<IRenderer> renderer)
 {
     m_renderer = std::move(renderer);
 }
