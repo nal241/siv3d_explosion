@@ -1,4 +1,5 @@
 ﻿#include "Explosion.h"
+#include "Renderers.h"
 
 namespace
 {
@@ -50,8 +51,8 @@ Explosion::Explosion(const InitData& init)
         floorBody->setRestitution(WallRestitution);
 
         auto floorObj = std::make_unique<GameObject>();
+        floorObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(floorBody.get(), s3d::Linear::Palette::Silver));
         floorObj->setPhysicsBody(std::move(floorBody));
-        floorObj->setColor(s3d::Linear::Palette::Silver);
         m_gameObjects.emplace(floorObj->getID(), std::move(floorObj));
     }
 
@@ -62,8 +63,8 @@ Explosion::Explosion(const InitData& init)
         wallBody->setRestitution(WallRestitution);
 
         auto wallObj = std::make_unique<GameObject>();
+        wallObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallBody.get(), s3d::Linear::Palette::Powderblue));
         wallObj->setPhysicsBody(std::move(wallBody));
-        wallObj->setColor(s3d::Linear::Palette::Powderblue);
         m_gameObjects.emplace(wallObj->getID(), std::move(wallObj));
     }
 
@@ -75,8 +76,8 @@ Explosion::Explosion(const InitData& init)
         wallBody->setRestitution(WallRestitution);
 
         auto wallObj = std::make_unique<GameObject>();
+        wallObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallBody.get(), s3d::Linear::Palette::Powderblue));
         wallObj->setPhysicsBody(std::move(wallBody));
-        wallObj->setColor(s3d::Linear::Palette::Powderblue);
         m_gameObjects.emplace(wallObj->getID(), std::move(wallObj));
     }
 
@@ -88,8 +89,8 @@ Explosion::Explosion(const InitData& init)
         wallBody->setRestitution(WallRestitution);
 
         auto wallObj = std::make_unique<GameObject>();
+        wallObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallBody.get(), s3d::Linear::Palette::Powderblue));
         wallObj->setPhysicsBody(std::move(wallBody));
-        wallObj->setColor(s3d::Linear::Palette::Powderblue);
         m_gameObjects.emplace(wallObj->getID(), std::move(wallObj));
     }
 
@@ -99,8 +100,8 @@ Explosion::Explosion(const InitData& init)
         bombBody->setRestitution(0.0f);
 
         auto bombObj = std::make_unique<GameObject>();
+        bombObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(bombBody.get(), ColorF{0.1, 0.1, 0.1}));
         bombObj->setPhysicsBody(std::move(bombBody));
-        bombObj->setColor(ColorF{0.1, 0.1, 0.1});
         m_bomb = bombObj.get(); // ポインタを保持
         m_gameObjects.emplace(bombObj->getID(), std::move(bombObj));
     }
@@ -116,9 +117,8 @@ Explosion::Explosion(const InitData& init)
         boxBody->setRestitution(0.5f);
 
         auto boxObj = std::make_unique<GameObject>();
+        boxObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(boxBody.get(), HSV{i * 45, 0.7, 0.9}));
         boxObj->setPhysicsBody(std::move(boxBody));
-        boxObj->setRenderer(std::make_unique<Renderer>());
-        boxObj->setColor(HSV{i * 45, 0.7, 0.9});
         m_gameObjects.emplace(boxObj->getID(), std::move(boxObj));
     }
 

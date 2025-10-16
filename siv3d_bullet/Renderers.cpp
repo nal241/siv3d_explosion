@@ -1,22 +1,26 @@
-﻿#include "Renderer.h"
-#include "PhysicsBody.h"
+#include "Renderers.h"
 #include "BulletSiv3DUtils.h"
 
-void Renderer::draw(const Vec3& position, const Quaternion& rotation, const Optional<Model>& model) const
+// --- ModelRenderer ---
+ModelRenderer::ModelRenderer(const Model& model, const ColorF& color) : m_model(model), m_color(color) {}
+
+void ModelRenderer::draw(const Vec3& position, const Quaternion& rotation) const { m_model.draw(position, rotation); }
+
+// --- PhysicsShapeRenderer ---
+PhysicsShapeRenderer::PhysicsShapeRenderer(PhysicsBody* physicsBody, const ColorF& color)
+    : m_physicsBody(physicsBody), m_color(color)
 {
-    if (model)
-    {
-        model->draw(position, rotation);
-    }
 }
 
-void Renderer::drawDebugShape(const Vec3& position, const Quaternion& rotation, PhysicsBody* physicsBody) const
+void PhysicsShapeRenderer::draw(const Vec3& position, const Quaternion& rotation) const
 {
-    if (!physicsBody)
+    if (!m_physicsBody)
+    {
         return;
+    }
 
-    const auto shapeType = physicsBody->getShapeType();
-    const auto shape = physicsBody->getShape();
+    const auto shapeType = m_physicsBody->getShapeType();
+    const auto shape = m_physicsBody->getShape();
 
     switch (shapeType)
     {
