@@ -1,4 +1,5 @@
 ﻿#include "SceneGame.h"
+#include "Renderers.h"
 
 namespace
 {
@@ -100,39 +101,39 @@ void SceneGame::draw() const
 
 void SceneGame::createStage()
 {
-    auto floor = m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
+    // Floor
+    auto floorBody = m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
                                            s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
-    floor->setRestitution(WallRestitution);
-
+    floorBody->setRestitution(WallRestitution);
     auto floorObj = std::make_unique<GameObject>();
-    floorObj->setPhysicsBody(std::move(floor));
-    floorObj->setColor(s3d::Linear::Palette::Silver);
+    floorObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(floorBody.get(), s3d::Linear::Palette::Silver));
+    floorObj->setPhysicsBody(std::move(floorBody));
 
-    auto wall_l = m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
+    // Left Wall
+    auto wallLBody = m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
                                             s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
-    wall_l->setRestitution(WallRestitution);
-
+    wallLBody->setRestitution(WallRestitution);
     auto wallLObj = std::make_unique<GameObject>();
-    wallLObj->setPhysicsBody(std::move(wall_l));
-    wallLObj->setColor(s3d::Linear::Palette::Powderblue);
+    wallLObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallLBody.get(), s3d::Linear::Palette::Powderblue));
+    wallLObj->setPhysicsBody(std::move(wallLBody));
 
-    auto wall_r =
+    // Right Wall
+    auto wallRBody =
         m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
                                   s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
-    wall_r->setRestitution(WallRestitution);
-
+    wallRBody->setRestitution(WallRestitution);
     auto wallRObj = std::make_unique<GameObject>();
-    wallRObj->setPhysicsBody(std::move(wall_r));
-    wallRObj->setColor(s3d::Linear::Palette::Powderblue);
+    wallRObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallRBody.get(), s3d::Linear::Palette::Powderblue));
+    wallRObj->setPhysicsBody(std::move(wallRBody));
 
-    auto wall_b =
+    // Back Wall
+    auto wallBBody =
         m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallLength, WallThickness),
                                   s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2), 0.0f});
-    wall_b->setRestitution(WallRestitution);
-
+    wallBBody->setRestitution(WallRestitution);
     auto wallBObj = std::make_unique<GameObject>();
-    wallBObj->setPhysicsBody(std::move(wall_b));
-    wallBObj->setColor(s3d::Linear::Palette::Powderblue);
+    wallBObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallBBody.get(), s3d::Linear::Palette::Powderblue));
+    wallBObj->setPhysicsBody(std::move(wallBBody));
 
     m_gameObjects.emplace(floorObj->getID(), std::move(floorObj));
     m_gameObjects.emplace(wallLObj->getID(), std::move(wallLObj));

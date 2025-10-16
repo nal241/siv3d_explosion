@@ -2,7 +2,7 @@
 #include <Siv3D.hpp>
 #include <memory>
 
-#include "Renderer.h"
+#include "Renderers.h"
 #include "PhysicsBody.h"
 
 class GameObject
@@ -10,7 +10,7 @@ class GameObject
 public:
     using IDType = uint64;
 
-    GameObject() : m_id(s_nextID++), m_renderer(std::make_unique<Renderer>()) {}
+    GameObject() : m_id(s_nextID++) {}
 
     // 仮想デストラクタは、ポリモーフィズムを安全に使うために必須
     virtual ~GameObject() = default;
@@ -26,7 +26,7 @@ public:
 
     // --- Setters ---
     void setPhysicsBody(std::unique_ptr<PhysicsBody> physicsBody);
-    void setRenderer(std::unique_ptr<Renderer> renderer);
+    void setRenderer(std::unique_ptr<IRenderer> renderer);
 
     // --- Getters / Setters ---
     IDType getID() const { return m_id; }
@@ -37,16 +37,6 @@ public:
     void setRotation(const Quaternion& rot) { m_rotation = rot; }
     const Quaternion& getRotation() const { return m_rotation; }
 
-    void setColor(const ColorF& color)
-    {
-        if (m_renderer)
-            m_renderer->setColor(color);
-    }
-    const ColorF& getColor() const { return m_color; }
-
-    void setModel(const Model& model) { m_model = model; }
-    const Optional<Model>& getModel() const { return m_model; }
-
     PhysicsBody* getPhysicsBody() { return m_physicsBody.get(); }
 
 protected:
@@ -55,13 +45,9 @@ protected:
     Vec3 m_position{0, 0, 0};
     Quaternion m_rotation = Quaternion::Identity();
 
-    // 描画関連
-    Optional<Model> m_model;
-    ColorF m_color = Linear::Palette::White;
-
 private:
     static inline IDType s_nextID = 0;
 
     std::unique_ptr<PhysicsBody> m_physicsBody;
-    std::unique_ptr<Renderer> m_renderer;
+    std::unique_ptr<IRenderer> m_renderer;
 };
