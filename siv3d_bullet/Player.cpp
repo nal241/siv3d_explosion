@@ -69,7 +69,7 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world,
         newPhysicsBody = world.createBox(BoxDesc{CubeSize, initialPos, CubeMass});
         newPhysicsBody->setRestitution(CubeRestitution);
         newGameObject->setRenderer(
-            std::make_unique<PhysicsShapeRenderer>(newPhysicsBody.get(), s3d::Linear::Palette::Gainsboro));
+            std::make_unique<PhysicsShapeRenderer>(*newPhysicsBody, s3d::Linear::Palette::Gainsboro));
         break;
     }
     case ObjectType::Sphere:
@@ -78,7 +78,7 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world,
         newPhysicsBody = world.createSphere(SphereDesc{SphereRadius, initialPos, SphereMass});
         newPhysicsBody->setRestitution(SphereRestitution);
         newGameObject->setRenderer(
-            std::make_unique<PhysicsShapeRenderer>(newPhysicsBody.get(), s3d::Linear::Palette::Lightsteelblue));
+            std::make_unique<PhysicsShapeRenderer>(*newPhysicsBody, s3d::Linear::Palette::Lightsteelblue));
         break;
     }
     case ObjectType::Coin:
