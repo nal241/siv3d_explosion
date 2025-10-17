@@ -11,7 +11,7 @@ void Main()
     manager.add<SceneGame>(State::Game);
     // manager.add<Ranking>(State::Ranking);
 
-	// 爆発用のシーン
+    // 爆発用のシーン
     manager.add<Explosion>(State::Explosion);
 
     // システムループ
