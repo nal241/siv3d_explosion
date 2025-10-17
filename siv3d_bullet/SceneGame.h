@@ -17,7 +17,6 @@ protected:
     // ヘルパーメソッド
     void removeOutOfBoundsObjects();
     void createStage();
-    std::unique_ptr<GameObject> createStaticBox(const Vec3& size, const Vec3& position, const ColorF& color);
     void addGameObject(std::unique_ptr<GameObject> obj);
 
     // メンバ変数
