@@ -17,7 +17,7 @@ namespace
     constexpr s3d::Vec3 BombPosition{5, 0.5, 5};
     constexpr float BombMass = 0.0f;
 
-	// === パーティクル設定 ===
+    // === パーティクル設定 ===
     constexpr int32 ParticleCount = 50;           // 1回の爆発で生成するパーティクル数
     constexpr double MinParticleSpeed = 3.0;      // パーティクルの最小初速（m/s）
     constexpr double MaxParticleSpeed = 8.0;      // パーティクルの最大初速（m/s）
@@ -31,7 +31,7 @@ namespace
     constexpr double MaxParticleSaturation = 1.0; // パーティクルの彩度の最大値
 
     // === 爆発の物理パラメータ ===
-    constexpr double ExplosionBasePower = 10.0;  // 爆発の基本威力
+    constexpr double ExplosionBasePower = 10.0;   // 爆発の基本威力
     constexpr double ExplosionMinDistance = 0.01; // これ以下の距離では力を加えない（ゼロ除算防止）
 } // namespace
 
@@ -232,8 +232,8 @@ void Explosion::draw() const
 
                 // 寿命に応じて透明度を変化
                 const double alpha = particle.life;
-				// リニアレンダリング用なのでremoveSRGBCurve()でsRGBカーブを除去
-				// 参考: https://zenn.dev/reputeless/books/siv3d-documentation/viewer/tutorial-3d
+                // リニアレンダリング用なのでremoveSRGBCurve()でsRGBカーブを除去
+                // 参考: https://zenn.dev/reputeless/books/siv3d-documentation/viewer/tutorial-3d
                 const ColorF color = particle.color.withAlpha(alpha).removeSRGBCurve();
 
                 // 球として描画

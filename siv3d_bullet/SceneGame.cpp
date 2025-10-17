@@ -103,7 +103,7 @@ void SceneGame::createStage()
 {
     // Floor
     auto floorBody = m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
-                                           s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
+                                               s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
     floorBody->setRestitution(WallRestitution);
     auto floorObj = std::make_unique<GameObject>();
     floorObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(floorBody.get(), s3d::Linear::Palette::Silver));
@@ -111,7 +111,7 @@ void SceneGame::createStage()
 
     // Left Wall
     auto wallLBody = m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
-                                            s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
+                                               s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
     wallLBody->setRestitution(WallRestitution);
     auto wallLObj = std::make_unique<GameObject>();
     wallLObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallLBody.get(), s3d::Linear::Palette::Powderblue));
