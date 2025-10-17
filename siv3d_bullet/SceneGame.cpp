@@ -105,7 +105,7 @@ void SceneGame::draw() const
     }
 }
 
-std::unique_ptr<GameObject> SceneGame::createStaticWall(const Vec3& size, const Vec3& position, const ColorF& color)
+std::unique_ptr<GameObject> SceneGame::createStaticBox(const Vec3& size, const Vec3& position, const ColorF& color)
 {
     auto body = m_world.createBox(BoxDesc{size, position, 0.0f});
     body->setRestitution(WallRestitution);
@@ -122,22 +122,22 @@ void SceneGame::addGameObject(std::unique_ptr<GameObject> obj) { m_gameObjects.e
 void SceneGame::createStage()
 {
     // Floor
-    addGameObject(createStaticWall(s3d::Vec3(WallLength, WallThickness, WallLength),
-                                   s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2),
-                                   s3d::Linear::Palette::Silver));
+    addGameObject(createStaticBox(s3d::Vec3(WallLength, WallThickness, WallLength),
+                                  s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2),
+                                  s3d::Linear::Palette::Silver));
 
     // Left Wall
-    addGameObject(createStaticWall(s3d::Vec3(WallThickness, WallLength, WallLength),
-                                   s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2),
-                                   s3d::Linear::Palette::Powderblue));
+    addGameObject(createStaticBox(s3d::Vec3(WallThickness, WallLength, WallLength),
+                                  s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2),
+                                  s3d::Linear::Palette::Powderblue));
 
     // Right Wall
-    addGameObject(createStaticWall(s3d::Vec3(WallThickness, WallLength, WallLength),
-                                   s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2),
-                                   s3d::Linear::Palette::Powderblue));
+    addGameObject(createStaticBox(s3d::Vec3(WallThickness, WallLength, WallLength),
+                                  s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2),
+                                  s3d::Linear::Palette::Powderblue));
 
     // Back Wall
-    addGameObject(createStaticWall(s3d::Vec3(WallLength, WallLength, WallThickness),
-                                   s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2),
-                                   s3d::Linear::Palette::Powderblue));
+    addGameObject(createStaticBox(s3d::Vec3(WallLength, WallLength, WallThickness),
+                                  s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2),
+                                  s3d::Linear::Palette::Powderblue));
 }
