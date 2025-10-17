@@ -14,6 +14,13 @@ public:
     void draw() const override;
 
 private:
+    // ヘルパーメソッド
+    void removeOutOfBoundsObjects();
+    void createStage();
+    std::unique_ptr<GameObject> createStaticWall(const Vec3& size, const Vec3& position, const ColorF& color);
+    void addGameObject(std::unique_ptr<GameObject> obj);
+
+    // メンバ変数
     PhysicsWorld m_world;
     HashTable<GameObject::IDType, std::unique_ptr<GameObject>> m_gameObjects;
 
@@ -27,6 +34,4 @@ private:
     Model m_model{U"model/coin.obj"};
 
     Player m_player;
-
-    void createStage();
 };
