@@ -17,13 +17,6 @@ void GameObject::draw() const
     }
 }
 
-void GameObject::setPhysicsBody(std::unique_ptr<PhysicsBody> physicsBody)
-{
-    m_physicsBody = std::move(physicsBody);
-}
+void GameObject::setPhysicsBody(std::unique_ptr<PhysicsBody> physicsBody) { m_physicsBody = std::move(physicsBody); }
 
-void GameObject::setRenderer(std::unique_ptr<IRenderer> renderer)
-{
-    m_renderer = std::move(renderer);
-}
-
+void GameObject::setRenderer(std::unique_ptr<IRenderer> renderer) { m_renderer = std::move(renderer); }
