@@ -1,0 +1,13 @@
+name: clang-format check
+on: [push, pull_request]
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install clang-format
+        run: sudo apt-get install clang-format
+      - name: Check format
+        run: |
+          find . -name '*.cpp' -o -name '*.h' > files.txt
+          clang-format --dry-run --Werror $(cat files.txt)
