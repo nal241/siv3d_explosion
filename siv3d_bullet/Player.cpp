@@ -4,25 +4,25 @@
 
 namespace
 {
-    // Cube settings
-    constexpr s3d::Vec3 CubeSize{1.0, 1.0, 1.0};
-    constexpr float CubeMass = 0.3f;
-    constexpr float CubeRestitution = 0.7f;
+    // 発射時の共通設定
+    constexpr double LaunchImpulse = 1.0;
 
-    // Sphere settings
-    constexpr float SphereRadius = 0.5f;
-    constexpr float SphereMass = 0.3f;
-    constexpr float SphereRestitution = 0.7f;
+    // 発射オブジェクトのプリセット
+    constexpr s3d::Vec3 DynamicBoxSize{1.0, 1.0, 1.0};
+    constexpr float DynamicBoxMass = 0.3f;
+    constexpr float DynamicBoxRestitution = 0.7f;
 
-    // Coin settings
+    constexpr float DynamicSphereRadius = 0.5f;
+    constexpr float DynamicSphereMass = 0.3f;
+    constexpr float DynamicSphereRestitution = 0.7f;
+
     constexpr float CoinRadius = 0.5f;
     constexpr float CoinHeight = 0.2f;
     constexpr float CoinMass = 0.1f;
     constexpr float CoinRestitution = 0.0f;
     constexpr float CoinFriction = 0.1f;
-
-    // common settings for launch
-    constexpr double LaunchImpulse = 1.0;
+    constexpr float CoinLinearDamping = 0.1f;
+    constexpr float CoinAngularDamping = 0.5f;
 } // namespace
 
 Player::Player(DebugCamera3D* camera, Model& coinModel) : m_camera(camera), m_coinModel(coinModel) {}
@@ -49,7 +49,8 @@ void Player::handleInput(PhysicsWorld& world, HashTable<GameObject::IDType, std:
 
 void Player::launchObject(ObjectType type, PhysicsWorld& world,
                           HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects)
-{ // カメラの位置と前方ベクトルを取得
+{
+    // カメラの位置と前方ベクトルを取得
     assert(m_camera != nullptr && "Camera pointer must not be null. Did you forget to call setCamera?");
     Vec3 camPos = m_camera->getEyePosition();
     Vec3 camForward = m_camera->getLookAtVector();
@@ -57,47 +58,44 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world,
     // 初期位置（カメラの少し前）
     Vec3 initialPos = camPos + camForward * 20.0;
 
-    // オブジェクト生成
-    std::unique_ptr<PhysicsBody> newPhysicsBody;
-    auto newGameObject = std::make_unique<GameObject>();
+    // オブジェクト生成（factory methodsを使用）
+    std::unique_ptr<GameObject> newGameObject;
 
     switch (type)
     {
     case ObjectType::Box:
-    {
-        // キューブ生成
-        newPhysicsBody = world.createBox(BoxDesc{CubeSize, initialPos, CubeMass});
-        newPhysicsBody->setRestitution(CubeRestitution);
-        newGameObject->setRenderer(
-            std::make_unique<PhysicsShapeRenderer>(*newPhysicsBody, s3d::Linear::Palette::Gainsboro));
+        newGameObject = GameObject::CreateBox(world, GameObject::BoxParams{.size = DynamicBoxSize,
+                                                                           .position = initialPos,
+                                                                           .mass = DynamicBoxMass,
+                                                                           .color = s3d::Linear::Palette::Gainsboro,
+                                                                           .restitution = DynamicBoxRestitution});
         break;
-    }
     case ObjectType::Sphere:
-    {
-        // 球生成
-        newPhysicsBody = world.createSphere(SphereDesc{SphereRadius, initialPos, SphereMass});
-        newPhysicsBody->setRestitution(SphereRestitution);
-        newGameObject->setRenderer(
-            std::make_unique<PhysicsShapeRenderer>(*newPhysicsBody, s3d::Linear::Palette::Lightsteelblue));
+        newGameObject =
+            GameObject::CreateSphere(world, GameObject::SphereParams{.radius = DynamicSphereRadius,
+                                                                     .position = initialPos,
+                                                                     .mass = DynamicSphereMass,
+                                                                     .color = s3d::Linear::Palette::Lightsteelblue,
+                                                                     .restitution = DynamicSphereRestitution});
         break;
-    }
     case ObjectType::Coin:
-    {
-        // モデル付き円柱（コイン）を生成
-        newPhysicsBody = world.createCylinder(CylinderDesc{CoinRadius, CoinHeight, initialPos, CoinMass});
-        newPhysicsBody->setRestitution(CoinRestitution);
-        newPhysicsBody->setFriction(CoinFriction);
-        newPhysicsBody->setDamping(0.1f, 0.5f);
-        newGameObject->setRenderer(std::make_unique<ModelRenderer>(m_coinModel));
+        newGameObject =
+            GameObject::CreateCylinder(world, GameObject::CylinderParams{.radius = CoinRadius,
+                                                                         .height = CoinHeight,
+                                                                         .position = initialPos,
+                                                                         .mass = CoinMass,
+                                                                         .restitution = CoinRestitution,
+                                                                         .friction = CoinFriction},
+                                       std::make_unique<ModelRenderer>(m_coinModel));
+        // 追加設定: damping
+        newGameObject->getPhysicsBody()->setDamping(CoinLinearDamping, CoinAngularDamping);
         break;
-    }
     }
 
     // 前方へインパルスを加える
-    if (newPhysicsBody)
+    if (newGameObject)
     {
-        newPhysicsBody->applyImpulse(camForward * LaunchImpulse);
-        newGameObject->setPhysicsBody(std::move(newPhysicsBody));
+        newGameObject->getPhysicsBody()->applyImpulse(camForward * LaunchImpulse);
         objects.emplace(newGameObject->getID(), std::move(newGameObject));
         // 発射音を再生
         m_shootSound.playOneShot();

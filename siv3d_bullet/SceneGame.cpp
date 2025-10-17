@@ -6,13 +6,15 @@ namespace
     // World settings
     constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
-    constexpr float WallRestitution = 1.0f;
 
     // Camera settings
     constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
     constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
     constexpr double CameraFov = 30_deg;
+
+    // ステージオブジェクトのプリセット
+    constexpr float StaticBoxRestitution = 1.0f;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -105,39 +107,41 @@ void SceneGame::draw() const
     }
 }
 
-std::unique_ptr<GameObject> SceneGame::createStaticBox(const Vec3& size, const Vec3& position, const ColorF& color)
-{
-    auto body = m_world.createBox(BoxDesc{size, position, 0.0f});
-    body->setRestitution(WallRestitution);
-
-    auto obj = std::make_unique<GameObject>();
-    obj->setRenderer(std::make_unique<PhysicsShapeRenderer>(*body, color));
-    obj->setPhysicsBody(std::move(body));
-
-    return obj;
-}
-
 void SceneGame::addGameObject(std::unique_ptr<GameObject> obj) { m_gameObjects.emplace(obj->getID(), std::move(obj)); }
 
 void SceneGame::createStage()
 {
     // Floor
-    addGameObject(createStaticBox(s3d::Vec3(WallLength, WallThickness, WallLength),
-                                  s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2),
-                                  s3d::Linear::Palette::Silver));
+    addGameObject(GameObject::CreateBox(
+        m_world, GameObject::BoxParams{.size = s3d::Vec3(WallLength, WallThickness, WallLength),
+                                       .position = s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2),
+                                       .mass = 0.0f, // 静的オブジェクト
+                                       .color = s3d::Linear::Palette::Silver,
+                                       .restitution = StaticBoxRestitution}));
 
     // Left Wall
-    addGameObject(createStaticBox(s3d::Vec3(WallThickness, WallLength, WallLength),
-                                  s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2),
-                                  s3d::Linear::Palette::Powderblue));
+    addGameObject(GameObject::CreateBox(
+        m_world, GameObject::BoxParams{.size = s3d::Vec3(WallThickness, WallLength, WallLength),
+                                       .position = s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2),
+                                       .mass = 0.0f,
+                                       .color = s3d::Linear::Palette::Powderblue,
+                                       .restitution = StaticBoxRestitution}));
 
     // Right Wall
-    addGameObject(createStaticBox(s3d::Vec3(WallThickness, WallLength, WallLength),
-                                  s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2),
-                                  s3d::Linear::Palette::Powderblue));
+    addGameObject(GameObject::CreateBox(
+        m_world,
+        GameObject::BoxParams{.size = s3d::Vec3(WallThickness, WallLength, WallLength),
+                              .position = s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2),
+                              .mass = 0.0f,
+                              .color = s3d::Linear::Palette::Powderblue,
+                              .restitution = StaticBoxRestitution}));
 
     // Back Wall
-    addGameObject(createStaticBox(s3d::Vec3(WallLength, WallLength, WallThickness),
-                                  s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2),
-                                  s3d::Linear::Palette::Powderblue));
+    addGameObject(GameObject::CreateBox(
+        m_world,
+        GameObject::BoxParams{.size = s3d::Vec3(WallLength, WallLength, WallThickness),
+                              .position = s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2),
+                              .mass = 0.0f,
+                              .color = s3d::Linear::Palette::Powderblue,
+                              .restitution = StaticBoxRestitution}));
 }

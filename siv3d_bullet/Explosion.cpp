@@ -43,12 +43,11 @@ Explosion::Explosion(const InitData& init) : SceneGame(init)
 
     // 爆弾
     {
-        auto bombBody = m_world.createSphere(SphereDesc{BombRadius, BombPosition, BombMass});
-        bombBody->setRestitution(0.0f);
-
-        auto bombObj = std::make_unique<GameObject>();
-        bombObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(*bombBody, ColorF{0.1, 0.1, 0.1}));
-        bombObj->setPhysicsBody(std::move(bombBody));
+        auto bombObj = GameObject::CreateSphere(m_world, GameObject::SphereParams{.radius = BombRadius,
+                                                                                  .position = BombPosition,
+                                                                                  .mass = BombMass,
+                                                                                  .color = ColorF{0.1, 0.1, 0.1},
+                                                                                  .restitution = 0.0f});
         m_bomb = bombObj.get(); // ポインタを保持
         m_gameObjects.emplace(bombObj->getID(), std::move(bombObj));
     }
@@ -60,22 +59,15 @@ Explosion::Explosion(const InitData& init) : SceneGame(init)
         double distance = 3.0;
         Vec3 position{5 + Math::Cos(angle) * distance, 1.0, 5 + Math::Sin(angle) * distance};
 
-        auto boxBody = m_world.createBox(BoxDesc{Vec3{0.5, 0.5, 0.5}, position, 2.0f});
-        boxBody->setRestitution(0.5f);
-
-        auto boxObj = std::make_unique<GameObject>();
-        boxObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(*boxBody, HSV{i * 45, 0.7, 0.9}));
-        boxObj->setPhysicsBody(std::move(boxBody));
+        auto boxObj = GameObject::CreateBox(m_world, GameObject::BoxParams{.size = Vec3{0.5, 0.5, 0.5},
+                                                                           .position = position,
+                                                                           .mass = 2.0f,
+                                                                           .color = HSV{i * 45, 0.7, 0.9},
+                                                                           .restitution = 0.5f});
         m_gameObjects.emplace(boxObj->getID(), std::move(boxObj));
     }
 
     m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
-
-    // 初期位置の更新
-    for (auto& [id, object] : m_gameObjects)
-    {
-        object->update();
-    }
 }
 
 void Explosion::update()
