@@ -419,3 +419,7 @@ gmon.out
 # Ignore props
 
 *.props
+
+# calude
+.claude/*
+CLAUDE.md
