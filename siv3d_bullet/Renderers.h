@@ -26,10 +26,10 @@ private:
 class PhysicsShapeRenderer : public IRenderer
 {
 public:
-    PhysicsShapeRenderer(PhysicsBody* physicsBody, const ColorF& color = Palette::White);
+    PhysicsShapeRenderer(PhysicsBody& physicsBody, const ColorF& color = Palette::White);
     void draw(const Vec3& position, const Quaternion& rotation) const override;
 
 private:
-    PhysicsBody* m_physicsBody; // 描画対象の物理ボディへのポインタ
+    PhysicsBody& m_physicsBody; // 描画対象の物理ボディへの参照
     ColorF m_color;
 };

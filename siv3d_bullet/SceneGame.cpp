@@ -6,13 +6,15 @@ namespace
     // World settings
     constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
-    constexpr float WallRestitution = 1.0f;
 
     // Camera settings
     constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
     constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
     constexpr double CameraFov = 30_deg;
+
+    // ステージオブジェクトのプリセット
+    constexpr float StaticBoxRestitution = 1.0f;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -33,45 +35,50 @@ void SceneGame::update()
     Print << U"Tキーで爆発用のシーンへ移動";
     Print << Profiler::FPS();
 
+    // カメラ更新
     m_camera.update(CameraSpeed);
 
-    for (auto const& [id, object] : m_gameObjects)
+    // プレイヤー入力
+    m_player.handleInput(m_world, m_gameObjects);
+
+    // GameObjects更新
+    for (auto const& [_, object] : m_gameObjects)
     {
         object->update();
     }
 
-    m_player.handleInput(m_world, m_gameObjects);
-
-    // worldのステップを進める
+    // 物理演算
     m_world.step(Scene::DeltaTime());
 
-    // 座標が一定以下ならオブジェクトを削除
-    {
-        Array<GameObject::IDType> objectsToRemove;
-        for (const auto& [id, object] : m_gameObjects)
-        {
-            if (object->getPosition().y < -10.0)
-            {
-                objectsToRemove.push_back(id);
-            }
-        }
+    // 範囲外オブジェクト削除
+    removeOutOfBoundsObjects();
 
-        for (const auto& id : objectsToRemove)
-        {
-            m_gameObjects.erase(id);
-        }
-    }
-
-    // Tキーで爆発用のシーンへ移動
+    // シーン遷移
     if (KeyT.down())
     {
         changeScene(State::Explosion, 1.0s);
     }
 }
 
+void SceneGame::removeOutOfBoundsObjects()
+{
+    Array<GameObject::IDType> objectsToRemove;
+    for (const auto& [id, object] : m_gameObjects)
+    {
+        if (object->getPosition().y < -10.0)
+        {
+            objectsToRemove.push_back(id);
+        }
+    }
+
+    for (const auto& id : objectsToRemove)
+    {
+        m_gameObjects.erase(id);
+    }
+}
+
 void SceneGame::draw() const
 {
-    // Set up a camera in the current 3D scene
     Graphics3D::SetCameraTransform(m_camera);
 
     // [3D rendering]
@@ -80,7 +87,8 @@ void SceneGame::draw() const
 
         // for debug
         // Plane{64}.draw(uvChecker);
-        for (auto const& [id, object] : m_gameObjects)
+
+        for (auto const& [_, object] : m_gameObjects)
         {
             object->draw();
         }
@@ -99,44 +107,41 @@ void SceneGame::draw() const
     }
 }
 
+void SceneGame::addGameObject(std::unique_ptr<GameObject> obj) { m_gameObjects.emplace(obj->getID(), std::move(obj)); }
+
 void SceneGame::createStage()
 {
     // Floor
-    auto floorBody = m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
-                                               s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
-    floorBody->setRestitution(WallRestitution);
-    auto floorObj = std::make_unique<GameObject>();
-    floorObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(floorBody.get(), s3d::Linear::Palette::Silver));
-    floorObj->setPhysicsBody(std::move(floorBody));
+    addGameObject(GameObject::CreateBox(
+        m_world, GameObject::BoxParams{.size = s3d::Vec3(WallLength, WallThickness, WallLength),
+                                       .position = s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2),
+                                       .mass = 0.0f, // 静的オブジェクト
+                                       .color = s3d::Linear::Palette::Silver,
+                                       .restitution = StaticBoxRestitution}));
 
     // Left Wall
-    auto wallLBody = m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
-                                               s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
-    wallLBody->setRestitution(WallRestitution);
-    auto wallLObj = std::make_unique<GameObject>();
-    wallLObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallLBody.get(), s3d::Linear::Palette::Powderblue));
-    wallLObj->setPhysicsBody(std::move(wallLBody));
+    addGameObject(GameObject::CreateBox(
+        m_world, GameObject::BoxParams{.size = s3d::Vec3(WallThickness, WallLength, WallLength),
+                                       .position = s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2),
+                                       .mass = 0.0f,
+                                       .color = s3d::Linear::Palette::Powderblue,
+                                       .restitution = StaticBoxRestitution}));
 
     // Right Wall
-    auto wallRBody =
-        m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
-                                  s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
-    wallRBody->setRestitution(WallRestitution);
-    auto wallRObj = std::make_unique<GameObject>();
-    wallRObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallRBody.get(), s3d::Linear::Palette::Powderblue));
-    wallRObj->setPhysicsBody(std::move(wallRBody));
+    addGameObject(GameObject::CreateBox(
+        m_world,
+        GameObject::BoxParams{.size = s3d::Vec3(WallThickness, WallLength, WallLength),
+                              .position = s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2),
+                              .mass = 0.0f,
+                              .color = s3d::Linear::Palette::Powderblue,
+                              .restitution = StaticBoxRestitution}));
 
     // Back Wall
-    auto wallBBody =
-        m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallLength, WallThickness),
-                                  s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2), 0.0f});
-    wallBBody->setRestitution(WallRestitution);
-    auto wallBObj = std::make_unique<GameObject>();
-    wallBObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(wallBBody.get(), s3d::Linear::Palette::Powderblue));
-    wallBObj->setPhysicsBody(std::move(wallBBody));
-
-    m_gameObjects.emplace(floorObj->getID(), std::move(floorObj));
-    m_gameObjects.emplace(wallLObj->getID(), std::move(wallLObj));
-    m_gameObjects.emplace(wallRObj->getID(), std::move(wallRObj));
-    m_gameObjects.emplace(wallBObj->getID(), std::move(wallBObj));
+    addGameObject(GameObject::CreateBox(
+        m_world,
+        GameObject::BoxParams{.size = s3d::Vec3(WallLength, WallLength, WallThickness),
+                              .position = s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2),
+                              .mass = 0.0f,
+                              .color = s3d::Linear::Palette::Powderblue,
+                              .restitution = StaticBoxRestitution}));
 }
