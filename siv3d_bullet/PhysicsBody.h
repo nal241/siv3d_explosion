@@ -59,7 +59,7 @@ public:
     void applyImpulse(const s3d::Vec3& impulse);
 
     // --- Getters ---
-    btRigidBody* GetBody() const { return m_body.get(); }
+    btRigidBody* getBody() const { return m_body.get(); }
     s3d::Vec3 getPosition() const;
     s3d::Quaternion getRotation() const;
     ShapeType getShapeType() const { return m_shapeType; }
