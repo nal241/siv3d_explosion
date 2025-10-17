@@ -35,64 +35,11 @@ namespace
     constexpr double ExplosionMinDistance = 0.01; // これ以下の距離では力を加えない（ゼロ除算防止）
 } // namespace
 
-Explosion::Explosion(const InitData& init)
-    : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera, m_model)
+Explosion::Explosion(const InitData& init) : SceneGame(init)
 {
     Print << U"Explosion Scene Initialized";
 
     // --- オブジェクト生成 ---
-
-    // 床
-    {
-        auto floorBody =
-            m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallThickness, WallLength),
-                                      s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2), 0.0f});
-        floorBody->setRestitution(WallRestitution);
-
-        auto floorObj = std::make_unique<GameObject>();
-        floorObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(*floorBody, s3d::Linear::Palette::Silver));
-        floorObj->setPhysicsBody(std::move(floorBody));
-        m_gameObjects.emplace(floorObj->getID(), std::move(floorObj));
-    }
-
-    // 壁 (左)
-    {
-        auto wallBody = m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
-                                                  s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
-        wallBody->setRestitution(WallRestitution);
-
-        auto wallObj = std::make_unique<GameObject>();
-        wallObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(*wallBody, s3d::Linear::Palette::Powderblue));
-        wallObj->setPhysicsBody(std::move(wallBody));
-        m_gameObjects.emplace(wallObj->getID(), std::move(wallObj));
-    }
-
-    // 壁 (右)
-    {
-        auto wallBody =
-            m_world.createBox(BoxDesc{s3d::Vec3(WallThickness, WallLength, WallLength),
-                                      s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2), 0.0f});
-        wallBody->setRestitution(WallRestitution);
-
-        auto wallObj = std::make_unique<GameObject>();
-        wallObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(*wallBody, s3d::Linear::Palette::Powderblue));
-        wallObj->setPhysicsBody(std::move(wallBody));
-        m_gameObjects.emplace(wallObj->getID(), std::move(wallObj));
-    }
-
-    // 壁 (奥)
-    {
-        auto wallBody =
-            m_world.createBox(BoxDesc{s3d::Vec3(WallLength, WallLength, WallThickness),
-                                      s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2), 0.0f});
-        wallBody->setRestitution(WallRestitution);
-
-        auto wallObj = std::make_unique<GameObject>();
-        wallObj->setRenderer(std::make_unique<PhysicsShapeRenderer>(*wallBody, s3d::Linear::Palette::Powderblue));
-        wallObj->setPhysicsBody(std::move(wallBody));
-        m_gameObjects.emplace(wallObj->getID(), std::move(wallObj));
-    }
 
     // 爆弾
     {
@@ -179,21 +126,7 @@ void Explosion::update()
     // 物理エンジンを更新
     m_world.step(deltaTime);
 
-    // 削除対象のIDを集める
-    Array<GameObject::IDType> toRemove;
-    for (const auto& [id, object] : m_gameObjects)
-    {
-        if (object->getPosition().y < -10.0)
-        {
-            toRemove.push_back(id);
-        }
-    }
-
-    // 削除実行
-    for (const auto& id : toRemove)
-    {
-        m_gameObjects.erase(id);
-    }
+    removeOutOfBoundsObjects();
 
     // Pキーで爆発
     if (KeyP.down() && m_bomb != nullptr)
