@@ -94,8 +94,13 @@ void SceneGame::draw() const
 
     // [2D rendering]
     {
+        // Flush 3D rendering commands before multisample resolve
         Graphics3D::Flush();
+
+        // Multisample resolve
         m_renderTexture.resolve();
+
+        // Transfer renderTexture to the current 2D scene (default scene)
         Shader::LinearToScreen(m_renderTexture);
     }
 }
