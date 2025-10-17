@@ -7,20 +7,15 @@ ModelRenderer::ModelRenderer(const Model& model, const ColorF& color) : m_model(
 void ModelRenderer::draw(const Vec3& position, const Quaternion& rotation) const { m_model.draw(position, rotation); }
 
 // --- PhysicsShapeRenderer ---
-PhysicsShapeRenderer::PhysicsShapeRenderer(PhysicsBody* physicsBody, const ColorF& color)
+PhysicsShapeRenderer::PhysicsShapeRenderer(PhysicsBody& physicsBody, const ColorF& color)
     : m_physicsBody(physicsBody), m_color(color)
 {
 }
 
 void PhysicsShapeRenderer::draw(const Vec3& position, const Quaternion& rotation) const
 {
-    if (!m_physicsBody)
-    {
-        return;
-    }
-
-    const auto shapeType = m_physicsBody->getShapeType();
-    const auto shape = m_physicsBody->getShape();
+    const auto shapeType = m_physicsBody.getShapeType();
+    const auto shape = m_physicsBody.getShape();
 
     switch (shapeType)
     {
