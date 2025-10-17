@@ -9,9 +9,8 @@ class Player
 public:
     Player(DebugCamera3D* camera, Model& coinModel);
 
-    // void handleInput(PhysicsWorld& world, HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects);
     void handleInput(PhysicsWorld& world, HashTable<GameObject::IDType, std::unique_ptr<GameObject>>& objects);
-    void setCamera(DebugCamera3D* camera);
+    // void setCamera(DebugCamera3D* camera);  // 未実装：将来カメラ切り替えが必要になったら実装
 
 private:
     struct Inputs
