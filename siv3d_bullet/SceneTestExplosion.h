@@ -24,8 +24,8 @@ private:
     // 爆発関数
     void explode(GameObject* bomb, double radius);
 
-    // 爆弾オブジェクト
-    GameObject* m_bomb = nullptr;
+    // 爆弾オブジェクトのID
+    GameObject::IDType m_bombID = 0;
 
     // 3D空間のパーティクルシステム
     Array<Particle3D> m_particles;
