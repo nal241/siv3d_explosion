@@ -1,4 +1,4 @@
-﻿#include "GameObject.h"
+#include "GameObject.h"
 #include "PhysicsWorld.h"
 
 // --- Constructor ---
@@ -15,6 +15,37 @@ GameObject::GameObject(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr
         m_position = m_physicsBody->getPosition();
         m_rotation = m_physicsBody->getRotation();
     }
+}
+
+GameObject::GameObject(GameObject&& other) noexcept
+    : m_id(other.m_id)
+    , m_position(std::move(other.m_position))
+    , m_rotation(std::move(other.m_rotation))
+    , m_physicsBody(std::move(other.m_physicsBody))
+    , m_renderer(std::move(other.m_renderer))
+{
+    if (m_physicsBody)
+    {
+        m_physicsBody->setOwner(this);
+    }
+}
+
+GameObject& GameObject::operator=(GameObject&& other) noexcept
+{
+    if (this != &other)
+    {
+        m_id = other.m_id;
+        m_position = std::move(other.m_position);
+        m_rotation = std::move(other.m_rotation);
+        m_physicsBody = std::move(other.m_physicsBody);
+        m_renderer = std::move(other.m_renderer);
+
+        if (m_physicsBody)
+        {
+            m_physicsBody->setOwner(this);
+        }
+    }
+    return *this;
 }
 
 // --- Public Methods ---
@@ -105,7 +136,7 @@ std::unique_ptr<GameObject> GameObject::CreateSphere(PhysicsWorld& world, const 
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
 
-    // レンダラーが指定されていなければデフォルト（PhysicsShapeRenderer）を使用
+    // レンダラーが指定されていればデフォルト（PhysicsShapeRenderer）を使用
     if (!renderer)
     {
         renderer = std::make_unique<PhysicsShapeRenderer>(*body, params.color);
