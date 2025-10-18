@@ -12,10 +12,10 @@ struct Particle3D
     double life; // 残り寿命（0.0 ～ 1.0）
     bool active;
 };
-class Explosion : public SceneGame
+class SceneTestExplosion : public SceneGame
 {
 public:
-    Explosion(const InitData& init);
+    SceneTestExplosion(const InitData& init);
 
     void update() override;
     void draw() const override;
@@ -24,8 +24,8 @@ private:
     // 爆発関数
     void explode(GameObject* bomb, double radius);
 
-    // 爆弾オブジェクト
-    GameObject* m_bomb = nullptr;
+    // 爆弾オブジェクトのID
+    GameObject::IDType m_bombID = 0;
 
     // 3D空間のパーティクルシステム
     Array<Particle3D> m_particles;

@@ -55,6 +55,8 @@ public:
 
     float getMass() const;
 
+    bool isStatic() const;
+
     void applyForce(const s3d::Vec3& force);
     void applyImpulse(const s3d::Vec3& impulse);
 
