@@ -48,7 +48,7 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
                                                                                   .mass = BombMass,
                                                                                   .color = ColorF{0.1, 0.1, 0.1},
                                                                                   .restitution = 0.0f});
-        m_bomb = bombObj.get(); // ポインタを保持
+        m_bombID = bombObj->getID(); // IDを保持
         m_gameObjects.emplace(bombObj->getID(), std::move(bombObj));
     }
 
@@ -121,9 +121,12 @@ void SceneTestExplosion::update()
     removeOutOfBoundsObjects();
 
     // Pキーで爆発
-    if (KeyP.down() && m_bomb != nullptr)
+    if (KeyP.down())
     {
-        explode(m_bomb, 5.0);
+        if (auto it = m_gameObjects.find(m_bombID); it != m_gameObjects.end())
+        {
+            explode(it->second.get(), 5.0);
+        }
     }
 
     // Tキーでゲームシーンへ戻る
