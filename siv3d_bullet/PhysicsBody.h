@@ -4,6 +4,7 @@
 
 // 前方宣言
 class PhysicsWorld;
+class GameObject;
 
 // 物理形状の生成用Desc
 struct BoxDesc
@@ -52,6 +53,9 @@ public:
     void setRestitution(float restitution);
     void setFriction(float friction);
     void setDamping(float lin_damping, float ang_damping);
+    void setOwner(GameObject* owner);
+    void setPosition(const s3d::Vec3& pos);
+    void setRotation(const s3d::Quaternion& rot);
 
     float getMass() const;
 
@@ -66,6 +70,7 @@ public:
     s3d::Quaternion getRotation() const;
     ShapeType getShapeType() const { return m_shapeType; }
     btCollisionShape* getShape() const { return m_shape.get(); }
+    GameObject* getOwner() const { return m_owner; }
 
 private:
     // PhysicsBody は PhysicsWorldで管理する。
@@ -76,5 +81,6 @@ private:
     std::unique_ptr<btMotionState> m_motionState;
 
     PhysicsWorld* m_world = nullptr;
+    GameObject* m_owner = nullptr;
     ShapeType m_shapeType;
 };

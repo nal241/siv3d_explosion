@@ -23,6 +23,8 @@ protected:
     PhysicsWorld m_world;
     HashTable<GameObject::IDType, std::unique_ptr<GameObject>> m_gameObjects;
 
+    RaycastResult m_raycastResult;
+
     // Background color (remove SRGB curve for a linear workflow)
     ColorF m_backgroundColor = ColorF{0.4, 0.6, 0.8}.removeSRGBCurve();
 

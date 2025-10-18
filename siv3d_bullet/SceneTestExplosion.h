@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "SceneGame.h"
 #include "PhysicsWorld.h"
-#include "Player.h"
 // ★ 3D空間のパーティクル構造体
 struct Particle3D
 {

@@ -38,6 +38,10 @@ void SceneGame::update()
     // カメラ更新
     m_camera.update(CameraSpeed);
 
+    // マウスカーソルからレイを発射
+    const Ray ray = m_camera.screenToRay(Cursor::Pos());
+    m_raycastResult = m_world.raycast(ray);
+
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
@@ -91,6 +95,23 @@ void SceneGame::draw() const
         for (auto const& [_, object] : m_gameObjects)
         {
             object->draw();
+        }
+
+        // レイキャストの結果を視覚化
+        if (m_raycastResult.hasHit)
+        {
+            // ヒットしたオブジェクトをワイヤーフレームで描画
+            if (m_raycastResult.hitObject)
+            {
+                m_raycastResult.hitObject->drawWireframe();
+            }
+
+            // ヒットした座標に小さな球を描画
+            Sphere{m_raycastResult.hitPoint, 0.1}.draw(Palette::Red);
+
+            // ヒットした座標の法線を描画
+            const Vec3 normalEnd = m_raycastResult.hitPoint + m_raycastResult.hitNormal;
+            Line3D{m_raycastResult.hitPoint, normalEnd}.draw(Palette::Yellow);
         }
     }
 

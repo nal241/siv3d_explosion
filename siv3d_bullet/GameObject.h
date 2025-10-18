@@ -15,23 +15,24 @@ public:
     // 仮想デストラクタは、ポリモーフィズムを安全に使うために必須
     virtual ~GameObject() = default;
 
-    // 削除禁止
+    // moveのみ
     GameObject(const GameObject&) = delete;
     GameObject& operator=(const GameObject&) = delete;
-    GameObject(GameObject&&) = delete;
-    GameObject& operator=(GameObject&&) = delete;
+    GameObject(GameObject&&) = default;
+    GameObject& operator=(GameObject&&) = default;
 
-    void update();
+    virtual void update() {}
     void draw() const;
+    void drawWireframe() const;
 
     // --- Getters / Setters ---
     IDType getID() const { return m_id; }
 
-    void setPosition(const Vec3& pos) { m_position = pos; }
-    const Vec3& getPosition() const { return m_position; }
+    void setPosition(const Vec3& pos);
+    Vec3 getPosition() const;
 
-    void setRotation(const Quaternion& rot) { m_rotation = rot; }
-    const Quaternion& getRotation() const { return m_rotation; }
+    void setRotation(const Quaternion& rot);
+    Quaternion getRotation() const;
 
     PhysicsBody* getPhysicsBody() { return m_physicsBody.get(); }
 
@@ -42,8 +43,8 @@ public:
     {
         Vec3 size;
         Vec3 position;
-        float mass; // 0.0fで静的オブジェクト
-        ColorF color = Linear::Palette::White;  // デフォルトレンダラー用
+        float mass;                            // 0.0fで静的オブジェクト
+        ColorF color = Linear::Palette::White; // デフォルトレンダラー用
         float restitution = 0.5f;
         float friction = 0.5f;
     };
@@ -53,7 +54,7 @@ public:
         float radius;
         Vec3 position;
         float mass;
-        ColorF color = Linear::Palette::White;  // デフォルトレンダラー用
+        ColorF color = Linear::Palette::White; // デフォルトレンダラー用
         float restitution = 0.5f;
         float friction = 0.5f;
     };
@@ -64,7 +65,7 @@ public:
         float height;
         Vec3 position;
         float mass;
-        ColorF color = Linear::Palette::White;  // デフォルトレンダラー用
+        ColorF color = Linear::Palette::White; // デフォルトレンダラー用
         float restitution = 0.5f;
         float friction = 0.5f;
     };
@@ -73,9 +74,12 @@ public:
     static std::unique_ptr<GameObject> CreateBox(PhysicsWorld& world, const BoxParams& params,
                                                  std::unique_ptr<IRenderer> renderer = nullptr);
     static std::unique_ptr<GameObject> CreateSphere(PhysicsWorld& world, const SphereParams& params,
-                                                     std::unique_ptr<IRenderer> renderer = nullptr);
+                                                    std::unique_ptr<IRenderer> renderer = nullptr);
     static std::unique_ptr<GameObject> CreateCylinder(PhysicsWorld& world, const CylinderParams& params,
-                                                       std::unique_ptr<IRenderer> renderer = nullptr);
+                                                      std::unique_ptr<IRenderer> renderer = nullptr);
+
+    // コンストラクタ（Factoryからの使用を推奨）
+    GameObject(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer);
 
 protected:
     // 子クラスからアクセスできるように protected にする
@@ -84,13 +88,6 @@ protected:
     Quaternion m_rotation = Quaternion::Identity();
 
 private:
-    // privateコンストラクタ（Factoryからのみ使用）
-    GameObject(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer);
-
-    // private setters（Factoryとコンストラクタからのみ使用）
-    void setPhysicsBody(std::unique_ptr<PhysicsBody> physicsBody);
-    void setRenderer(std::unique_ptr<IRenderer> renderer);
-
     static inline IDType s_nextID = 0;
 
     std::unique_ptr<PhysicsBody> m_physicsBody;
