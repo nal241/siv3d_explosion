@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Siv3D.hpp>
 #include <memory>
 
@@ -18,8 +18,8 @@ public:
     // moveのみ
     GameObject(const GameObject&) = delete;
     GameObject& operator=(const GameObject&) = delete;
-    GameObject(GameObject&&) = default;
-    GameObject& operator=(GameObject&&) = default;
+    GameObject(GameObject&&) noexcept;
+    GameObject& operator=(GameObject&&) noexcept;
 
     virtual void update() {}
     void draw() const;
