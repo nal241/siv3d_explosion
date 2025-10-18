@@ -37,7 +37,7 @@ namespace
 
 Explosion::Explosion(const InitData& init) : SceneGame(init)
 {
-    Print << U"Explosion Scene Initialized";
+    s3d::Print << U"Explosion Scene Initialized";
 
     // --- オブジェクト生成 ---
 
@@ -73,9 +73,9 @@ Explosion::Explosion(const InitData& init) : SceneGame(init)
 void Explosion::update()
 {
     ClearPrint();
-    Print << U"Object num: {}"_fmt(m_gameObjects.size());
-    Print << U"Particles: {}"_fmt(m_particles.size());
-    Print << Profiler::FPS();
+    s3d::Print << U"Object num: {}"_fmt(m_gameObjects.size());
+    s3d::Print << U"Particles: {}"_fmt(m_particles.size());
+    s3d::Print << Profiler::FPS();
 
     m_camera.update(CameraSpeed);
 
@@ -166,7 +166,6 @@ void Explosion::draw() const
             }
         }
     }
-
     // [2D rendering]
     {
         Graphics3D::Flush();
@@ -194,8 +193,8 @@ void Explosion::explode(GameObject* bomb, double radius)
     // 爆弾の中心位置を取得
     Vec3 bombCenter = bomb->getPosition();
 
-    Print << U"💥 Explosion at {}"_fmt(bombCenter);
-    Print << U"Radius: {}"_fmt(radius);
+    s3d::Print << U"💥 Explosion at {}"_fmt(bombCenter);
+    s3d::Print << U"Radius: {}"_fmt(radius);
 
     // === パーティクル生成 ===
     for (int32 i = 0; i < ParticleCount; ++i)
@@ -218,7 +217,7 @@ void Explosion::explode(GameObject* bomb, double radius)
         m_particles << particle;
     }
 
-    Print << U"   Created {} particles"_fmt(ParticleCount);
+    s3d::Print << U"   Created {} particles"_fmt(ParticleCount);
 
     // === 物理演算：オブジェクトに力を加える ===
     int32 hitCount = 0;
@@ -246,12 +245,16 @@ void Explosion::explode(GameObject* bomb, double radius)
             double explosionForce = ExplosionBasePower * falloff;
             Vec3 force = normalizedDirection * explosionForce;
 
+            if (auto* rigidBody = body->getBody())
+            {
+                rigidBody->activate(true);
+            }
             body->applyImpulse(force);
             hitCount++;
 
-            Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
+            s3d::Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
         }
     }
 
-    Print << U"   Hit {} objects"_fmt(hitCount);
+    s3d::Print << U"   Hit {} objects"_fmt(hitCount);
 }
