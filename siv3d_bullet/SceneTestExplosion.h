@@ -12,10 +12,10 @@ struct Particle3D
     double life; // 残り寿命（0.0 ～ 1.0）
     bool active;
 };
-class Explosion : public SceneGame
+class SceneTestExplosion : public SceneGame
 {
 public:
-    Explosion(const InitData& init);
+    SceneTestExplosion(const InitData& init);
 
     void update() override;
     void draw() const override;

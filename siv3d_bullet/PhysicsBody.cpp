@@ -64,6 +64,14 @@ float PhysicsBody::getMass() const
     return 1.0f / invMass;
 }
 
+bool PhysicsBody::isStatic() const
+{
+    if (!m_body)
+        return true;
+
+    return m_body->isStaticObject();
+}
+
 s3d::Vec3 PhysicsBody::getPosition() const
 {
     btTransform transform;
