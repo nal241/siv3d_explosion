@@ -1,4 +1,4 @@
-﻿#include "Explosion.h"
+﻿#include "SceneTestExplosion.h"
 #include "Renderers.h"
 
 namespace
@@ -35,7 +35,7 @@ namespace
     constexpr double ExplosionMinDistance = 0.01; // これ以下の距離では力を加えない（ゼロ除算防止）
 } // namespace
 
-Explosion::Explosion(const InitData& init) : SceneGame(init)
+SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
 {
     s3d::Print << U"Explosion Scene Initialized";
 
@@ -70,7 +70,7 @@ Explosion::Explosion(const InitData& init) : SceneGame(init)
     m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
 }
 
-void Explosion::update()
+void SceneTestExplosion::update()
 {
     ClearPrint();
     s3d::Print << U"Object num: {}"_fmt(m_gameObjects.size());
@@ -133,7 +133,7 @@ void Explosion::update()
     }
 }
 
-void Explosion::draw() const
+void SceneTestExplosion::draw() const
 {
     Graphics3D::SetCameraTransform(m_camera);
 
@@ -182,7 +182,7 @@ void Explosion::draw() const
     }
 }
 
-void Explosion::explode(GameObject* bomb, double radius)
+void SceneTestExplosion::explode(GameObject* bomb, double radius)
 {
     if (!bomb)
         return;
@@ -230,7 +230,7 @@ void Explosion::explode(GameObject* bomb, double radius)
 
         // GameObjectからPhysicsBodyを取得
         auto body = object->getPhysicsBody();
-        if (!body || body->getMass() == 0.0f)
+        if (!body || body->isStatic())
             continue;
 
         Vec3 objectPos = object->getPosition();
