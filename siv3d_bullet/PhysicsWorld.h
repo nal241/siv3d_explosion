@@ -4,6 +4,17 @@
 
 #include "PhysicsBody.h"
 
+// 前方宣言
+class GameObject;
+
+struct RaycastResult
+{
+    bool hasHit = false;
+    GameObject* hitObject = nullptr;
+    s3d::Vec3 hitPoint;
+    s3d::Vec3 hitNormal;
+};
+
 class PhysicsWorld
 {
 public:
@@ -16,6 +27,8 @@ public:
 
     // シミュレーションを1ステップ進める
     void step(float deltaTime);
+
+    RaycastResult raycast(const s3d::Ray& ray, double maxDistance = 1000.0);
 
     // オブジェクト追加（unique_ptrで返す）
     std::unique_ptr<PhysicsBody> createBox(const BoxDesc& desc);

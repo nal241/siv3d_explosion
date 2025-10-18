@@ -1,6 +1,7 @@
 ﻿#include "PhysicsBody.h"
 
 #include "BulletSiv3DUtils.h"
+#include "GameObject.h"
 #include "PhysicsWorld.h"
 
 PhysicsBody::PhysicsBody(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass,
@@ -47,6 +48,26 @@ void PhysicsBody::setDamping(float lin_damping, float ang_damping) { m_body->set
 void PhysicsBody::applyForce(const Vec3& force) { m_body->applyCentralForce(ToBtVector3(force)); }
 
 void PhysicsBody::applyImpulse(const Vec3& impulse) { m_body->applyCentralImpulse(ToBtVector3(impulse)); }
+
+void PhysicsBody::setPosition(const s3d::Vec3& pos)
+{
+    btTransform transform = m_body->getWorldTransform();
+    transform.setOrigin(ToBtVector3(pos));
+    m_body->setWorldTransform(transform);
+}
+
+void PhysicsBody::setRotation(const s3d::Quaternion& rot)
+{
+    btTransform transform = m_body->getWorldTransform();
+    transform.setRotation(ToBtQuaternion(rot));
+    m_body->setWorldTransform(transform);
+}
+
+void PhysicsBody::setOwner(GameObject* owner)
+{
+    m_owner = owner;
+    m_body->setUserPointer(m_owner);
+}
 
 // 質量を取得
 float PhysicsBody::getMass() const

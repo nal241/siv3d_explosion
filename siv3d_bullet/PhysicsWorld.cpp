@@ -1,6 +1,7 @@
 ﻿#include "PhysicsWorld.h"
-#include "PhysicsBody.h"
 #include "BulletSiv3dUtils.h"
+#include "GameObject.h"
+#include "PhysicsBody.h"
 
 namespace
 {
@@ -34,6 +35,35 @@ PhysicsWorld::~PhysicsWorld()
 
 // シミュレーションを進める
 void PhysicsWorld::step(float deltaTime) { m_dynamicsWorld->stepSimulation(deltaTime, MaxSubSteps); }
+
+RaycastResult PhysicsWorld::raycast(const s3d::Ray& ray, double maxDistance)
+{
+    const Vec3 origin = ray.getOrigin();
+    const Vec3 direction = ray.getDirection();
+    const btVector3 from = ToBtVector3(origin);
+    const btVector3 to = ToBtVector3(origin + direction * maxDistance);
+
+    btCollisionWorld::ClosestRayResultCallback callback(from, to);
+    m_dynamicsWorld->rayTest(from, to, callback);
+
+    if (callback.hasHit())
+    {
+        RaycastResult result;
+        result.hasHit = true;
+        result.hitPoint = ToSiv3DVec3(callback.m_hitPointWorld);
+        result.hitNormal = ToSiv3DVec3(callback.m_hitNormalWorld);
+
+        const btRigidBody* body = btRigidBody::upcast(callback.m_collisionObject);
+        if (body)
+        {
+            result.hitObject = static_cast<GameObject*>(body->getUserPointer());
+        }
+        return result;
+    }
+
+    return {}; // No hit
+}
+
 // 箱を作成する
 std::unique_ptr<PhysicsBody> PhysicsWorld::createBox(const BoxDesc& desc)
 {
