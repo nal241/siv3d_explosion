@@ -1,4 +1,4 @@
-﻿#include "Renderers.h"
+#include "Renderers.h"
 #include "BulletSiv3DUtils.h"
 
 // --- ModelRenderer ---
@@ -13,7 +13,7 @@ void ModelRenderer::drawWireframe(const Vec3& position, const Quaternion& rotati
 }
 
 // --- PhysicsShapeRenderer ---
-PhysicsShapeRenderer::PhysicsShapeRenderer(PhysicsBody& physicsBody, const ColorF& color)
+PhysicsShapeRenderer::PhysicsShapeRenderer(const PhysicsBody& physicsBody, const ColorF& color)
     : m_physicsBody(physicsBody), m_color(color)
 {
 }
