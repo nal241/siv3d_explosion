@@ -50,7 +50,6 @@ void ExplosionHelper::CreateExplosion(
             .life = s3d::Random(MinParticleLife, MaxParticleLife),
             .active = true
         };
-
         particles << particle;
     }
 
