@@ -40,7 +40,7 @@ void SceneGame::update()
     updatePhysics();
     updateGameObjects();
     updateSpawn();
-    removeOutOfBoundsObjects();
+    removeObjects();
     updateSceneSpecific();
 }
 
@@ -102,26 +102,20 @@ void SceneGame::updateGameObjects()
 
 void SceneGame::updateSpawn()
 {
-    while (m_enemySpawnTimer.sF() >= m_spawnInterval)
+    if (m_enemySpawnTimer.sF() >= m_spawnInterval)
     {
         spawnEnemy();
-        m_enemySpawnTimer.set(SecondsF{m_enemySpawnTimer.sF() - m_spawnInterval});
+        m_enemySpawnTimer.restart();
     }
 }
 
-void SceneGame::removeOutOfBoundsObjects()
+void SceneGame::removeObjects()
 {
     m_gameObjects.remove_if(
         [](const std::shared_ptr<GameObject>& obj)
         {
             // 範囲外チェック
-            if (obj->getPosition().y < -10.0)
-            {
-                return true;
-            }
-
-            // オブジェクト自身の削除判定
-            return obj->shouldBeRemoved();
+            return obj->getPosition().y < -10.0 || obj->shouldBeRemoved();
         });
 }
 

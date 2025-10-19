@@ -9,7 +9,7 @@ class SceneGame : public App::Scene
 public:
     SceneGame(const InitData& init);
 
-    void update() override final;
+    void update() override;
 
     void draw() const override;
 
@@ -23,7 +23,7 @@ protected:
     virtual void updateSceneSpecific() {}
 
     // ヘルパーメソッド
-    void removeOutOfBoundsObjects();
+    void removeObjects();
     void createStage();
     void addGameObject(std::shared_ptr<GameObject> obj);
     void spawnEnemy();
