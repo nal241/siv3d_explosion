@@ -247,10 +247,6 @@ void SceneTestExplosion::explode(const std::shared_ptr<GameObject>& bomb, double
             double explosionForce = ExplosionBasePower * falloff;
             Vec3 force = normalizedDirection * explosionForce;
 
-            if (auto* rigidBody = body->getBody())
-            {
-                rigidBody->activate(true);
-            }
             body->applyImpulse(force);
             hitCount++;
 
