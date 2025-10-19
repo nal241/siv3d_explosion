@@ -17,11 +17,18 @@ protected:
     // ヘルパーメソッド
     void removeOutOfBoundsObjects();
     void createStage();
-    void addGameObject(std::unique_ptr<GameObject> obj);
+    void addGameObject(std::shared_ptr<GameObject> obj);
 
     // メンバ変数
     PhysicsWorld m_world;
-    HashTable<GameObject::IDType, std::unique_ptr<GameObject>> m_gameObjects;
+
+    // GameObjectの所有権を持つコンテナ
+    // NOTE: 子クラスが特定のオブジェクトへの参照を保持する場合は、
+    //       weak_ptrまたは生ポインタを使用するとよい。
+    //       shared_ptrでの二重所有はさける。
+    s3d::Array<std::shared_ptr<GameObject>> m_gameObjects;
+
+    RaycastResult m_raycastResult;
 
     // Background color (remove SRGB curve for a linear workflow)
     ColorF m_backgroundColor = ColorF{0.4, 0.6, 0.8}.removeSRGBCurve();

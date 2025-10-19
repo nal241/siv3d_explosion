@@ -38,11 +38,15 @@ void SceneGame::update()
     // カメラ更新
     m_camera.update(CameraSpeed);
 
+    // マウスカーソルからレイを発射
+    const Ray ray = m_camera.screenToRay(Cursor::Pos());
+    m_raycastResult = m_world.raycast(ray);
+
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
     // GameObjects更新
-    for (auto const& [_, object] : m_gameObjects)
+    for (const auto& object : m_gameObjects)
     {
         object->update();
     }
@@ -62,19 +66,7 @@ void SceneGame::update()
 
 void SceneGame::removeOutOfBoundsObjects()
 {
-    Array<GameObject::IDType> objectsToRemove;
-    for (const auto& [id, object] : m_gameObjects)
-    {
-        if (object->getPosition().y < -10.0)
-        {
-            objectsToRemove.push_back(id);
-        }
-    }
-
-    for (const auto& id : objectsToRemove)
-    {
-        m_gameObjects.erase(id);
-    }
+    m_gameObjects.remove_if([](const std::shared_ptr<GameObject>& obj) { return obj->getPosition().y < -10.0; });
 }
 
 void SceneGame::draw() const
@@ -88,9 +80,26 @@ void SceneGame::draw() const
         // for debug
         // Plane{64}.draw(uvChecker);
 
-        for (auto const& [_, object] : m_gameObjects)
+        for (const auto& object : m_gameObjects)
         {
             object->draw();
+        }
+
+        // レイキャストの結果を視覚化
+        if (m_raycastResult.hasHit)
+        {
+            // ヒットしたオブジェクトをワイヤーフレームで描画
+            if (auto hitObject = m_raycastResult.hitObject.lock())
+            {
+                hitObject->drawWireframe();
+            }
+
+            // ヒットした座標に小さな球を描画
+            Sphere{m_raycastResult.hitPoint, 0.1}.draw(Palette::Red);
+
+            // ヒットした座標の法線を描画
+            const Vec3 normalEnd = m_raycastResult.hitPoint + m_raycastResult.hitNormal;
+            Line3D{m_raycastResult.hitPoint, normalEnd}.draw(Palette::Yellow);
         }
     }
 
@@ -107,7 +116,7 @@ void SceneGame::draw() const
     }
 }
 
-void SceneGame::addGameObject(std::unique_ptr<GameObject> obj) { m_gameObjects.emplace(obj->getID(), std::move(obj)); }
+void SceneGame::addGameObject(std::shared_ptr<GameObject> obj) { m_gameObjects.push_back(std::move(obj)); }
 
 void SceneGame::createStage()
 {
