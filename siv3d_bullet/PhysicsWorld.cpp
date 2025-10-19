@@ -1,4 +1,4 @@
-﻿#include "PhysicsWorld.h"
+#include "PhysicsWorld.h"
 #include "BulletSiv3DUtils.h"
 #include "GameObject.h"
 #include "PhysicsBody.h"

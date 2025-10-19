@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "SceneGame.h"
 #include "PhysicsWorld.h"
 // ★ 3D空間のパーティクル構造体
