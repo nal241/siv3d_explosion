@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "SceneCommon.h"
 #include "PhysicsWorld.h"
 #include "Player.h"

@@ -1,4 +1,4 @@
-﻿#include "Player.h"
+#include "Player.h"
 #include "GameObject.h"
 #include "Renderers.h"
 
