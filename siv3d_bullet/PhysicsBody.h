@@ -1,9 +1,11 @@
 ﻿#pragma once
 #include <Siv3D.hpp>
-#include <btBulletDynamicsCommon.h>
-
 // 前方宣言
+class btCollisionShape;
+class btRigidBody;
+class btMotionState;
 class PhysicsWorld;
+class GameObject;
 
 // 物理形状の生成用Desc
 struct BoxDesc
@@ -52,6 +54,9 @@ public:
     void setRestitution(float restitution);
     void setFriction(float friction);
     void setDamping(float lin_damping, float ang_damping);
+    void setOwner(std::weak_ptr<GameObject> owner);
+    void setPosition(const s3d::Vec3& pos);
+    void setRotation(const s3d::Quaternion& rot);
 
     float getMass() const;
 
@@ -66,6 +71,7 @@ public:
     s3d::Quaternion getRotation() const;
     ShapeType getShapeType() const { return m_shapeType; }
     btCollisionShape* getShape() const { return m_shape.get(); }
+    std::weak_ptr<GameObject> getOwner() const;
 
 private:
     // PhysicsBody は PhysicsWorldで管理する。
@@ -76,5 +82,6 @@ private:
     std::unique_ptr<btMotionState> m_motionState;
 
     PhysicsWorld* m_world = nullptr;
+    std::weak_ptr<GameObject> m_owner;
     ShapeType m_shapeType;
 };
