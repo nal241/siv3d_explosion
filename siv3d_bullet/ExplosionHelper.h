@@ -11,3 +11,17 @@ struct Particle3D
     double life; // 残り寿命
     bool active;
 };
+
+// Forward declaration
+class GameObject;
+
+namespace ExplosionHelper
+{
+    void CreateExplosion(
+        s3d::Array<Particle3D>& particles,
+        const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
+        const s3d::Vec3& center,
+        double radius,
+        const std::shared_ptr<GameObject>& bombObject = nullptr
+    );
+}
