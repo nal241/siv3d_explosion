@@ -16,9 +16,6 @@ protected:
     void updateSceneSpecific() override;
 
 private:
-    // 爆弾オブジェクトへの弱参照
-    std::weak_ptr<GameObject> m_bombObject;
-
     // 3D空間のパーティクルシステム
     s3d::Array<Particle3D> m_particles;
     static constexpr s3d::Vec3 Gravity{0, -5.0, 0};
@@ -30,7 +27,8 @@ private:
     // UI用フォント
     s3d::Font m_titleFont{40, s3d::Typeface::Bold};
     s3d::Font m_instructionFont{24};
+    s3d::Font m_cooldownFont{16, s3d::Typeface::Bold};
 
-    // 爆弾用の爆発コンポーネント
-    ExplosionComponent m_bombExplosionComponent;
+    // 爆弾投擲のクールダウンタイマー
+    s3d::Stopwatch m_throwCooldown;
 };

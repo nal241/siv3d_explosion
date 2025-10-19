@@ -27,16 +27,6 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
     s3d::Print << U"Explosion Scene Initialized";
 
     // --- オブジェクト生成 ---
-    // 爆弾
-    {
-        auto bomb = GameObject::CreateSphere(m_world, GameObject::SphereParams{.radius = BombRadius,
-                                                                               .position = BombPosition,
-                                                                               .mass = BombMass,
-                                                                               .color = ColorF{0.1, 0.1, 0.1},
-                                                                               .restitution = 0.0f});
-        m_bombObject = bomb; // weak_ptrに保存
-        addGameObject(std::move(bomb));
-    }
 
     // テストキューブ
     for (int i = 0; i < 8; i++)
@@ -111,13 +101,6 @@ void SceneTestExplosion::updateSceneSpecific()
     // このシーン固有の表示
     s3d::Print << U"Particles: {} "_fmt(m_particles.size());
 
-    // Pキーで爆発を予約
-    if (KeyP.down())
-    {
-        // 爆発コンポーネントを起動する（遅延0秒、半径5.0）
-        m_bombExplosionComponent.activate(0.0, 5.0);
-    }
-
     // Tキーでゲームシーンへ戻る
     if (KeyT.down())
     {
@@ -125,7 +108,7 @@ void SceneTestExplosion::updateSceneSpecific()
     }
 
     // Bキーで爆弾を投げる
-    if (KeyB.down())
+    if (KeyB.down() && (m_throwCooldown.sF() >= 1.0 || !m_throwCooldown.isStarted()))
     {
         const Vec3 pos = m_camera.getEyePosition() + m_camera.getLookAtVector() * 2.0;
         const float mass = 2.0f;
@@ -157,6 +140,9 @@ void SceneTestExplosion::updateSceneSpecific()
 
             // シーンにオブジェクトを追加
             addGameObject(std::move(newBomb));
+
+            // クールダウンを開始
+            m_throwCooldown.restart();
         }
     }
 }
@@ -202,11 +188,34 @@ void SceneTestExplosion::draw() const
 
         // UI を描画
         {
-            Rect{20, 20, 500, 180}.draw(ColorF{0.0, 0.0, 0.0, 0.7});
+            Rect{20, 20, 500, 150}.draw(ColorF{0.0, 0.0, 0.0, 0.7});
             m_titleFont(U"これは爆発用のシーンです").draw(30, 30, ColorF{1.0, 0.7, 0.0});
             m_instructionFont(U"B：爆弾を投げる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
-            m_instructionFont(U"P：(古い)中央の爆弾を起爆").draw(30, 115, ColorF{0.7});
-            m_instructionFont(U"T：ゲームシーンへ戻る").draw(30, 145, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"T：ゲームシーンへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
+        }
+
+        // クールダウンUIを描画
+        {
+            constexpr double cooldownTime = 1.0;
+            const double progress = Min(m_throwCooldown.sF() / cooldownTime, 1.0);
+
+            // 画面下部中央に配置
+            const RectF bar{ Arg::center(Scene::Center().x, Scene::Height() - 40), 400, 20 };
+
+            // 背景
+            bar.draw(ColorF{ 0.0, 0.6 });
+
+            // 進捗
+            bar.stretched(0, -(bar.w * (1.0 - progress)), 0, 0).draw(ColorF{ 0.9, 0.8, 0.3 });
+
+            // 枠線
+            bar.drawFrame(1.5, ColorF{ 0.1 });
+
+            // テキスト（クールダウン完了時のみ表示）
+            if (progress >= 1.0)
+            {
+                m_cooldownFont(U"BOMB READY").drawAt(bar.center(), ColorF{0.0});
+            }
         }
     }
 }
