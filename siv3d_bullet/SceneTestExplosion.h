@@ -1,16 +1,9 @@
 #pragma once
 #include "SceneGame.h"
+#include "GameObject.h"
 #include "PhysicsWorld.h"
-// ★ 3D空間のパーティクル構造体
-struct Particle3D
-{
-    Vec3 position;
-    Vec3 velocity;
-    ColorF color;
-    double size;
-    double life; // 残り寿命（0.0 ～ 1.0）
-    bool active;
-};
+#include "ExplosionHelper.h" // ★ Particle3D構造体をインクルード
+
 class SceneTestExplosion : public SceneGame
 {
 public:
