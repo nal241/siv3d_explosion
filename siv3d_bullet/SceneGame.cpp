@@ -46,7 +46,7 @@ void SceneGame::update()
     m_player.handleInput(m_world, m_gameObjects);
 
     // GameObjects更新
-    for (auto const& [_, object] : m_gameObjects)
+    for (const auto& object : m_gameObjects)
     {
         object->update();
     }
@@ -66,19 +66,7 @@ void SceneGame::update()
 
 void SceneGame::removeOutOfBoundsObjects()
 {
-    Array<GameObject::IDType> objectsToRemove;
-    for (const auto& [id, object] : m_gameObjects)
-    {
-        if (object->getPosition().y < -10.0)
-        {
-            objectsToRemove.push_back(id);
-        }
-    }
-
-    for (const auto& id : objectsToRemove)
-    {
-        m_gameObjects.erase(id);
-    }
+    m_gameObjects.remove_if([](const std::shared_ptr<GameObject>& obj) { return obj->getPosition().y < -10.0; });
 }
 
 void SceneGame::draw() const
@@ -92,7 +80,7 @@ void SceneGame::draw() const
         // for debug
         // Plane{64}.draw(uvChecker);
 
-        for (auto const& [_, object] : m_gameObjects)
+        for (const auto& object : m_gameObjects)
         {
             object->draw();
         }
@@ -128,7 +116,7 @@ void SceneGame::draw() const
     }
 }
 
-void SceneGame::addGameObject(std::unique_ptr<GameObject> obj) { m_gameObjects.emplace(obj->getID(), std::move(obj)); }
+void SceneGame::addGameObject(std::shared_ptr<GameObject> obj) { m_gameObjects.push_back(std::move(obj)); }
 
 void SceneGame::createStage()
 {

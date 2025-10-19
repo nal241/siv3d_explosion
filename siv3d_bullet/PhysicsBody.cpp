@@ -63,10 +63,10 @@ void PhysicsBody::setRotation(const s3d::Quaternion& rot)
     m_body->setWorldTransform(transform);
 }
 
-void PhysicsBody::setOwner(GameObject* owner)
+void PhysicsBody::setOwner(std::weak_ptr<GameObject> owner)
 {
-    m_owner = owner;
-    m_body->setUserPointer(m_owner);
+    m_owner = std::move(owner);
+    m_body->setUserPointer(this);
 }
 
 // 質量を取得
@@ -106,3 +106,5 @@ s3d::Quaternion PhysicsBody::getRotation() const
     m_body->getMotionState()->getWorldTransform(transform);
     return ToSiv3DQuaternion(transform.getRotation());
 }
+
+std::shared_ptr<GameObject> PhysicsBody::getOwner() const { return m_owner.lock(); }
