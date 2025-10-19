@@ -1,4 +1,5 @@
 #include "SceneTestExplosion.h"
+#include "SceneCommon.h"
 #include "Renderers.h"
 #include "Enemy.h"
 

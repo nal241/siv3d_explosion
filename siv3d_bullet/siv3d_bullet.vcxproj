@@ -73,7 +73,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <DisableSpecificWarnings>26451;26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:__cplusplus /source-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <BuildStlModules>false</BuildStlModules>
@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="ExplosionHelper.cpp" />
     <ClCompile Include="SceneTestExplosion.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -344,6 +345,7 @@
     <ClInclude Include="BulletSiv3DUtils.h" />
     <ClInclude Include="CollisionGroups.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="ExplosionHelper.h" />
     <ClInclude Include="SceneTestExplosion.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="PhysicsBody.h" />
