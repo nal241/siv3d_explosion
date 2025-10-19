@@ -93,7 +93,7 @@ std::shared_ptr<GameObject> GameObject::CreateBox(PhysicsWorld& world, const Box
 
     // GameObjectを生成
     auto gameObject = std::make_shared<GameObject>(std::move(body), std::move(renderer));
-    gameObject->getPhysicsBody()->setOwner(gameObject);
+    gameObject->getPhysicsBody()->setOwner(gameObject->weak_from_this());
     return gameObject;
 }
 
@@ -112,7 +112,7 @@ std::shared_ptr<GameObject> GameObject::CreateSphere(PhysicsWorld& world, const 
 
     // GameObjectを生成
     auto gameObject = std::make_shared<GameObject>(std::move(body), std::move(renderer));
-    gameObject->getPhysicsBody()->setOwner(gameObject);
+    gameObject->getPhysicsBody()->setOwner(gameObject->weak_from_this());
     return gameObject;
 }
 
@@ -131,6 +131,6 @@ std::shared_ptr<GameObject> GameObject::CreateCylinder(PhysicsWorld& world, cons
 
     // GameObjectを生成
     auto gameObject = std::make_shared<GameObject>(std::move(body), std::move(renderer));
-    gameObject->getPhysicsBody()->setOwner(gameObject);
+    gameObject->getPhysicsBody()->setOwner(gameObject->weak_from_this());
     return gameObject;
 }
