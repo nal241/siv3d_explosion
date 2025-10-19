@@ -3,6 +3,7 @@
 #include "Renderers.h"
 #include "Enemy.h"
 #include "ExplosionHelper.h"
+#include "Bomb.h"
 
 namespace
 {
@@ -108,13 +109,49 @@ void SceneTestExplosion::updateSceneSpecific()
     if (KeyP.down())
     {
         // 爆発コンポーネントを起動する（遅延0秒、半径5.0）
-        m_bombExplosionComponent.activate(3.0, 5.0);
+        m_bombExplosionComponent.activate(0.0, 5.0);
     }
 
     // Tキーでゲームシーンへ戻る
     if (KeyT.down())
     {
         changeScene(State::Game, 1.0s);
+    }
+
+    // Bキーで爆弾を投げる
+    if (KeyB.down())
+    {
+        const Vec3 pos = m_camera.getEyePosition() + m_camera.getLookAtVector() * 2.0;
+        const float mass = 2.0f;
+        const float radius = 0.4f;
+
+        // 爆弾のパラメータを設定
+        GameObject::SphereParams params{
+            .radius = radius,
+            .position = pos,
+            .mass = mass,
+            .color = ColorF{1.0, 0.5, 0.2},
+            .restitution = 0.4f,
+            .friction = 0.8f,
+        };
+
+        // Bombファクトリを使ってオブジェクトを生成
+        if (auto newBomb = Bomb::Create(m_world, params))
+        {
+            // 3秒後に爆発するようタイマーをセット
+            if (auto explosion = newBomb->getComponent<ExplosionComponent>())
+            {
+                explosion->activate(3.0, 5.0);
+            }
+
+            // 射出する力を加える
+            const float impulseStrength = 25.0f;
+            const Vec3 impulse = m_camera.getLookAtVector() * impulseStrength;
+            newBomb->getPhysicsBody()->applyImpulse(impulse);
+
+            // シーンにオブジェクトを追加
+            addGameObject(std::move(newBomb));
+        }
     }
 }
 
@@ -159,10 +196,11 @@ void SceneTestExplosion::draw() const
 
         // UI を描画
         {
-            Rect{20, 20, 500, 150}.draw(ColorF{0.0, 0.0, 0.0, 0.7});
+            Rect{20, 20, 500, 180}.draw(ColorF{0.0, 0.0, 0.0, 0.7});
             m_titleFont(U"これは爆発用のシーンです").draw(30, 30, ColorF{1.0, 0.7, 0.0});
-            m_instructionFont(U"P：爆発させる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
-            m_instructionFont(U"T：ゲームシーンへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"B：爆弾を投げる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"P：(古い)中央の爆弾を起爆").draw(30, 115, ColorF{0.7});
+            m_instructionFont(U"T：ゲームシーンへ戻る").draw(30, 145, ColorF{1.0, 1.0, 1.0});
         }
     }
 }
