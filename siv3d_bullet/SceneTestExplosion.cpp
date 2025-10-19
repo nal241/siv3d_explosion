@@ -7,6 +7,33 @@
 
 namespace
 {
+    // 弾道計算
+    // http://www.sharp.co.jp/pc/scidep/blog/2021-08-27/
+    // https://qiita.com/nofunc/items/a193873325966a892755
+    std::optional<Vec3> CalculateLaunchVelocity(const Vec3& start, const Vec3& target, const double launchAngleDeg,
+                                                const double gravity)
+    {
+        const Vec3 diff = target - start;
+        const Vec3 diffXZ = {diff.x, 0.0, diff.z};
+        const double distance = diffXZ.length();
+
+        if (distance == 0.0) return std::nullopt;
+
+        const double launchAngleRad = ToRadians(launchAngleDeg);
+        const double cosAngle = Cos(launchAngleRad);
+        const double tanAngle = Tan(launchAngleRad);
+
+        // 初速を計算
+        const double v_pow2 = (gravity * distance * distance) / (2.0 * cosAngle * cosAngle * (distance * tanAngle - diff.y));
+
+        // 負の平方根は物理的に到達不可能
+        if (v_pow2 <= 0.0) return std::nullopt;
+
+        const double v = Sqrt(v_pow2);
+
+        return diffXZ.normalized() * v * cosAngle + Vec3{0, v * Sin(launchAngleRad), 0};
+    }
+
     // === シーン設定 ===
     constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
@@ -47,6 +74,10 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
 
 void SceneTestExplosion::updateSceneSpecific()
 {
+    // マウスカーソルから静的オブジェクトへのレイキャスト
+    const Ray ray = m_camera.screenToRay(Cursor::Pos());
+    m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
+
     // --- 爆発の確認 ---
     for (auto& object : m_gameObjects)
     {
@@ -110,39 +141,50 @@ void SceneTestExplosion::updateSceneSpecific()
     // Bキーで爆弾を投げる
     if (KeyB.down() && (m_throwCooldown.sF() >= 1.0 || !m_throwCooldown.isStarted()))
     {
-        const Vec3 pos = m_camera.getEyePosition() + m_camera.getLookAtVector() * 2.0;
-        const float mass = 2.0f;
-        const float radius = 0.4f;
-
-        // 爆弾のパラメータを設定
-        GameObject::SphereParams params{
-            .radius = radius,
-            .position = pos,
-            .mass = mass,
-            .color = ColorF{1.0, 0.5, 0.2},
-            .restitution = 0.4f,
-            .friction = 0.8f,
-        };
-
-        // Bombファクトリを使ってオブジェクトを生成
-        if (auto newBomb = Bomb::Create(m_world, params))
+        // マウスカーソル位置にレイがヒットしていたら
+        if (m_raycastResult.hasHit)
         {
-            // 3秒後に爆発するようタイマーをセット
-            if (auto explosion = newBomb->getComponent<ExplosionComponent>())
+            const Vec3 startPos = m_camera.getEyePosition();
+            const Vec3 targetPos = m_raycastResult.hitPoint;
+            constexpr float launchAngle = 35.0f; // 角度を少し下げる
+            constexpr float gravity = 9.8f;   // 物理ワールドの重力に合わせる
+
+            // 投擲に必要な初速を計算
+            if (auto launchVelocity = CalculateLaunchVelocity(startPos, targetPos, launchAngle, gravity))
             {
-                explosion->activate(3.0, 5.0);
+                const float mass = 2.0f;
+                const float radius = 0.4f;
+
+                // 爆弾のパラメータを設定（発射位置はカメラの位置）
+                GameObject::SphereParams params{
+                    .radius = radius,
+                    .position = startPos,
+                    .mass = mass,
+                    .color = ColorF{1.0, 0.5, 0.2},
+                    .restitution = 0.4f,
+                    .friction = 0.8f,
+                };
+
+                // Bombファクトリを使ってオブジェクトを生成
+                if (auto newBomb = Bomb::Create(m_world, params))
+                {
+                    // 3秒後に爆発するようタイマーをセット
+                    if (auto explosion = newBomb->getComponent<ExplosionComponent>())
+                    {
+                        explosion->activate(3.0, 5.0);
+                    }
+
+                    // 計算された初速からインパルスを適用
+                    const Vec3 impulse = *launchVelocity * mass;
+                    newBomb->getPhysicsBody()->applyImpulse(impulse);
+
+                    // シーンにオブジェクトを追加
+                    addGameObject(std::move(newBomb));
+
+                    // クールダウンを開始
+                    m_throwCooldown.restart();
+                }
             }
-
-            // 射出する力を加える
-            const float impulseStrength = 25.0f;
-            const Vec3 impulse = m_camera.getLookAtVector() * impulseStrength;
-            newBomb->getPhysicsBody()->applyImpulse(impulse);
-
-            // シーンにオブジェクトを追加
-            addGameObject(std::move(newBomb));
-
-            // クールダウンを開始
-            m_throwCooldown.restart();
         }
     }
 }
@@ -159,6 +201,16 @@ void SceneTestExplosion::draw() const
         for (const auto& object : m_gameObjects)
         {
             object->draw();
+        }
+
+        // 狙っている場所を可視化
+        if (m_raycastResult.hasHit)
+        {
+            // ヒットした座標に小さな球を描画
+            Sphere{m_raycastResult.hitPoint, 0.1}.draw(Palette::Red);
+
+            // 地面にターゲットマーカーを描画
+            Cylinder{m_raycastResult.hitPoint, 0.5, 0.05}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
         }
 
         // 3D空間にパーティクルを描画（加算ブレンドで光らせる）
