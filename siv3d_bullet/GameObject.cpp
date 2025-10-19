@@ -81,7 +81,17 @@ void GameObject::setRotation(const Quaternion& rot)
 std::shared_ptr<GameObject> GameObject::CreateBox(PhysicsWorld& world, const BoxParams& params,
                                                   std::unique_ptr<IRenderer> renderer)
 {
-    auto body = world.createBox(BoxDesc{params.size, params.position, params.mass});
+    CollisionGroup group = params.group;
+    CollisionMask mask = params.mask;
+
+    // 質量が0の場合は静的オブジェクトとして扱う
+    if (params.mass == 0.0f)
+    {
+        group = GROUP_STATIC;
+        mask = MASK_ALL;
+    }
+
+    auto body = world.createBox(BoxDesc{params.size, params.position, params.mass}, group, mask);
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
 
@@ -100,7 +110,17 @@ std::shared_ptr<GameObject> GameObject::CreateBox(PhysicsWorld& world, const Box
 std::shared_ptr<GameObject> GameObject::CreateSphere(PhysicsWorld& world, const SphereParams& params,
                                                      std::unique_ptr<IRenderer> renderer)
 {
-    auto body = world.createSphere(SphereDesc{params.radius, params.position, params.mass});
+    CollisionGroup group = params.group;
+    CollisionMask mask = params.mask;
+
+    // 質量が0の場合は静的オブジェクトとして扱う
+    if (params.mass == 0.0f)
+    {
+        group = GROUP_STATIC;
+        mask = MASK_ALL;
+    }
+
+    auto body = world.createSphere(SphereDesc{params.radius, params.position, params.mass}, group, mask);
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
 
@@ -119,7 +139,18 @@ std::shared_ptr<GameObject> GameObject::CreateSphere(PhysicsWorld& world, const 
 std::shared_ptr<GameObject> GameObject::CreateCylinder(PhysicsWorld& world, const CylinderParams& params,
                                                        std::unique_ptr<IRenderer> renderer)
 {
-    auto body = world.createCylinder(CylinderDesc{params.radius, params.height, params.position, params.mass});
+    CollisionGroup group = params.group;
+    CollisionMask mask = params.mask;
+
+    // 質量が0の場合は静的オブジェクトとして扱う
+    if (params.mass == 0.0f)
+    {
+        group = GROUP_STATIC;
+        mask = MASK_ALL;
+    }
+
+    auto body =
+        world.createCylinder(CylinderDesc{params.radius, params.height, params.position, params.mass}, group, mask);
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
 

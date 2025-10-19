@@ -67,7 +67,8 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world, s3d::Array<std::
                                                                            .position = initialPos,
                                                                            .mass = DynamicBoxMass,
                                                                            .color = s3d::Linear::Palette::Gainsboro,
-                                                                           .restitution = DynamicBoxRestitution});
+                                                                           .restitution = DynamicBoxRestitution,
+                                                                           .group = GROUP_ATTRACTABLE});
         break;
     case ObjectType::Sphere:
         newGameObject =
@@ -75,7 +76,8 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world, s3d::Array<std::
                                                                      .position = initialPos,
                                                                      .mass = DynamicSphereMass,
                                                                      .color = s3d::Linear::Palette::Lightsteelblue,
-                                                                     .restitution = DynamicSphereRestitution});
+                                                                     .restitution = DynamicSphereRestitution,
+                                                                     .group = GROUP_ATTRACTABLE});
         break;
     case ObjectType::Coin:
         newGameObject = GameObject::CreateCylinder(world,
@@ -84,7 +86,8 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world, s3d::Array<std::
                                                                               .position = initialPos,
                                                                               .mass = CoinMass,
                                                                               .restitution = CoinRestitution,
-                                                                              .friction = CoinFriction},
+                                                                              .friction = CoinFriction,
+                                                                              .group = GROUP_ATTRACTABLE},
                                                    std::make_unique<ModelRenderer>(m_coinModel));
         // 追加設定: damping
         newGameObject->getPhysicsBody()->setDamping(CoinLinearDamping, CoinAngularDamping);

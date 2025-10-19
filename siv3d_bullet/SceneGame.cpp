@@ -38,9 +38,32 @@ void SceneGame::update()
     // カメラ更新
     m_camera.update(CameraSpeed);
 
-    // マウスカーソルからレイを発射
+    // マウスカーソルから静的オブジェクトへのレイキャスト
     const Ray ray = m_camera.screenToRay(Cursor::Pos());
-    m_raycastResult = m_world.raycast(ray);
+    m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
+
+    // 吸引処理
+    if (MouseL.pressed() && m_raycastResult.hasHit)
+    {
+        const Vec3& hitPoint = m_raycastResult.hitPoint;
+        constexpr double AttractionForce = 5.0; // 吸引力の定数
+
+        for (const auto& object : m_gameObjects)
+        {
+            if (auto body = object->getPhysicsBody(); body && body->getGroup() == GROUP_ATTRACTABLE)
+            {
+                const Vec3 objPos = object->getPosition();
+                const Vec3 direction = (hitPoint - objPos);
+                const double distanceSq = direction.lengthSq();
+
+                if (distanceSq > 0.01) // 非常に近い場合は力を加えない
+                {
+                    const Vec3 force = direction.normalized() * AttractionForce / Max(distanceSq, 1.0);
+                    body->applyForce(force);
+                }
+            }
+        }
+    }
 
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);

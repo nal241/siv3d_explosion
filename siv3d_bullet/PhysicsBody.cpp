@@ -6,9 +6,9 @@
 #include "GameObject.h"
 #include "PhysicsWorld.h"
 
-PhysicsBody::PhysicsBody(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass,
-                         const Vec3& position)
-    : m_world(world), m_shape(std::move(shape)), m_shapeType(type)
+PhysicsBody::PhysicsBody(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type,
+                         const Vec3& position, float mass, CollisionGroup group, CollisionMask mask)
+    : m_world(world), m_shape(std::move(shape)), m_shapeType(type), m_group(group), m_mask(mask)
 {
     btTransform transform;
     transform.setIdentity();
