@@ -109,4 +109,4 @@ s3d::Quaternion PhysicsBody::getRotation() const
     return ToSiv3DQuaternion(transform.getRotation());
 }
 
-std::shared_ptr<GameObject> PhysicsBody::getOwner() const { return m_owner.lock(); }
+std::weak_ptr<GameObject> PhysicsBody::getOwner() const { return m_owner; }

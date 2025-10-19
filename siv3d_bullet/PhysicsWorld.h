@@ -10,9 +10,8 @@ class GameObject;
 struct RaycastResult
 {
     bool hasHit = false;
-    // NOTE: hitObjectは非所有ポインタ。レイキャスト結果を長期保存する場合は、
-    //       weak_ptrにコピーするか、IDを保存すること。
-    GameObject* hitObject = nullptr;
+    // NOTE: hitObjectはweak_ptrで保持。使用時にlock()して有効性を確認すること。
+    std::weak_ptr<GameObject> hitObject;
     s3d::Vec3 hitPoint;
     s3d::Vec3 hitNormal;
 };

@@ -89,9 +89,9 @@ void SceneGame::draw() const
         if (m_raycastResult.hasHit)
         {
             // ヒットしたオブジェクトをワイヤーフレームで描画
-            if (m_raycastResult.hitObject)
+            if (auto hitObject = m_raycastResult.hitObject.lock())
             {
-                m_raycastResult.hitObject->drawWireframe();
+                hitObject->drawWireframe();
             }
 
             // ヒットした座標に小さな球を描画

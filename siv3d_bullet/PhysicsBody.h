@@ -71,7 +71,7 @@ public:
     s3d::Quaternion getRotation() const;
     ShapeType getShapeType() const { return m_shapeType; }
     btCollisionShape* getShape() const { return m_shape.get(); }
-    std::shared_ptr<GameObject> getOwner() const;
+    std::weak_ptr<GameObject> getOwner() const;
 
 private:
     // PhysicsBody は PhysicsWorldで管理する。
