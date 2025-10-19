@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include <Siv3D.hpp>
+#include <btBulletDynamicsCommon.h>
+#include "CollisionGroups.h"
+
 // 前方宣言
-class btCollisionShape;
-class btRigidBody;
-class btMotionState;
 class PhysicsWorld;
 class GameObject;
 
@@ -48,8 +48,8 @@ public:
     PhysicsBody(PhysicsBody&&) = default;
     PhysicsBody& operator=(PhysicsBody&&) = default;
 
-    PhysicsBody(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass,
-                const s3d::Vec3& position);
+    PhysicsBody(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, const s3d::Vec3& position,
+                float mass, CollisionGroup group, CollisionMask mask);
 
     void setRestitution(float restitution);
     void setFriction(float friction);
@@ -72,6 +72,8 @@ public:
     ShapeType getShapeType() const { return m_shapeType; }
     btCollisionShape* getShape() const { return m_shape.get(); }
     std::weak_ptr<GameObject> getOwner() const;
+    CollisionGroup getGroup() const { return m_group; }
+    CollisionMask getMask() const { return m_mask; }
 
 private:
     // PhysicsBody は PhysicsWorldで管理する。
@@ -84,4 +86,6 @@ private:
     PhysicsWorld* m_world = nullptr;
     std::weak_ptr<GameObject> m_owner;
     ShapeType m_shapeType;
+    CollisionGroup m_group;
+    CollisionMask m_mask;
 };

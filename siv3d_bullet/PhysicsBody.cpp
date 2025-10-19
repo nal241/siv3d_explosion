@@ -6,9 +6,9 @@
 #include "GameObject.h"
 #include "PhysicsWorld.h"
 
-PhysicsBody::PhysicsBody(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, float mass,
-                         const Vec3& position)
-    : m_world(world), m_shape(std::move(shape)), m_shapeType(type)
+PhysicsBody::PhysicsBody(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type,
+                         const Vec3& position, float mass, CollisionGroup group, CollisionMask mask)
+    : m_world(world), m_shape(std::move(shape)), m_shapeType(type), m_group(group), m_mask(mask)
 {
     btTransform transform;
     transform.setIdentity();
@@ -47,9 +47,23 @@ void PhysicsBody::setRestitution(float restitution) { m_body->setRestitution(res
 void PhysicsBody::setFriction(float friction) { m_body->setFriction(friction); }
 void PhysicsBody::setDamping(float lin_damping, float ang_damping) { m_body->setDamping(lin_damping, ang_damping); }
 
-void PhysicsBody::applyForce(const Vec3& force) { m_body->applyCentralForce(ToBtVector3(force)); }
+void PhysicsBody::applyForce(const Vec3& force)
+{
+    if (m_body)
+    {
+        m_body->activate(true);
+        m_body->applyCentralForce(ToBtVector3(force));
+    }
+}
 
-void PhysicsBody::applyImpulse(const Vec3& impulse) { m_body->applyCentralImpulse(ToBtVector3(impulse)); }
+void PhysicsBody::applyImpulse(const Vec3& impulse)
+{
+    if (m_body)
+    {
+        m_body->activate(true);
+        m_body->applyCentralImpulse(ToBtVector3(impulse));
+    }
+}
 
 void PhysicsBody::setPosition(const s3d::Vec3& pos)
 {

@@ -1,5 +1,5 @@
 ﻿#include "PhysicsWorld.h"
-#include "BulletSiv3dUtils.h"
+#include "BulletSiv3DUtils.h"
 #include "GameObject.h"
 #include "PhysicsBody.h"
 
@@ -36,7 +36,7 @@ PhysicsWorld::~PhysicsWorld()
 // シミュレーションを進める
 void PhysicsWorld::step(float deltaTime) { m_dynamicsWorld->stepSimulation(deltaTime, MaxSubSteps); }
 
-RaycastResult PhysicsWorld::raycast(const s3d::Ray& ray, double maxDistance)
+RaycastResult PhysicsWorld::raycast(const s3d::Ray& ray, CollisionMask mask, double maxDistance)
 {
     const Vec3 origin = ray.getOrigin();
     const Vec3 direction = ray.getDirection();
@@ -44,6 +44,7 @@ RaycastResult PhysicsWorld::raycast(const s3d::Ray& ray, double maxDistance)
     const btVector3 to = ToBtVector3(origin + direction * maxDistance);
 
     btCollisionWorld::ClosestRayResultCallback callback(from, to);
+    callback.m_collisionFilterMask = mask;
     m_dynamicsWorld->rayTest(from, to, callback);
 
     if (callback.hasHit())
@@ -67,30 +68,34 @@ RaycastResult PhysicsWorld::raycast(const s3d::Ray& ray, double maxDistance)
 }
 
 // 箱を作成する
-std::unique_ptr<PhysicsBody> PhysicsWorld::createBox(const BoxDesc& desc)
+std::unique_ptr<PhysicsBody> PhysicsWorld::createBox(const BoxDesc& desc, CollisionGroup group, CollisionMask mask)
 {
     auto shape = std::make_unique<btBoxShape>(ToBtVector3(desc.size * 0.5));
-    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Box, desc.mass, desc.position);
+    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Box, desc.position, desc.mass, group, mask);
 }
 
 // 球を作成する
-std::unique_ptr<PhysicsBody> PhysicsWorld::createSphere(const SphereDesc& desc)
+std::unique_ptr<PhysicsBody> PhysicsWorld::createSphere(const SphereDesc& desc, CollisionGroup group,
+                                                        CollisionMask mask)
 {
     auto shape = std::make_unique<btSphereShape>(desc.radius);
-    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Sphere, desc.mass, desc.position);
+    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Sphere, desc.position, desc.mass, group,
+                                         mask);
 }
 
 // 円柱を作成する
-std::unique_ptr<PhysicsBody> PhysicsWorld::createCylinder(const CylinderDesc& desc)
+std::unique_ptr<PhysicsBody> PhysicsWorld::createCylinder(const CylinderDesc& desc, CollisionGroup group,
+                                                          CollisionMask mask)
 {
     auto shape = std::make_unique<btCylinderShape>(btVector3{desc.radius, desc.height * 0.5, desc.radius});
-    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Cylinder, desc.mass, desc.position);
+    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Cylinder, desc.position, desc.mass, group,
+                                         mask);
 }
 
 void PhysicsWorld::registerObject(PhysicsBody* obj)
 {
     m_registeredObjects.insert(obj);
-    m_dynamicsWorld->addRigidBody(obj->m_body.get());
+    m_dynamicsWorld->addRigidBody(obj->getBody(), obj->getGroup(), obj->getMask());
 }
 
 void PhysicsWorld::unregisterObject(PhysicsBody* obj)
@@ -99,7 +104,7 @@ void PhysicsWorld::unregisterObject(PhysicsBody* obj)
     {
         if (m_dynamicsWorld)
         {
-            m_dynamicsWorld->removeRigidBody(obj->m_body.get());
+            m_dynamicsWorld->removeRigidBody(obj->getBody());
         }
     }
 }
