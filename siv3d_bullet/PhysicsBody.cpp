@@ -47,9 +47,23 @@ void PhysicsBody::setRestitution(float restitution) { m_body->setRestitution(res
 void PhysicsBody::setFriction(float friction) { m_body->setFriction(friction); }
 void PhysicsBody::setDamping(float lin_damping, float ang_damping) { m_body->setDamping(lin_damping, ang_damping); }
 
-void PhysicsBody::applyForce(const Vec3& force) { m_body->applyCentralForce(ToBtVector3(force)); }
+void PhysicsBody::applyForce(const Vec3& force)
+{
+    if (m_body)
+    {
+        m_body->activate(true);
+        m_body->applyCentralForce(ToBtVector3(force));
+    }
+}
 
-void PhysicsBody::applyImpulse(const Vec3& impulse) { m_body->applyCentralImpulse(ToBtVector3(impulse)); }
+void PhysicsBody::applyImpulse(const Vec3& impulse)
+{
+    if (m_body)
+    {
+        m_body->activate(true);
+        m_body->applyCentralImpulse(ToBtVector3(impulse));
+    }
+}
 
 void PhysicsBody::setPosition(const s3d::Vec3& pos)
 {

@@ -15,6 +15,10 @@ namespace
 
     // ステージオブジェクトのプリセット
     constexpr float StaticBoxRestitution = 1.0f;
+
+    // 吸引機能の設定
+    constexpr double AttractionForce = 5.0;  // 吸引力の強さ（一定）
+    constexpr double AttractionRadius = 2.0; // 吸引力の有効半径
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -46,7 +50,6 @@ void SceneGame::update()
     if (MouseL.pressed() && m_raycastResult.hasHit)
     {
         const Vec3& hitPoint = m_raycastResult.hitPoint;
-        constexpr double AttractionForce = 5.0; // 吸引力の定数
 
         for (const auto& object : m_gameObjects)
         {
@@ -56,9 +59,10 @@ void SceneGame::update()
                 const Vec3 direction = (hitPoint - objPos);
                 const double distanceSq = direction.lengthSq();
 
-                if (distanceSq > 0.01) // 非常に近い場合は力を加えない
+                // 有効範囲内かチェック
+                if (distanceSq < (AttractionRadius * AttractionRadius))
                 {
-                    const Vec3 force = direction.normalized() * AttractionForce / Max(distanceSq, 1.0);
+                    const Vec3 force = direction.normalized() * AttractionForce;
                     body->applyForce(force);
                 }
             }
@@ -106,6 +110,15 @@ void SceneGame::draw() const
         for (const auto& object : m_gameObjects)
         {
             object->draw();
+        }
+
+        // --- デバッグ描画 ---
+
+        // 吸引範囲の可視化
+        if (MouseL.pressed() && m_raycastResult.hasHit)
+        {
+            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
+            Sphere{m_raycastResult.hitPoint, AttractionRadius}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
         }
 
         // レイキャストの結果を視覚化
