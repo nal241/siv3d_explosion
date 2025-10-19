@@ -2,8 +2,9 @@
 #include <Siv3D.hpp>
 #include <memory>
 
-#include "Renderers.h"
+#include "CollisionGroups.h"
 #include "PhysicsBody.h"
+#include "Renderers.h"
 
 class PhysicsWorld;
 
@@ -55,6 +56,8 @@ public:
         ColorF color = Linear::Palette::White; // デフォルトレンダラー用
         float restitution = 0.5f;
         float friction = 0.5f;
+        CollisionGroup group = GROUP_DEFAULT;
+        CollisionMask mask = MASK_ALL;
     };
 
     struct SphereParams
@@ -65,6 +68,8 @@ public:
         ColorF color = Linear::Palette::White; // デフォルトレンダラー用
         float restitution = 0.5f;
         float friction = 0.5f;
+        CollisionGroup group = GROUP_DEFAULT;
+        CollisionMask mask = MASK_ALL;
     };
 
     struct CylinderParams
@@ -76,6 +81,8 @@ public:
         ColorF color = Linear::Palette::White; // デフォルトレンダラー用
         float restitution = 0.5f;
         float friction = 0.5f;
+        CollisionGroup group = GROUP_DEFAULT;
+        CollisionMask mask = MASK_ALL;
     };
 
     // 汎用Factory Methods（レンダラーはオプショナル）
