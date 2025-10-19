@@ -1,6 +1,9 @@
 #pragma once
 #include <Siv3D.hpp>
+#include <vector>
 #include <memory>
+#include <algorithm>
+#include "IComponent.h"
 
 #include "CollisionGroups.h"
 #include "PhysicsBody.h"
@@ -30,8 +33,41 @@ public:
     GameObject(GameObject&&) = default;
     GameObject& operator=(GameObject&&) = default;
 
-    virtual void update() {}
-    virtual bool shouldBeRemoved() const { return false; }
+    // --- Component Management ---
+    template <typename T, typename... Args>
+    std::shared_ptr<T> addComponent(Args&&... args)
+    {
+        static_assert(std::is_base_of_v<IComponent, T>, "T must be a descendant of IComponent");
+        auto newComponent = std::make_shared<T>(std::forward<Args>(args)...);
+        newComponent->init(*this);
+        m_components.push_back(newComponent);
+        return newComponent;
+    }
+
+    template <typename T>
+    std::shared_ptr<T> getComponent()
+    {
+        for (const auto& component : m_components)
+        {
+            if (auto casted = std::dynamic_pointer_cast<T>(component))
+            {
+                return casted;
+            }
+        }
+        return nullptr;
+    }
+
+    // --- Core Methods ---
+    virtual void update()
+    {
+        for (const auto& component : m_components)
+        {
+            component->update();
+        }
+    }
+    virtual bool shouldBeRemoved() const { return m_shouldBeRemoved; }
+    void destroy() { m_shouldBeRemoved = true; }
+
     void draw() const;
     void drawWireframe() const;
 
@@ -102,10 +138,12 @@ protected:
     IDType m_id;
     Vec3 m_position{0, 0, 0};
     Quaternion m_rotation = Quaternion::Identity();
+    bool m_shouldBeRemoved = false;
 
 private:
     static inline IDType s_nextID = 0;
 
     std::unique_ptr<PhysicsBody> m_physicsBody;
     std::unique_ptr<IRenderer> m_renderer;
+    std::vector<std::shared_ptr<IComponent>> m_components;
 };

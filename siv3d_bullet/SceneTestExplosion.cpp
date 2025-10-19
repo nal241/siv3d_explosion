@@ -19,7 +19,6 @@ namespace
     constexpr double BombRadius = 0.5;
     constexpr s3d::Vec3 BombPosition{5, 0.5, 5};
     constexpr float BombMass = 0.0f;
-
 } // namespace
 
 SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
@@ -27,7 +26,6 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
     s3d::Print << U"Explosion Scene Initialized";
 
     // --- オブジェクト生成 ---
-
     // 爆弾
     {
         auto bomb = GameObject::CreateSphere(m_world, GameObject::SphereParams{.radius = BombRadius,
@@ -58,7 +56,25 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
 
 void SceneTestExplosion::updateSceneSpecific()
 {
-    // パーティクルを更新
+    // --- コンポーネントの更新 ---
+    const bool wasPending = m_bombExplosionComponent.isPending();
+    m_bombExplosionComponent.update();
+
+    if (wasPending && !m_bombExplosionComponent.isPending())
+    {
+        if (auto bomb = m_bombObject.lock())
+        {
+            // 爆発音を再生
+            m_explosionSound.playOneShot();
+
+            s3d::Print << U"💥 Explosion at {} with radius {} "_fmt(bomb->getPosition(), m_bombExplosionComponent.getRadius());
+
+            // ヘルパー関数を呼び出して爆発を生成
+            ExplosionHelper::CreateExplosion(m_particles, m_gameObjects, bomb->getPosition(), m_bombExplosionComponent.getRadius(), bomb);
+        }
+    }
+
+    // --- パーティクルの更新 ---
     const double deltaTime = Scene::DeltaTime();
 
     for (auto& particle : m_particles)
@@ -86,20 +102,13 @@ void SceneTestExplosion::updateSceneSpecific()
     m_particles.remove_if([](const Particle3D& p) { return !p.active; });
 
     // このシーン固有の表示
-    s3d::Print << U"Particles: {}"_fmt(m_particles.size());
+    s3d::Print << U"Particles: {} "_fmt(m_particles.size());
 
-    // Pキーで爆発
+    // Pキーで爆発を予約
     if (KeyP.down())
     {
-        if (auto bomb = m_bombObject.lock()) // 生存確認
-        {
-            // 爆発音を再生
-            m_explosionSound.playOneShot();
-
-            s3d::Print << U"💥 Explosion at {} with radius 5.0"_fmt(bomb->getPosition());
-
-            ExplosionHelper::CreateExplosion(m_particles, m_gameObjects, bomb->getPosition(), 5.0, bomb);
-        }
+        // 爆発コンポーネントを起動する（遅延0秒、半径5.0）
+        m_bombExplosionComponent.activate(3.0, 5.0);
     }
 
     // Tキーでゲームシーンへ戻る
@@ -157,5 +166,3 @@ void SceneTestExplosion::draw() const
         }
     }
 }
-
-

@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="ExplosionComponent.cpp" />
     <ClCompile Include="ExplosionHelper.cpp" />
     <ClCompile Include="SceneTestExplosion.cpp" />
     <ClCompile Include="GameObject.cpp" />
@@ -345,7 +346,9 @@
     <ClInclude Include="BulletSiv3DUtils.h" />
     <ClInclude Include="CollisionGroups.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="ExplosionComponent.h" />
     <ClInclude Include="ExplosionHelper.h" />
+    <ClInclude Include="IComponent.h" />
     <ClInclude Include="SceneTestExplosion.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="PhysicsBody.h" />
