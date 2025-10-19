@@ -1,5 +1,6 @@
-﻿#include "SceneGame.h"
+#include "SceneGame.h"
 #include "Renderers.h"
+#include "Enemy.h"
 
 namespace
 {
@@ -34,13 +35,23 @@ SceneGame::SceneGame(const InitData& init)
 
 void SceneGame::update()
 {
+    updateCamera();
+    updateInput();
+    updatePhysics();
+    updateGameObjects();
+    updateSpawn();
+    removeObjects();
+    updateSceneSpecific();
+}
+
+void SceneGame::updateCamera() { m_camera.update(CameraSpeed); }
+
+void SceneGame::updateInput()
+{
     ClearPrint();
     Print << U"Object num:{}"_fmt(m_gameObjects.size());
-    Print << U"Tキーで爆発用のシーンへ移動";
+    Print << U"Tキーでシーン移動";
     Print << Profiler::FPS();
-
-    // カメラ更新
-    m_camera.update(CameraSpeed);
 
     // マウスカーソルから静的オブジェクトへのレイキャスト
     const Ray ray = m_camera.screenToRay(Cursor::Pos());
@@ -72,18 +83,6 @@ void SceneGame::update()
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
-    // GameObjects更新
-    for (const auto& object : m_gameObjects)
-    {
-        object->update();
-    }
-
-    // 物理演算
-    m_world.step(Scene::DeltaTime());
-
-    // 範囲外オブジェクト削除
-    removeOutOfBoundsObjects();
-
     // シーン遷移
     if (KeyT.down())
     {
@@ -91,9 +90,33 @@ void SceneGame::update()
     }
 }
 
-void SceneGame::removeOutOfBoundsObjects()
+void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTime())); }
+
+void SceneGame::updateGameObjects()
 {
-    m_gameObjects.remove_if([](const std::shared_ptr<GameObject>& obj) { return obj->getPosition().y < -10.0; });
+    for (const auto& object : m_gameObjects)
+    {
+        object->update();
+    }
+}
+
+void SceneGame::updateSpawn()
+{
+    if (m_enemySpawnTimer.sF() >= m_spawnInterval)
+    {
+        spawnEnemy();
+        m_enemySpawnTimer.restart();
+    }
+}
+
+void SceneGame::removeObjects()
+{
+    m_gameObjects.remove_if(
+        [](const std::shared_ptr<GameObject>& obj)
+        {
+            // 範囲外チェック
+            return obj->getPosition().y < -10.0 || obj->shouldBeRemoved();
+        });
 }
 
 void SceneGame::draw() const
@@ -189,4 +212,20 @@ void SceneGame::createStage()
                               .mass = 0.0f,
                               .color = s3d::Linear::Palette::Powderblue,
                               .restitution = StaticBoxRestitution}));
+}
+
+void SceneGame::spawnEnemy()
+{
+    // ステージ内のランダムな位置にスポーン
+    const double x = Random(1.0, WallLength - 1.0);
+    const double z = Random(1.0, WallLength - 1.0);
+    const double y = 2.0;
+
+    addGameObject(Enemy::Create(m_world, Enemy::EnemyParams{.position = Vec3{x, y, z},
+                                                            .radius = 0.5f,
+                                                            .mass = 2.0f,
+                                                            .maxHealth = 100,
+                                                            .color = HSV{0, 0.7, 0.9},
+                                                            .group = GROUP_ATTRACTABLE,
+                                                            .mask = MASK_ALL}));
 }

@@ -1,5 +1,6 @@
 #include "SceneTestExplosion.h"
 #include "Renderers.h"
+#include "Enemy.h"
 
 namespace
 {
@@ -69,15 +70,8 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
     m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
 }
 
-void SceneTestExplosion::update()
+void SceneTestExplosion::updateSceneSpecific()
 {
-    ClearPrint();
-    s3d::Print << U"Object num: {}"_fmt(m_gameObjects.size());
-    s3d::Print << U"Particles: {}"_fmt(m_particles.size());
-    s3d::Print << Profiler::FPS();
-
-    m_camera.update(CameraSpeed);
-
     // パーティクルを更新
     const double deltaTime = Scene::DeltaTime();
 
@@ -105,19 +99,8 @@ void SceneTestExplosion::update()
     // 非アクティブなパーティクルを削除
     m_particles.remove_if([](const Particle3D& p) { return !p.active; });
 
-    // ゲームオブジェクトの位置を更新
-    for (auto& object : m_gameObjects)
-    {
-        object->update();
-    }
-
-    // プレイヤー入力
-    m_player.handleInput(m_world, m_gameObjects);
-
-    // 物理エンジンを更新
-    m_world.step(deltaTime);
-
-    removeOutOfBoundsObjects();
+    // このシーン固有の表示
+    s3d::Print << U"Particles: {}"_fmt(m_particles.size());
 
     // Pキーで爆発
     if (KeyP.down())
@@ -250,7 +233,17 @@ void SceneTestExplosion::explode(const std::shared_ptr<GameObject>& bomb, double
             body->applyImpulse(force);
             hitCount++;
 
-            s3d::Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
+            // エネミーにダメージを与える
+            if (auto enemy = std::dynamic_pointer_cast<Enemy>(object))
+            {
+                int damage = static_cast<int>(falloff * 100); // 最大100ダメージ
+                enemy->takeDamage(damage);
+                s3d::Print << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
+            }
+            else
+            {
+                s3d::Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
+            }
         }
     }
 
