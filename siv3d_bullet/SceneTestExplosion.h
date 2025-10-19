@@ -16,8 +16,10 @@ class SceneTestExplosion : public SceneGame
 public:
     SceneTestExplosion(const InitData& init);
 
-    void update() override;
     void draw() const override;
+
+protected:
+    void updateSceneSpecific() override;
 
 private:
     // 爆発関数
