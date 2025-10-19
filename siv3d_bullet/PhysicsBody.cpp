@@ -1,4 +1,4 @@
-﻿#include "PhysicsBody.h"
+#include "PhysicsBody.h"
 
 #include <btBulletDynamicsCommon.h>
 

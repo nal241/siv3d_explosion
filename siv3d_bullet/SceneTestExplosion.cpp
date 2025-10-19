@@ -1,4 +1,4 @@
-﻿#include "SceneTestExplosion.h"
+#include "SceneTestExplosion.h"
 #include "Renderers.h"
 
 namespace
