@@ -57,21 +57,27 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
 
 void SceneTestExplosion::updateSceneSpecific()
 {
-    // --- コンポーネントの更新 ---
-    const bool wasPending = m_bombExplosionComponent.isPending();
-    m_bombExplosionComponent.update();
-
-    if (wasPending && !m_bombExplosionComponent.isPending())
+    // --- 爆発の確認 ---
+    for (auto& object : m_gameObjects)
     {
-        if (auto bomb = m_bombObject.lock())
+        if (auto explosion = object->getComponent<ExplosionComponent>())
         {
-            // 爆発音を再生
-            m_explosionSound.playOneShot();
+            if (explosion->justExploded())
+            {
+                // 爆発イベントを消費
+                explosion->consumeExplosion();
 
-            s3d::Print << U"💥 Explosion at {} with radius {} "_fmt(bomb->getPosition(), m_bombExplosionComponent.getRadius());
+                // 爆発音を再生
+                m_explosionSound.playOneShot();
 
-            // ヘルパー関数を呼び出して爆発を生成
-            ExplosionHelper::CreateExplosion(m_particles, m_gameObjects, bomb->getPosition(), m_bombExplosionComponent.getRadius(), bomb);
+                s3d::Print << U"💥 Explosion at {} with radius {} "_fmt(object->getPosition(), explosion->getRadius());
+
+                // ヘルパー関数を呼び出して爆発を生成
+                ExplosionHelper::CreateExplosion(m_particles, m_gameObjects, object->getPosition(), explosion->getRadius(), object);
+
+                // 爆発したオブジェクトは消す
+                object->destroy();
+            }
         }
     }
 
