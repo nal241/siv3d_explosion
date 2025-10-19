@@ -2,6 +2,7 @@
 #include "SceneCommon.h"
 #include "Renderers.h"
 #include "Enemy.h"
+#include "ExplosionHelper.h"
 
 namespace
 {
@@ -19,22 +20,6 @@ namespace
     constexpr s3d::Vec3 BombPosition{5, 0.5, 5};
     constexpr float BombMass = 0.0f;
 
-    // === パーティクル設定 ===
-    constexpr int32 ParticleCount = 50;           // 1回の爆発で生成するパーティクル数
-    constexpr double MinParticleSpeed = 3.0;      // パーティクルの最小初速（m/s）
-    constexpr double MaxParticleSpeed = 8.0;      // パーティクルの最大初速（m/s）
-    constexpr double MinParticleSize = 0.2;       // パーティクルの最小サイズ（m）
-    constexpr double MaxParticleSize = 0.5;       // パーティクルの最大サイズ（m）
-    constexpr double MinParticleLife = 0.8;       // パーティクルの最小寿命（秒）
-    constexpr double MaxParticleLife = 1.5;       // パーティクルの最大寿命（秒）
-    constexpr double MinParticleHue = 0.0;        // パーティクルの色相の最小値
-    constexpr double MaxParticleHue = 60.0;       // パーティクルの色相の最大値（オレンジ～赤）
-    constexpr double MinParticleSaturation = 0.7; // パーティクルの彩度の最小値
-    constexpr double MaxParticleSaturation = 1.0; // パーティクルの彩度の最大値
-
-    // === 爆発の物理パラメータ ===
-    constexpr double ExplosionBasePower = 10.0;   // 爆発の基本威力
-    constexpr double ExplosionMinDistance = 0.01; // これ以下の距離では力を加えない（ゼロ除算防止）
 } // namespace
 
 SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
@@ -108,7 +93,12 @@ void SceneTestExplosion::updateSceneSpecific()
     {
         if (auto bomb = m_bombObject.lock()) // 生存確認
         {
-            explode(bomb, 5.0);
+            // 爆発音を再生
+            m_explosionSound.playOneShot();
+
+            s3d::Print << U"💥 Explosion at {} with radius 5.0"_fmt(bomb->getPosition());
+
+            ExplosionHelper::CreateExplosion(m_particles, m_gameObjects, bomb->getPosition(), 5.0, bomb);
         }
     }
 
@@ -168,85 +158,4 @@ void SceneTestExplosion::draw() const
     }
 }
 
-void SceneTestExplosion::explode(const std::shared_ptr<GameObject>& bomb, double radius)
-{
-    if (!bomb)
-        return;
 
-    // 爆発音を再生
-    m_explosionSound.playOneShot();
-
-    // 爆弾の中心位置を取得
-    Vec3 bombCenter = bomb->getPosition();
-
-    s3d::Print << U"💥 Explosion at {}"_fmt(bombCenter);
-    s3d::Print << U"Radius: {}"_fmt(radius);
-
-    // === パーティクル生成 ===
-    for (int32 i = 0; i < ParticleCount; ++i)
-    {
-        // 球状にランダムな方向
-        const double theta = Random(0.0, Math::TwoPi);
-        const double phi = Random(0.0, Math::Pi);
-        const double speed = Random(MinParticleSpeed, MaxParticleSpeed);
-
-        Vec3 direction{Math::Sin(phi) * Math::Cos(theta), Math::Sin(phi) * Math::Sin(theta), Math::Cos(phi)};
-
-        Particle3D particle{.position = bombCenter,
-                            .velocity = direction * speed,
-                            .color = HSV{Random(MinParticleHue, MaxParticleHue),
-                                         Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
-                            .size = Random(MinParticleSize, MaxParticleSize),
-                            .life = Random(MinParticleLife, MaxParticleLife),
-                            .active = true};
-
-        m_particles << particle;
-    }
-
-    s3d::Print << U"   Created {} particles"_fmt(ParticleCount);
-
-    // === 物理演算：オブジェクトに力を加える ===
-    int32 hitCount = 0;
-
-    for (auto& object : m_gameObjects)
-    {
-        // 爆弾自身はスキップ
-        if (object == bomb)
-            continue;
-
-        // GameObjectからPhysicsBodyを取得
-        auto body = object->getPhysicsBody();
-        if (!body || body->isStatic())
-            continue;
-
-        Vec3 objectPos = object->getPosition();
-        Vec3 direction = objectPos - bombCenter;
-        double distance = direction.length();
-
-        // 範囲内かつ有効な距離の場合のみ力を加える
-        if (distance < radius && distance > ExplosionMinDistance)
-        {
-            Vec3 normalizedDirection = direction.normalized();
-            double falloff = 1.0 - (distance / radius);
-            double explosionForce = ExplosionBasePower * falloff;
-            Vec3 force = normalizedDirection * explosionForce;
-
-            body->applyImpulse(force);
-            hitCount++;
-
-            // エネミーにダメージを与える
-            if (auto enemy = std::dynamic_pointer_cast<Enemy>(object))
-            {
-                int damage = static_cast<int>(falloff * 100); // 最大100ダメージ
-                enemy->takeDamage(damage);
-                s3d::Print << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
-            }
-            else
-            {
-                s3d::Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
-            }
-        }
-    }
-
-    s3d::Print << U"   Hit {} objects"_fmt(hitCount);
-}

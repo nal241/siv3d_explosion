@@ -15,9 +15,6 @@ protected:
     void updateSceneSpecific() override;
 
 private:
-    // 爆発関数
-    void explode(const std::shared_ptr<GameObject>& bomb, double radius);
-
     // 爆弾オブジェクトへの弱参照
     std::weak_ptr<GameObject> m_bombObject;
 
