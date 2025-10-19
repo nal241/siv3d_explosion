@@ -1,5 +1,7 @@
 ﻿#include "PhysicsBody.h"
 
+#include <btBulletDynamicsCommon.h>
+
 #include "BulletSiv3DUtils.h"
 #include "GameObject.h"
 #include "PhysicsWorld.h"

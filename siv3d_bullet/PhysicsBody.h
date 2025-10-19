@@ -1,8 +1,9 @@
 ﻿#pragma once
 #include <Siv3D.hpp>
-#include <btBulletDynamicsCommon.h>
-
 // 前方宣言
+class btCollisionShape;
+class btRigidBody;
+class btMotionState;
 class PhysicsWorld;
 class GameObject;
 
