@@ -31,4 +31,7 @@ private:
 
     // 爆弾投擲のクールダウンタイマー
     s3d::Stopwatch m_throwCooldown;
+
+    // レイキャストの結果
+    RaycastResult m_raycastResult;
 };

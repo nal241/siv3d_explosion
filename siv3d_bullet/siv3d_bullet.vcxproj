@@ -127,6 +127,7 @@
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="ExplosionComponent.cpp" />
     <ClCompile Include="ExplosionHelper.cpp" />
+    <ClCompile Include="SceneResult.cpp" />
     <ClCompile Include="SceneTestExplosion.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -135,6 +136,7 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Renderers.cpp" />
     <ClCompile Include="SceneGame.cpp" />
+    <ClCompile Include="SceneTitle.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -351,6 +353,7 @@
     <ClInclude Include="ExplosionComponent.h" />
     <ClInclude Include="ExplosionHelper.h" />
     <ClInclude Include="IComponent.h" />
+    <ClInclude Include="SceneResult.h" />
     <ClInclude Include="SceneTestExplosion.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="PhysicsBody.h" />
@@ -359,6 +362,7 @@
     <ClInclude Include="Renderers.h" />
     <ClInclude Include="SceneCommon.h" />
     <ClInclude Include="SceneGame.h" />
+    <ClInclude Include="SceneTitle.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
