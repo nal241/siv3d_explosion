@@ -43,13 +43,13 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
 
     // 爆弾
     {
-        auto bombObj = GameObject::CreateSphere(m_world, GameObject::SphereParams{.radius = BombRadius,
-                                                                                  .position = BombPosition,
-                                                                                  .mass = BombMass,
-                                                                                  .color = ColorF{0.1, 0.1, 0.1},
-                                                                                  .restitution = 0.0f});
-        m_bombID = bombObj->getID(); // IDを保持
-        m_gameObjects.emplace(bombObj->getID(), std::move(bombObj));
+        auto bomb = GameObject::CreateSphere(m_world, GameObject::SphereParams{.radius = BombRadius,
+                                                                               .position = BombPosition,
+                                                                               .mass = BombMass,
+                                                                               .color = ColorF{0.1, 0.1, 0.1},
+                                                                               .restitution = 0.0f});
+        m_bombObject = bomb; // weak_ptrに保存
+        addGameObject(std::move(bomb));
     }
 
     // テストキューブ
@@ -59,12 +59,11 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
         double distance = 3.0;
         Vec3 position{5 + Math::Cos(angle) * distance, 1.0, 5 + Math::Sin(angle) * distance};
 
-        auto boxObj = GameObject::CreateBox(m_world, GameObject::BoxParams{.size = Vec3{0.5, 0.5, 0.5},
+        addGameObject(GameObject::CreateBox(m_world, GameObject::BoxParams{.size = Vec3{0.5, 0.5, 0.5},
                                                                            .position = position,
                                                                            .mass = 2.0f,
                                                                            .color = HSV{i * 45, 0.7, 0.9},
-                                                                           .restitution = 0.5f});
-        m_gameObjects.emplace(boxObj->getID(), std::move(boxObj));
+                                                                           .restitution = 0.5f}));
     }
 
     m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
@@ -107,7 +106,7 @@ void SceneTestExplosion::update()
     m_particles.remove_if([](const Particle3D& p) { return !p.active; });
 
     // ゲームオブジェクトの位置を更新
-    for (auto& [id, object] : m_gameObjects)
+    for (auto& object : m_gameObjects)
     {
         object->update();
     }
@@ -123,9 +122,9 @@ void SceneTestExplosion::update()
     // Pキーで爆発
     if (KeyP.down())
     {
-        if (auto it = m_gameObjects.find(m_bombID); it != m_gameObjects.end())
+        if (auto bomb = m_bombObject.lock()) // 生存確認
         {
-            explode(it->second.get(), 5.0);
+            explode(bomb, 5.0);
         }
     }
 
@@ -145,7 +144,7 @@ void SceneTestExplosion::draw() const
         const ScopedRenderTarget3D target{m_renderTexture.clear(m_backgroundColor)};
 
         // 3Dオブジェクトを描画
-        for (const auto& [id, object] : m_gameObjects)
+        for (const auto& object : m_gameObjects)
         {
             object->draw();
         }
@@ -185,7 +184,7 @@ void SceneTestExplosion::draw() const
     }
 }
 
-void SceneTestExplosion::explode(GameObject* bomb, double radius)
+void SceneTestExplosion::explode(const std::shared_ptr<GameObject>& bomb, double radius)
 {
     if (!bomb)
         return;
@@ -225,10 +224,10 @@ void SceneTestExplosion::explode(GameObject* bomb, double radius)
     // === 物理演算：オブジェクトに力を加える ===
     int32 hitCount = 0;
 
-    for (auto& [id, object] : m_gameObjects)
+    for (auto& object : m_gameObjects)
     {
         // 爆弾自身はスキップ
-        if (object.get() == bomb)
+        if (object == bomb)
             continue;
 
         // GameObjectからPhysicsBodyを取得

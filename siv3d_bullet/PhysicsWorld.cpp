@@ -54,9 +54,13 @@ RaycastResult PhysicsWorld::raycast(const s3d::Ray& ray, double maxDistance)
         result.hitNormal = ToSiv3DVec3(callback.m_hitNormalWorld);
 
         const btRigidBody* body = btRigidBody::upcast(callback.m_collisionObject);
-        if (body)
+        if (body && body->getUserPointer())
         {
-            result.hitObject = static_cast<GameObject*>(body->getUserPointer());
+            PhysicsBody* physicsBody = static_cast<PhysicsBody*>(body->getUserPointer());
+            if (auto owner = physicsBody->getOwner())
+            {
+                result.hitObject = owner.get();
+            }
         }
         return result;
     }

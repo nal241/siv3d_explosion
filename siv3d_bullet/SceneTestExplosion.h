@@ -21,10 +21,10 @@ public:
 
 private:
     // 爆発関数
-    void explode(GameObject* bomb, double radius);
+    void explode(const std::shared_ptr<GameObject>& bomb, double radius);
 
-    // 爆弾オブジェクトのID
-    GameObject::IDType m_bombID = 0;
+    // 爆弾オブジェクトへの弱参照
+    std::weak_ptr<GameObject> m_bombObject;
 
     // 3D空間のパーティクルシステム
     Array<Particle3D> m_particles;

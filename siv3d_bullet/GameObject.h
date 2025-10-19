@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Siv3D.hpp>
 #include <memory>
 
@@ -7,7 +7,15 @@
 
 class PhysicsWorld;
 
-class GameObject
+/// @brief ゲームオブジェクトの基底クラス
+///
+/// PhysicsBody（物理演算）とIRenderer（描画）を組み合わせて、
+/// ゲーム内のオブジェクトを表現します。
+///
+/// 所有関係:
+/// - GameObjectはPhysicsBodyとIRendererをunique_ptrで所有
+/// - PhysicsBodyはGameObjectをweak_ptrで参照（循環参照を避けるため）
+class GameObject : public std::enable_shared_from_this<GameObject>
 {
 public:
     using IDType = uint64;
@@ -15,11 +23,11 @@ public:
     // 仮想デストラクタは、ポリモーフィズムを安全に使うために必須
     virtual ~GameObject() = default;
 
-    // moveのみ
+    // moveのみ許可（コピー禁止）
     GameObject(const GameObject&) = delete;
     GameObject& operator=(const GameObject&) = delete;
-    GameObject(GameObject&&) noexcept;
-    GameObject& operator=(GameObject&&) noexcept;
+    GameObject(GameObject&&) = default;
+    GameObject& operator=(GameObject&&) = default;
 
     virtual void update() {}
     void draw() const;
@@ -71,11 +79,11 @@ public:
     };
 
     // 汎用Factory Methods（レンダラーはオプショナル）
-    static std::unique_ptr<GameObject> CreateBox(PhysicsWorld& world, const BoxParams& params,
+    static std::shared_ptr<GameObject> CreateBox(PhysicsWorld& world, const BoxParams& params,
                                                  std::unique_ptr<IRenderer> renderer = nullptr);
-    static std::unique_ptr<GameObject> CreateSphere(PhysicsWorld& world, const SphereParams& params,
+    static std::shared_ptr<GameObject> CreateSphere(PhysicsWorld& world, const SphereParams& params,
                                                     std::unique_ptr<IRenderer> renderer = nullptr);
-    static std::unique_ptr<GameObject> CreateCylinder(PhysicsWorld& world, const CylinderParams& params,
+    static std::shared_ptr<GameObject> CreateCylinder(PhysicsWorld& world, const CylinderParams& params,
                                                       std::unique_ptr<IRenderer> renderer = nullptr);
 
     // コンストラクタ（Factoryからの使用を推奨）

@@ -1,4 +1,4 @@
-#include "GameObject.h"
+﻿#include "GameObject.h"
 #include "PhysicsWorld.h"
 
 // --- Constructor ---
@@ -9,43 +9,9 @@ GameObject::GameObject(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr
     // PhysicsBodyが指定されていれば、初期位置・回転を同期
     if (m_physicsBody)
     {
-        // PhysicsBodyにポインタを設定
-        m_physicsBody->setOwner(this);
-
         m_position = m_physicsBody->getPosition();
         m_rotation = m_physicsBody->getRotation();
     }
-}
-
-GameObject::GameObject(GameObject&& other) noexcept
-    : m_id(other.m_id)
-    , m_position(std::move(other.m_position))
-    , m_rotation(std::move(other.m_rotation))
-    , m_physicsBody(std::move(other.m_physicsBody))
-    , m_renderer(std::move(other.m_renderer))
-{
-    if (m_physicsBody)
-    {
-        m_physicsBody->setOwner(this);
-    }
-}
-
-GameObject& GameObject::operator=(GameObject&& other) noexcept
-{
-    if (this != &other)
-    {
-        m_id = other.m_id;
-        m_position = std::move(other.m_position);
-        m_rotation = std::move(other.m_rotation);
-        m_physicsBody = std::move(other.m_physicsBody);
-        m_renderer = std::move(other.m_renderer);
-
-        if (m_physicsBody)
-        {
-            m_physicsBody->setOwner(this);
-        }
-    }
-    return *this;
 }
 
 // --- Public Methods ---
@@ -112,7 +78,7 @@ void GameObject::setRotation(const Quaternion& rot)
 
 // --- Static Factory Methods ---
 
-std::unique_ptr<GameObject> GameObject::CreateBox(PhysicsWorld& world, const BoxParams& params,
+std::shared_ptr<GameObject> GameObject::CreateBox(PhysicsWorld& world, const BoxParams& params,
                                                   std::unique_ptr<IRenderer> renderer)
 {
     auto body = world.createBox(BoxDesc{params.size, params.position, params.mass});
@@ -126,10 +92,12 @@ std::unique_ptr<GameObject> GameObject::CreateBox(PhysicsWorld& world, const Box
     }
 
     // GameObjectを生成
-    return std::make_unique<GameObject>(std::move(body), std::move(renderer));
+    auto gameObject = std::make_shared<GameObject>(std::move(body), std::move(renderer));
+    gameObject->getPhysicsBody()->setOwner(gameObject);
+    return gameObject;
 }
 
-std::unique_ptr<GameObject> GameObject::CreateSphere(PhysicsWorld& world, const SphereParams& params,
+std::shared_ptr<GameObject> GameObject::CreateSphere(PhysicsWorld& world, const SphereParams& params,
                                                      std::unique_ptr<IRenderer> renderer)
 {
     auto body = world.createSphere(SphereDesc{params.radius, params.position, params.mass});
@@ -143,10 +111,12 @@ std::unique_ptr<GameObject> GameObject::CreateSphere(PhysicsWorld& world, const 
     }
 
     // GameObjectを生成
-    return std::make_unique<GameObject>(std::move(body), std::move(renderer));
+    auto gameObject = std::make_shared<GameObject>(std::move(body), std::move(renderer));
+    gameObject->getPhysicsBody()->setOwner(gameObject);
+    return gameObject;
 }
 
-std::unique_ptr<GameObject> GameObject::CreateCylinder(PhysicsWorld& world, const CylinderParams& params,
+std::shared_ptr<GameObject> GameObject::CreateCylinder(PhysicsWorld& world, const CylinderParams& params,
                                                        std::unique_ptr<IRenderer> renderer)
 {
     auto body = world.createCylinder(CylinderDesc{params.radius, params.height, params.position, params.mass});
@@ -160,5 +130,7 @@ std::unique_ptr<GameObject> GameObject::CreateCylinder(PhysicsWorld& world, cons
     }
 
     // GameObjectを生成
-    return std::make_unique<GameObject>(std::move(body), std::move(renderer));
+    auto gameObject = std::make_shared<GameObject>(std::move(body), std::move(renderer));
+    gameObject->getPhysicsBody()->setOwner(gameObject);
+    return gameObject;
 }

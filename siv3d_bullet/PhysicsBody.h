@@ -53,7 +53,7 @@ public:
     void setRestitution(float restitution);
     void setFriction(float friction);
     void setDamping(float lin_damping, float ang_damping);
-    void setOwner(GameObject* owner);
+    void setOwner(std::weak_ptr<GameObject> owner);
     void setPosition(const s3d::Vec3& pos);
     void setRotation(const s3d::Quaternion& rot);
 
@@ -70,7 +70,7 @@ public:
     s3d::Quaternion getRotation() const;
     ShapeType getShapeType() const { return m_shapeType; }
     btCollisionShape* getShape() const { return m_shape.get(); }
-    GameObject* getOwner() const { return m_owner; }
+    std::shared_ptr<GameObject> getOwner() const;
 
 private:
     // PhysicsBody は PhysicsWorldで管理する。
@@ -81,6 +81,6 @@ private:
     std::unique_ptr<btMotionState> m_motionState;
 
     PhysicsWorld* m_world = nullptr;
-    GameObject* m_owner = nullptr;
+    std::weak_ptr<GameObject> m_owner;
     ShapeType m_shapeType;
 };
