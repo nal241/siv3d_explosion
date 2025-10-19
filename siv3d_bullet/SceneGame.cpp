@@ -88,6 +88,12 @@ void SceneGame::updateInput()
     {
         changeScene(State::Explosion, 1.0s);
     }
+
+    // Rキーでリザルトへ
+    if (KeyR.down())
+    {
+        changeScene(State::Result);
+    }
 }
 
 void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTime())); }
@@ -112,10 +118,18 @@ void SceneGame::updateSpawn()
 void SceneGame::removeObjects()
 {
     m_gameObjects.remove_if(
-        [](const std::shared_ptr<GameObject>& obj)
+        [this](const std::shared_ptr<GameObject>& obj)
         {
             // 範囲外チェック
-            return obj->getPosition().y < -10.0 || obj->shouldBeRemoved();
+            bool shouldRemove = obj->getPosition().y < -10.0 || obj->shouldBeRemoved();
+
+            if (shouldRemove)
+            {
+                // オブジェクト削除時にスコア加算
+                getData().score += 10;
+            }
+
+            return shouldRemove;
         });
 }
 
