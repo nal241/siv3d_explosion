@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Siv3D.hpp>
 #include "PhysicsBody.h"
 
@@ -28,11 +28,11 @@ private:
 class PhysicsShapeRenderer : public IRenderer
 {
 public:
-    PhysicsShapeRenderer(PhysicsBody& physicsBody, const ColorF& color = Palette::White);
+    PhysicsShapeRenderer(const PhysicsBody& physicsBody, const ColorF& color = Palette::White);
     void draw(const Vec3& position, const Quaternion& rotation) const override;
     void drawWireframe(const Vec3& position, const Quaternion& rotation) const override;
 
 private:
-    PhysicsBody& m_physicsBody; // 描画対象の物理ボディへの参照
+    const PhysicsBody& m_physicsBody; // 描画対象の物理ボディへの参照（読み取り専用）
     ColorF m_color;
 };
