@@ -2,6 +2,7 @@
 
 #include <btBulletDynamicsCommon.h>
 
+#include "CollisionGroups.h"
 #include "PhysicsBody.h"
 
 // 前方宣言
@@ -29,12 +30,12 @@ public:
     // シミュレーションを1ステップ進める
     void step(float deltaTime);
 
-    RaycastResult raycast(const s3d::Ray& ray, double maxDistance = 1000.0);
+    RaycastResult raycast(const s3d::Ray& ray, CollisionMask mask = MASK_ALL, double maxDistance = 1000.0);
 
     // オブジェクト追加（unique_ptrで返す）
-    std::unique_ptr<PhysicsBody> createBox(const BoxDesc& desc);
-    std::unique_ptr<PhysicsBody> createSphere(const SphereDesc& desc);
-    std::unique_ptr<PhysicsBody> createCylinder(const CylinderDesc& desc);
+    std::unique_ptr<PhysicsBody> createBox(const BoxDesc& desc, CollisionGroup group, CollisionMask mask);
+    std::unique_ptr<PhysicsBody> createSphere(const SphereDesc& desc, CollisionGroup group, CollisionMask mask);
+    std::unique_ptr<PhysicsBody> createCylinder(const CylinderDesc& desc, CollisionGroup group, CollisionMask mask);
 
 private:
     friend class PhysicsBody;
