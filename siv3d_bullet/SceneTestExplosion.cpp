@@ -8,8 +8,6 @@
 namespace
 {
     // 弾道計算
-    // http://www.sharp.co.jp/pc/scidep/blog/2021-08-27/
-    // https://qiita.com/nofunc/items/a193873325966a892755
     std::optional<Vec3> CalculateLaunchVelocity(const Vec3& start, const Vec3& target, const double launchAngleDeg,
                                                 const double gravity)
     {

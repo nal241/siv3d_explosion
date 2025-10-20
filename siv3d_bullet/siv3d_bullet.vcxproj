@@ -350,7 +350,6 @@
     <ClInclude Include="CollisionGroups.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="ExplosionHelper.h" />
-    <ClInclude Include="IComponent.h" />
     <ClInclude Include="SceneResult.h" />
     <ClInclude Include="SceneTestExplosion.h" />
     <ClInclude Include="GameObject.h" />
