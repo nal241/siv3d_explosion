@@ -81,23 +81,13 @@ void SceneTestExplosion::updateSceneSpecific()
     // --- 爆発の確認 ---
     for (auto& object : m_gameObjects)
     {
-        if (auto explosion = object->getComponent<ExplosionComponent>())
+        if (auto bomb = std::dynamic_pointer_cast<Bomb>(object))
         {
-            if (explosion->justExploded())
+            bomb->update();
+            if (bomb->isReadyToExplode())
             {
-                // 爆発イベントを消費
-                explosion->consumeExplosion();
-
-                // 爆発音を再生
                 m_explosionSound.playOneShot();
-
-                s3d::Print << U"💥 Explosion at {} with radius {} "_fmt(object->getPosition(), explosion->getRadius());
-
-                // ヘルパー関数を呼び出して爆発を生成
-                ExplosionHelper::CreateExplosion(m_particles, m_gameObjects, object->getPosition(), explosion->getRadius(), object);
-
-                // 爆発したオブジェクトは消す
-                object->destroy();
+                bomb->triggerExplosion(m_particles, m_gameObjects);
             }
         }
     }
@@ -156,24 +146,20 @@ void SceneTestExplosion::updateSceneSpecific()
                 const float radius = 0.4f;
 
                 // 爆弾のパラメータを設定（発射位置はカメラの位置）
-                GameObject::SphereParams params{
-                    .radius = radius,
+                Bomb::BombParams params{
                     .position = startPos,
+                    .radius = radius,
                     .mass = mass,
+                    .duration = 3.0, // 3秒後に爆発
                     .color = ColorF{1.0, 0.5, 0.2},
                     .restitution = 0.4f,
                     .friction = 0.8f,
+                    .explosionRadius = 5.0, // 爆発半径5
                 };
 
                 // Bombファクトリを使ってオブジェクトを生成
                 if (auto newBomb = Bomb::Create(m_world, params))
                 {
-                    // 3秒後に爆発するようタイマーをセット
-                    if (auto explosion = newBomb->getComponent<ExplosionComponent>())
-                    {
-                        explosion->activate(3.0, 5.0);
-                    }
-
                     // 計算された初速からインパルスを適用
                     const Vec3 impulse = *launchVelocity * mass;
                     newBomb->getPhysicsBody()->applyImpulse(impulse);
