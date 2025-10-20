@@ -26,7 +26,7 @@ public:
 
     bool isReadyToExplode() const;
     
-    void triggerExplosion(s3d::Array<Particle3D>& particles, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects);
+    void triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects);
 
     static std::shared_ptr<Bomb> Create(PhysicsWorld& world, const BombParams& params);
 

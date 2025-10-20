@@ -24,7 +24,7 @@ namespace
 }
 
 void ExplosionHelper::CreateExplosion(
-    s3d::Array<Particle3D>& particles,
+    ParticleSystem& particleSystem,
     const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
     const s3d::Vec3& center,
     double radius,
@@ -50,7 +50,7 @@ void ExplosionHelper::CreateExplosion(
             .life = s3d::Random(MinParticleLife, MaxParticleLife),
             .active = true
         };
-        particles << particle;
+        particleSystem.add(particle);
     }
 
     s3d::Print << U"   Applying force to objects...";
