@@ -1,6 +1,5 @@
 #pragma once
 #include "SceneGame.h"
-#include "ExplosionComponent.h"
 #include "GameObject.h"
 #include "PhysicsWorld.h"
 #include "ExplosionHelper.h" // ★ Particle3D構造体をインクルード
