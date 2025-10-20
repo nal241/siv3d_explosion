@@ -7,31 +7,6 @@
 
 namespace
 {
-    // 弾道計算
-    std::optional<Vec3> CalculateLaunchVelocity(const Vec3& start, const Vec3& target, const double launchAngleDeg,
-                                                const double gravity)
-    {
-        const Vec3 diff = target - start;
-        const Vec3 diffXZ = {diff.x, 0.0, diff.z};
-        const double distance = diffXZ.length();
-
-        if (distance == 0.0) return std::nullopt;
-
-        const double launchAngleRad = ToRadians(launchAngleDeg);
-        const double cosAngle = Cos(launchAngleRad);
-        const double tanAngle = Tan(launchAngleRad);
-
-        // 初速を計算
-        const double v_pow2 = (gravity * distance * distance) / (2.0 * cosAngle * cosAngle * (distance * tanAngle - diff.y));
-
-        // 負の平方根は物理的に到達不可能
-        if (v_pow2 <= 0.0) return std::nullopt;
-
-        const double v = Sqrt(v_pow2);
-
-        return diffXZ.normalized() * v * cosAngle + Vec3{0, v * Sin(launchAngleRad), 0};
-    }
-
     // === シーン設定 ===
     constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
@@ -138,7 +113,7 @@ void SceneTestExplosion::updateSceneSpecific()
             constexpr float gravity = 9.8f;   // 物理ワールドの重力に合わせる
 
             // 投擲に必要な初速を計算
-            if (auto launchVelocity = CalculateLaunchVelocity(startPos, targetPos, launchAngle, gravity))
+            if (auto launchVelocity = PhysicsWorld::CalculateLaunchVelocity(startPos, targetPos, launchAngle, gravity))
             {
                 const float mass = 2.0f;
                 const float radius = 0.4f;

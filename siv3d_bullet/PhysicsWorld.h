@@ -37,6 +37,9 @@ public:
     std::unique_ptr<PhysicsBody> createSphere(const SphereDesc& desc, CollisionGroup group, CollisionMask mask);
     std::unique_ptr<PhysicsBody> createCylinder(const CylinderDesc& desc, CollisionGroup group, CollisionMask mask);
 
+    // --- static utilities ---
+    static std::optional<Vec3> CalculateLaunchVelocity(const Vec3& start, const Vec3& target, double launchAngleDeg, double gravity);
+
 private:
     friend class PhysicsBody;
 
