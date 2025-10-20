@@ -2,7 +2,6 @@
 #include "SceneCommon.h"
 #include "Renderers.h"
 #include "Enemy.h"
-#include "ExplosionHelper.h"
 #include "Bomb.h"
 
 namespace
@@ -60,40 +59,16 @@ void SceneTestExplosion::updateSceneSpecific()
             if (bomb->isReadyToExplode())
             {
                 m_explosionSound.playOneShot();
-                bomb->triggerExplosion(m_particles, m_gameObjects);
+                bomb->triggerExplosion(m_particleSystem, m_gameObjects);
             }
         }
     }
 
     // --- パーティクルの更新 ---
-    const double deltaTime = Scene::DeltaTime();
-
-    for (auto& particle : m_particles)
-    {
-        if (!particle.active)
-            continue;
-
-        // 速度を更新（重力を適用）
-        particle.velocity += Gravity * deltaTime;
-
-        // 位置を更新
-        particle.position += particle.velocity * deltaTime;
-
-        // 寿命を減らす
-        particle.life -= deltaTime;
-
-        // 寿命が尽きたら非アクティブに
-        if (particle.life <= 0.0)
-        {
-            particle.active = false;
-        }
-    }
-
-    // 非アクティブなパーティクルを削除
-    m_particles.remove_if([](const Particle3D& p) { return !p.active; });
+    m_particleSystem.update(Scene::DeltaTime());
 
     // このシーン固有の表示
-    s3d::Print << U"Particles: {} "_fmt(m_particles.size());
+    // s3d::Print << U"Particles: {} "_fmt(m_particleSystem.m_particles.size());
 
     // Tキーでゲームシーンへ戻る
     if (KeyT.down())
@@ -109,7 +84,7 @@ void SceneTestExplosion::updateSceneSpecific()
         {
             const Vec3 startPos = m_camera.getEyePosition();
             const Vec3 targetPos = m_raycastResult.hitPoint;
-            constexpr float launchAngle = 35.0f; // 角度を少し下げる
+            constexpr float launchAngle = -10.0f; // 角度を少し下げる
             constexpr float gravity = 9.8f;   // 物理ワールドの重力に合わせる
 
             // 投擲に必要な初速を計算
@@ -173,23 +148,7 @@ void SceneTestExplosion::draw() const
         }
 
         // 3D空間にパーティクルを描画（加算ブレンドで光らせる）
-        {
-            const ScopedRenderStates3D blend{BlendState::Additive};
-            for (const auto& particle : m_particles)
-            {
-                if (!particle.active)
-                    continue;
-
-                // 寿命に応じて透明度を変化
-                const double alpha = particle.life;
-                // リニアレンダリング用なのでremoveSRGBCurve()でsRGBカーブを除去
-                // 参考: https://zenn.dev/reputeless/books/siv3d-documentation/viewer/tutorial-3d
-                const ColorF color = particle.color.withAlpha(alpha).removeSRGBCurve();
-
-                // 球として描画
-                Sphere{particle.position, particle.size}.draw(color);
-            }
-        }
+        m_particleSystem.draw();
     }
     // [2D rendering]
     {

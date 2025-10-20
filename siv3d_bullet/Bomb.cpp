@@ -25,14 +25,14 @@ bool Bomb::isReadyToExplode() const
     return m_timer.sF() >= m_duration && !m_isExploded;
 }
 
-void Bomb::triggerExplosion(s3d::Array<Particle3D>& particles, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects)
+void Bomb::triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects)
 {
     if (m_isExploded)
     {
         return;
     }
 
-    ExplosionHelper::CreateExplosion(particles, gameObjects, getPosition(), m_explosionRadius, shared_from_this());
+    ExplosionHelper::CreateExplosion(particleSystem, gameObjects, getPosition(), m_explosionRadius, shared_from_this());
     m_isExploded = true;
 }
 

@@ -2,7 +2,7 @@
 #include "SceneGame.h"
 #include "GameObject.h"
 #include "PhysicsWorld.h"
-#include "ExplosionHelper.h" // ★ Particle3D構造体をインクルード
+#include "ParticleSystem.h"
 
 class SceneTestExplosion : public SceneGame
 {
@@ -16,8 +16,7 @@ protected:
 
 private:
     // 3D空間のパーティクルシステム
-    s3d::Array<Particle3D> m_particles;
-    static constexpr s3d::Vec3 Gravity{0, -5.0, 0};
+    ParticleSystem m_particleSystem;
 
     // 効果音
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
