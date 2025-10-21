@@ -95,9 +95,8 @@ OverlapResult PhysicsWorld::overlapSphere(s3d::Vec3 center, double radius, Colli
 
         OverlapCallback(CollisionMask mask) : filterMask(mask) {}
 
-        btScalar addSingleResult(btManifoldPoint& cp,
-                                const btCollisionObjectWrapper* colObj0, int partId0, int index0,
-                                const btCollisionObjectWrapper* colObj1, int partId1, int index1) override
+        btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0, int partId0, int index0,
+                                 const btCollisionObjectWrapper* colObj1, int partId1, int index1) override
         {
             const btRigidBody* body = btRigidBody::upcast(colObj1->getCollisionObject());
             if (body && body->getUserPointer())

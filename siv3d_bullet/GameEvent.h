@@ -7,9 +7,9 @@ class GameObject;
 /// @brief 爆発リクエストイベント
 struct ExplosionRequest
 {
-	s3d::Vec3 position;
-	double radius;
-	std::weak_ptr<GameObject> source;  // 爆発源
+    s3d::Vec3 position;
+    double radius;
+    std::weak_ptr<GameObject> source; // 爆発源
 };
 
 // 将来の拡張用（例）
