@@ -36,6 +36,13 @@ PhysicsWorld::~PhysicsWorld()
 // シミュレーションを進める
 void PhysicsWorld::step(float deltaTime) { m_dynamicsWorld->stepSimulation(deltaTime, MaxSubSteps); }
 
+// 重力を取得
+s3d::Vec3 PhysicsWorld::getGravity() const
+{
+    const btVector3 gravity = m_dynamicsWorld->getGravity();
+    return ToSiv3DVec3(gravity);
+}
+
 RaycastResult PhysicsWorld::raycast(const s3d::Ray& ray, CollisionMask mask, double maxDistance)
 {
     const Vec3 origin = ray.getOrigin();
@@ -109,24 +116,39 @@ void PhysicsWorld::unregisterObject(PhysicsBody* obj)
     }
 }
 
-std::optional<Vec3> PhysicsWorld::CalculateLaunchVelocity(const Vec3& start, const Vec3& target, const double launchAngleDeg,
-                                                        const double gravity)
+// 放物線軌道で目標地点に到達するための初速度ベクトルを計算
+//
+// 前提条件:
+//   - gravity.x == 0 && gravity.z == 0 (重力はY軸方向のみ)
+//   - gravity.y < 0 (下向きの重力)
+//   - launchAngleDeg は水平面からの角度（度数法）
+//
+// 戻り値:
+//   指定された角度で target に到達するための初速度ベクトル
+//   到達不可能な場合は std::nullopt
+std::optional<Vec3> PhysicsWorld::CalculateLaunchVelocity(const Vec3& start, const Vec3& target,
+                                                          const double launchAngleDeg, const Vec3& gravity)
 {
     const Vec3 diff = target - start;
     const Vec3 diffXZ = {diff.x, 0.0, diff.z};
     const double distance = diffXZ.length();
 
-    if (distance == 0.0) return std::nullopt;
+    if (distance == 0.0)
+        return std::nullopt;
 
     const double launchAngleRad = ToRadians(launchAngleDeg);
     const double cosAngle = Cos(launchAngleRad);
     const double tanAngle = Tan(launchAngleRad);
 
-    // 初速を計算
-    const double v_pow2 = (gravity * distance * distance) / (2.0 * cosAngle * cosAngle * (distance * tanAngle - diff.y));
+    // 放物運動の式から初速度の大きさを計算
+    // v^2 = (g_y * d^2) / (2 * cos^2(θ) * (d * tan(θ) - h))
+    // ここで d = 水平距離, h = 高さの差, g_y = gravity.y (負の値)
+    const double v_pow2 =
+        (-gravity.y * distance * distance) / (2.0 * cosAngle * cosAngle * (distance * tanAngle - diff.y));
 
-    // 負の平方根は物理的に到達不可能
-    if (v_pow2 <= 0.0) return std::nullopt;
+    // v^2 が正でなければ到達不可能
+    if (v_pow2 <= 0.0)
+        return std::nullopt;
 
     const double v = Sqrt(v_pow2);
 
