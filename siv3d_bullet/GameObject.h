@@ -37,10 +37,7 @@ public:
 
     /// @brief イベントを取得してクリア
     /// @return 保留中のイベント配列
-    s3d::Array<GameEvent> consumeEvents()
-    {
-        return std::exchange(m_pendingEvents, s3d::Array<GameEvent>{});
-    }
+    s3d::Array<GameEvent> consumeEvents() { return std::exchange(m_pendingEvents, s3d::Array<GameEvent>{}); }
 
     void draw() const;
     void drawWireframe() const;
@@ -114,11 +111,7 @@ protected:
     Quaternion m_rotation = Quaternion::Identity();
 
     /// @brief イベントを発行
-    template<typename T>
-    void emitEvent(T&& event)
-    {
-        m_pendingEvents.emplace_back(std::forward<T>(event));
-    }
+    template <typename T> void emitEvent(T&& event) { m_pendingEvents.emplace_back(std::forward<T>(event)); }
 
 private:
     /// @brief 保留中のイベント

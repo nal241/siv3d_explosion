@@ -53,4 +53,3 @@ void Enemy::update()
         m_state = State::Dead;
     }
 }
-

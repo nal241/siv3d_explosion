@@ -126,15 +126,17 @@ void SceneGame::updateGameObjects()
         // イベント処理
         for (auto& event : object->consumeEvents())
         {
-            std::visit([this](auto&& e)
-            {
-                using T = std::decay_t<decltype(e)>;
-                if constexpr (std::is_same_v<T, ExplosionRequest>)
+            std::visit(
+                [this](auto&& e)
                 {
-                    handleExplosion(e);
-                }
-                // 将来: 他のイベント型を追加
-            }, event);
+                    using T = std::decay_t<decltype(e)>;
+                    if constexpr (std::is_same_v<T, ExplosionRequest>)
+                    {
+                        handleExplosion(e);
+                    }
+                    // 将来: 他のイベント型を追加
+                },
+                event);
         }
     }
 }
@@ -302,8 +304,7 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
         const double phi = s3d::Random(0.0, s3d::Math::Pi);
         const double speed = s3d::Random(MinParticleSpeed, MaxParticleSpeed);
 
-        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
-                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta), s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
                             s3d::Math::Cos(phi)};
 
         Particle3D particle{.position = center,
@@ -347,14 +348,14 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         s3d::Vec3 direction = objectPos - center;
         double distanceSq = direction.lengthSq();
 
-        // 最小距離チェック（二乗で比較して高速化）
+        // 最小距離チェック
         const double minDistSq = ExplosionMinDistance * ExplosionMinDistance;
         if (distanceSq <= minDistSq)
             continue;
 
         // ここで一度だけ平方根を計算
         double distance = s3d::Math::Sqrt(distanceSq);
-        s3d::Vec3 normalizedDirection = direction / distance;  // 手動で正規化
+        s3d::Vec3 normalizedDirection = direction / distance; // 手動で正規化
 
         double falloff = 1.0 - (distance / radius);
         double explosionForce = ExplosionBasePower * falloff;
