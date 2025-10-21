@@ -15,11 +15,6 @@ protected:
     void updateSceneSpecific() override;
 
 private:
-    // 3D空間のパーティクルシステム
-    ParticleSystem m_particleSystem;
-
-    // 効果音
-    s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
     // 背景色
     s3d::ColorF m_backgroundColor = s3d::ColorF{0.8, 0.3, 0.2}.removeSRGBCurve();
     // UI用フォント
