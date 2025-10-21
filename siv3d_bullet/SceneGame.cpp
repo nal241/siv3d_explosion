@@ -40,7 +40,7 @@ void SceneGame::update()
     updateInput();
     updatePhysics();
     updateGameObjects();
-	updateParticleSystem();
+    updateParticleSystem();
     updateSpawn();
     removeObjects();
     updateSceneSpecific();
@@ -105,24 +105,7 @@ void SceneGame::updateGameObjects()
     for (const auto& object : m_gameObjects)
     {
         object->update();
-
-        // 爆発物の処理
-        if (auto bomb = std::dynamic_pointer_cast<Bomb>(object))
-        {
-            if (bomb->isReadyToExplode())
-            {
-                m_explosionSound.playOneShot();
-                bomb->triggerExplosion(m_particleSystem, m_gameObjects);
-            }
-        }
-        else if (auto enemy = std::dynamic_pointer_cast<Enemy>(object))
-        {
-            if (enemy->isReadyToExplode())
-            {
-                m_explosionSound.playOneShot();
-                enemy->triggerExplosion(m_particleSystem, m_gameObjects);
-            }
-        }
+        object->handleExplosionCheck(m_particleSystem, m_gameObjects, m_explosionSound);
     }
 }
 
