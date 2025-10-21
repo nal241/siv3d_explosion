@@ -1,6 +1,8 @@
 #include "SceneTestExplosion.h"
+#include "SceneCommon.h"
 #include "Renderers.h"
 #include "Enemy.h"
+#include "Bomb.h"
 
 namespace
 {
@@ -17,23 +19,6 @@ namespace
     constexpr double BombRadius = 0.5;
     constexpr s3d::Vec3 BombPosition{5, 0.5, 5};
     constexpr float BombMass = 0.0f;
-
-    // === パーティクル設定 ===
-    constexpr int32 ParticleCount = 50;           // 1回の爆発で生成するパーティクル数
-    constexpr double MinParticleSpeed = 3.0;      // パーティクルの最小初速（m/s）
-    constexpr double MaxParticleSpeed = 8.0;      // パーティクルの最大初速（m/s）
-    constexpr double MinParticleSize = 0.2;       // パーティクルの最小サイズ（m）
-    constexpr double MaxParticleSize = 0.5;       // パーティクルの最大サイズ（m）
-    constexpr double MinParticleLife = 0.8;       // パーティクルの最小寿命（秒）
-    constexpr double MaxParticleLife = 1.5;       // パーティクルの最大寿命（秒）
-    constexpr double MinParticleHue = 0.0;        // パーティクルの色相の最小値
-    constexpr double MaxParticleHue = 60.0;       // パーティクルの色相の最大値（オレンジ～赤）
-    constexpr double MinParticleSaturation = 0.7; // パーティクルの彩度の最小値
-    constexpr double MaxParticleSaturation = 1.0; // パーティクルの彩度の最大値
-
-    // === 爆発の物理パラメータ ===
-    constexpr double ExplosionBasePower = 10.0;   // 爆発の基本威力
-    constexpr double ExplosionMinDistance = 0.01; // これ以下の距離では力を加えない（ゼロ除算防止）
 } // namespace
 
 SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
@@ -41,17 +26,6 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
     s3d::Print << U"Explosion Scene Initialized";
 
     // --- オブジェクト生成 ---
-
-    // 爆弾
-    {
-        auto bomb = GameObject::CreateSphere(m_world, GameObject::SphereParams{.radius = BombRadius,
-                                                                               .position = BombPosition,
-                                                                               .mass = BombMass,
-                                                                               .color = ColorF{0.1, 0.1, 0.1},
-                                                                               .restitution = 0.0f});
-        m_bombObject = bomb; // weak_ptrに保存
-        addGameObject(std::move(bomb));
-    }
 
     // テストキューブ
     for (int i = 0; i < 8; i++)
@@ -72,49 +46,85 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
 
 void SceneTestExplosion::updateSceneSpecific()
 {
-    // パーティクルを更新
-    const double deltaTime = Scene::DeltaTime();
+    // マウスカーソルから静的オブジェクトへのレイキャスト
+    const Ray ray = m_camera.screenToRay(Cursor::Pos());
+    m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
 
-    for (auto& particle : m_particles)
+    // --- 爆発の確認 ---
+    for (auto& object : m_gameObjects)
     {
-        if (!particle.active)
-            continue;
-
-        // 速度を更新（重力を適用）
-        particle.velocity += Gravity * deltaTime;
-
-        // 位置を更新
-        particle.position += particle.velocity * deltaTime;
-
-        // 寿命を減らす
-        particle.life -= deltaTime;
-
-        // 寿命が尽きたら非アクティブに
-        if (particle.life <= 0.0)
+        if (auto bomb = std::dynamic_pointer_cast<Bomb>(object))
         {
-            particle.active = false;
+            bomb->update();
+            if (bomb->isReadyToExplode())
+            {
+                m_explosionSound.playOneShot();
+                bomb->triggerExplosion(m_particleSystem, m_gameObjects);
+            }
         }
     }
 
-    // 非アクティブなパーティクルを削除
-    m_particles.remove_if([](const Particle3D& p) { return !p.active; });
+    // --- パーティクルの更新 ---
+    m_particleSystem.update(Scene::DeltaTime());
 
     // このシーン固有の表示
-    s3d::Print << U"Particles: {}"_fmt(m_particles.size());
-
-    // Pキーで爆発
-    if (KeyP.down())
-    {
-        if (auto bomb = m_bombObject.lock()) // 生存確認
-        {
-            explode(bomb, 5.0);
-        }
-    }
+    // s3d::Print << U"Particles: {} "_fmt(m_particleSystem.m_particles.size());
 
     // Tキーでゲームシーンへ戻る
     if (KeyT.down())
     {
         changeScene(State::Game, 1.0s);
+    }
+
+    // Bキーで爆弾を投げる
+    if (KeyB.down() && (m_throwCooldown.sF() >= 1.0 || !m_throwCooldown.isStarted()))
+    {
+        // マウスカーソル位置にレイがヒットしていたら
+        if (m_raycastResult.hasHit)
+        {
+            const Vec3 startPos = m_camera.getEyePosition();
+            const Vec3 targetPos = m_raycastResult.hitPoint;
+            constexpr double launchAngle = -10.0;      // 角度を少し下げる
+            const Vec3 gravity = m_world.getGravity(); // 物理ワールドの重力を取得
+
+            // 投擲に必要な初速を計算
+            if (auto launchVelocity = PhysicsWorld::CalculateLaunchVelocity(startPos, targetPos, launchAngle, gravity))
+            {
+                const float mass = 2.0f;
+                const float radius = 0.4f;
+
+                // 爆弾のパラメータを設定（発射位置はカメラの位置）
+                Bomb::BombParams params{
+                    .position = startPos,
+                    .radius = radius,
+                    .mass = mass,
+                    .duration = 3.0, // 3秒後に爆発
+                    .color = ColorF{1.0, 0.5, 0.2},
+                    .restitution = 0.4f,
+                    .friction = 0.8f,
+                    .explosionRadius = 5.0, // 爆発半径5
+                };
+
+                // Bombファクトリを使ってオブジェクトを生成
+                if (auto newBomb = Bomb::Create(m_world, params))
+                {
+                    // 計算された初速からインパルスを適用
+                    const Vec3 impulse = *launchVelocity * mass;
+                    newBomb->getPhysicsBody()->applyImpulse(impulse);
+
+                    // シーンにオブジェクトを追加
+                    addGameObject(std::move(newBomb));
+
+                    // クールダウンを開始
+                    m_throwCooldown.restart();
+                }
+            }
+            else
+            {
+                // 到達不可能な位置への投擲を試みた場合
+                Print << U"目標地点に到達できません";
+            }
+        }
     }
 }
 
@@ -132,24 +142,18 @@ void SceneTestExplosion::draw() const
             object->draw();
         }
 
-        // 3D空間にパーティクルを描画（加算ブレンドで光らせる）
+        // 狙っている場所を可視化
+        if (m_raycastResult.hasHit)
         {
-            const ScopedRenderStates3D blend{BlendState::Additive};
-            for (const auto& particle : m_particles)
-            {
-                if (!particle.active)
-                    continue;
+            // ヒットした座標に小さな球を描画
+            Sphere{m_raycastResult.hitPoint, 0.1}.draw(Palette::Red);
 
-                // 寿命に応じて透明度を変化
-                const double alpha = particle.life;
-                // リニアレンダリング用なのでremoveSRGBCurve()でsRGBカーブを除去
-                // 参考: https://zenn.dev/reputeless/books/siv3d-documentation/viewer/tutorial-3d
-                const ColorF color = particle.color.withAlpha(alpha).removeSRGBCurve();
-
-                // 球として描画
-                Sphere{particle.position, particle.size}.draw(color);
-            }
+            // 地面にターゲットマーカーを描画
+            Cylinder{m_raycastResult.hitPoint, 0.5, 0.05}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
         }
+
+        // 3D空間にパーティクルを描画（加算ブレンドで光らせる）
+        m_particleSystem.draw();
     }
     // [2D rendering]
     {
@@ -161,91 +165,32 @@ void SceneTestExplosion::draw() const
         {
             Rect{20, 20, 500, 150}.draw(ColorF{0.0, 0.0, 0.0, 0.7});
             m_titleFont(U"これは爆発用のシーンです").draw(30, 30, ColorF{1.0, 0.7, 0.0});
-            m_instructionFont(U"P：爆発させる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"B：爆弾を投げる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
             m_instructionFont(U"T：ゲームシーンへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
         }
-    }
-}
 
-void SceneTestExplosion::explode(const std::shared_ptr<GameObject>& bomb, double radius)
-{
-    if (!bomb)
-        return;
-
-    // 爆発音を再生
-    m_explosionSound.playOneShot();
-
-    // 爆弾の中心位置を取得
-    Vec3 bombCenter = bomb->getPosition();
-
-    s3d::Print << U"💥 Explosion at {}"_fmt(bombCenter);
-    s3d::Print << U"Radius: {}"_fmt(radius);
-
-    // === パーティクル生成 ===
-    for (int32 i = 0; i < ParticleCount; ++i)
-    {
-        // 球状にランダムな方向
-        const double theta = Random(0.0, Math::TwoPi);
-        const double phi = Random(0.0, Math::Pi);
-        const double speed = Random(MinParticleSpeed, MaxParticleSpeed);
-
-        Vec3 direction{Math::Sin(phi) * Math::Cos(theta), Math::Sin(phi) * Math::Sin(theta), Math::Cos(phi)};
-
-        Particle3D particle{.position = bombCenter,
-                            .velocity = direction * speed,
-                            .color = HSV{Random(MinParticleHue, MaxParticleHue),
-                                         Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
-                            .size = Random(MinParticleSize, MaxParticleSize),
-                            .life = Random(MinParticleLife, MaxParticleLife),
-                            .active = true};
-
-        m_particles << particle;
-    }
-
-    s3d::Print << U"   Created {} particles"_fmt(ParticleCount);
-
-    // === 物理演算：オブジェクトに力を加える ===
-    int32 hitCount = 0;
-
-    for (auto& object : m_gameObjects)
-    {
-        // 爆弾自身はスキップ
-        if (object == bomb)
-            continue;
-
-        // GameObjectからPhysicsBodyを取得
-        auto body = object->getPhysicsBody();
-        if (!body || body->isStatic())
-            continue;
-
-        Vec3 objectPos = object->getPosition();
-        Vec3 direction = objectPos - bombCenter;
-        double distance = direction.length();
-
-        // 範囲内かつ有効な距離の場合のみ力を加える
-        if (distance < radius && distance > ExplosionMinDistance)
+        // クールダウンUIを描画
         {
-            Vec3 normalizedDirection = direction.normalized();
-            double falloff = 1.0 - (distance / radius);
-            double explosionForce = ExplosionBasePower * falloff;
-            Vec3 force = normalizedDirection * explosionForce;
+            constexpr double cooldownTime = 1.0;
+            const double progress = Min(m_throwCooldown.sF() / cooldownTime, 1.0);
 
-            body->applyImpulse(force);
-            hitCount++;
+            // 画面下部中央に配置
+            const RectF bar{Arg::center(Scene::Center().x, Scene::Height() - 40), 400, 20};
 
-            // エネミーにダメージを与える
-            if (auto enemy = std::dynamic_pointer_cast<Enemy>(object))
+            // 背景
+            bar.draw(ColorF{0.0, 0.6});
+
+            // 進捗
+            bar.stretched(0, -(bar.w * (1.0 - progress)), 0, 0).draw(ColorF{0.9, 0.8, 0.3});
+
+            // 枠線
+            bar.drawFrame(1.5, ColorF{0.1});
+
+            // テキスト（クールダウン完了時のみ表示）
+            if (progress >= 1.0)
             {
-                int damage = static_cast<int>(falloff * 100); // 最大100ダメージ
-                enemy->takeDamage(damage);
-                s3d::Print << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
-            }
-            else
-            {
-                s3d::Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
+                m_cooldownFont(U"BOMB READY").drawAt(bar.center(), ColorF{0.0});
             }
         }
     }
-
-    s3d::Print << U"   Hit {} objects"_fmt(hitCount);
 }

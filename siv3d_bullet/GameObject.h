@@ -32,6 +32,7 @@ public:
 
     virtual void update() {}
     virtual bool shouldBeRemoved() const { return false; }
+
     void draw() const;
     void drawWireframe() const;
 
