@@ -19,7 +19,8 @@ public:
         double explosionRadius = 3.0;
     };
 
-    Enemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth, double explosionRadius);
+    Enemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
+          double explosionRadius);
 
     void update() override;
     void takeDamage(int damage);
@@ -29,6 +30,10 @@ public:
 
     bool isReadyToExplode() const;
     void triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects);
+
+    bool handleExplosionCheck(ParticleSystem& particleSystem,
+                              const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
+                              s3d::Audio& explosionSound) override;
 
     static std::shared_ptr<Enemy> Create(PhysicsWorld& world, const EnemyParams& params);
 

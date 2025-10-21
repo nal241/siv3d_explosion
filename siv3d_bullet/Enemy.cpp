@@ -2,8 +2,10 @@
 #include "PhysicsWorld.h"
 #include "ExplosionHelper.h"
 
-Enemy::Enemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth, double explosionRadius)
-    : GameObject(std::move(physicsBody), std::move(renderer)), m_health(maxHealth), m_maxHealth(maxHealth), m_explosionRadius(explosionRadius)
+Enemy::Enemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
+             double explosionRadius)
+    : GameObject(std::move(physicsBody), std::move(renderer)), m_health(maxHealth), m_maxHealth(maxHealth),
+      m_explosionRadius(explosionRadius)
 {
 }
 
@@ -34,7 +36,8 @@ std::shared_ptr<Enemy> Enemy::Create(PhysicsWorld& world, const EnemyParams& par
 
     auto renderer = std::make_unique<PhysicsShapeRenderer>(*body, params.color);
 
-    auto enemy = std::make_shared<Enemy>(std::move(body), std::move(renderer), params.maxHealth, params.explosionRadius);
+    auto enemy =
+        std::make_shared<Enemy>(std::move(body), std::move(renderer), params.maxHealth, params.explosionRadius);
     enemy->getPhysicsBody()->setOwner(enemy->weak_from_this());
     return enemy;
 }
@@ -44,19 +47,23 @@ void Enemy::update()
     // タイマーの更新はStopwatchが自動的に行う
 }
 
-bool Enemy::isReadyToExplode() const
-{
-    return (m_state == State::Dying && m_deathTimer.sF() >= 1.0);
-}
+bool Enemy::isReadyToExplode() const { return (m_state == State::Dying && m_deathTimer.sF() >= 1.0); }
 
 void Enemy::triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects)
 {
-    if (m_state != State::Dying)
-    {
-        return;
-    }
-
     ExplosionHelper::CreateExplosion(particleSystem, gameObjects, getPosition(), m_explosionRadius, shared_from_this());
 
     m_state = State::Dead;
+}
+
+bool Enemy::handleExplosionCheck(ParticleSystem& particleSystem,
+                                 const s3d::Array<std::shared_ptr<GameObject>>& gameObjects, s3d::Audio& explosionSound)
+{
+    if (isReadyToExplode())
+    {
+        triggerExplosion(particleSystem, gameObjects);
+        explosionSound.playOneShot();
+        return true;
+    }
+    return false;
 }
