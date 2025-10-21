@@ -17,6 +17,12 @@ struct RaycastResult
     s3d::Vec3 hitNormal;
 };
 
+struct OverlapResult
+{
+    // NOTE: hitObjectsはweak_ptrで保持。使用時にlock()して有効性を確認すること。
+    s3d::Array<std::weak_ptr<GameObject>> hitObjects;
+};
+
 class PhysicsWorld
 {
 public:
@@ -31,6 +37,13 @@ public:
     void step(float deltaTime);
 
     RaycastResult raycast(const s3d::Ray& ray, CollisionMask mask = MASK_ALL, double maxDistance = 1000.0);
+
+    /// @brief 球体範囲内のGameObjectを取得
+    /// @param center 中心位置
+    /// @param radius 半径
+    /// @param mask 衝突マスク
+    /// @return 範囲内のGameObject（weak_ptr配列）
+    OverlapResult overlapSphere(s3d::Vec3 center, double radius, CollisionMask mask = MASK_ALL);
 
     // 重力取得
     s3d::Vec3 getGravity() const;

@@ -29,6 +29,11 @@ protected:
     void createStage();
     void addGameObject(std::shared_ptr<GameObject> obj);
     void spawnEnemy();
+    void handleExplosion(const ExplosionRequest& request);
+
+    // 爆発処理
+    void createExplosionParticles(const s3d::Vec3& center, double radius);
+    void applyExplosionForce(const ExplosionRequest& request);
 
     // メンバ変数
     PhysicsWorld m_world;

@@ -21,6 +21,23 @@ namespace
     // 吸引機能の設定
     constexpr double AttractionForce = 5.0;  // 吸引力の強さ（一定）
     constexpr double AttractionRadius = 2.0; // 吸引力の有効半径
+
+    // === 爆発パーティクル設定 ===
+    constexpr int32 ParticleCount = 50;
+    constexpr double MinParticleSpeed = 3.0;
+    constexpr double MaxParticleSpeed = 8.0;
+    constexpr double MinParticleSize = 0.2;
+    constexpr double MaxParticleSize = 0.5;
+    constexpr double MinParticleLife = 0.8;
+    constexpr double MaxParticleLife = 1.5;
+    constexpr double MinParticleHue = 0.0;
+    constexpr double MaxParticleHue = 60.0;
+    constexpr double MinParticleSaturation = 0.7;
+    constexpr double MaxParticleSaturation = 1.0;
+
+    // === 爆発の物理パラメータ ===
+    constexpr double ExplosionBasePower = 10.0;
+    constexpr double ExplosionMinDistance = 0.01;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -105,7 +122,20 @@ void SceneGame::updateGameObjects()
     for (const auto& object : m_gameObjects)
     {
         object->update();
-        object->handleExplosionCheck(m_particleSystem, m_gameObjects, m_explosionSound);
+
+        // イベント処理
+        for (auto& event : object->consumeEvents())
+        {
+            std::visit([this](auto&& e)
+            {
+                using T = std::decay_t<decltype(e)>;
+                if constexpr (std::is_same_v<T, ExplosionRequest>)
+                {
+                    handleExplosion(e);
+                }
+                // 将来: 他のイベント型を追加
+            }, event);
+        }
     }
 }
 
@@ -250,4 +280,100 @@ void SceneGame::spawnEnemy()
                                                             .group = GROUP_ATTRACTABLE,
                                                             .mask = MASK_ALL,
                                                             .explosionRadius = 3.0}));
+}
+
+void SceneGame::handleExplosion(const ExplosionRequest& request)
+{
+    // 爆発を実行（パーティクル + 物理的な力）
+    createExplosionParticles(request.position, request.radius);
+    applyExplosionForce(request);
+
+    // サウンド再生
+    m_explosionSound.playOneShot();
+}
+
+void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
+{
+    s3d::Print << U"   Creating {} particles"_fmt(ParticleCount);
+
+    for (int32 i = 0; i < ParticleCount; ++i)
+    {
+        const double theta = s3d::Random(0.0, s3d::Math::TwoPi);
+        const double phi = s3d::Random(0.0, s3d::Math::Pi);
+        const double speed = s3d::Random(MinParticleSpeed, MaxParticleSpeed);
+
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
+                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+                            s3d::Math::Cos(phi)};
+
+        Particle3D particle{.position = center,
+                            .velocity = direction * speed,
+                            .color = s3d::HSV{s3d::Random(MinParticleHue, MaxParticleHue),
+                                              s3d::Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
+                            .size = s3d::Random(MinParticleSize, MaxParticleSize),
+                            .life = s3d::Random(MinParticleLife, MaxParticleLife),
+                            .active = true};
+        m_particleSystem.add(particle);
+    }
+}
+
+void SceneGame::applyExplosionForce(const ExplosionRequest& request)
+{
+    const s3d::Vec3& center = request.position;
+    const double radius = request.radius;
+    auto explosionSource = request.source.lock();
+
+    s3d::Print << U"   Applying force to objects...";
+
+    // 範囲内のオブジェクトを取得して力を加える
+    auto nearbyResult = m_world.overlapSphere(center, radius, MASK_ALL);
+    int32 hitCount = 0;
+
+    for (auto weakObj : nearbyResult.hitObjects)
+    {
+        auto object = weakObj.lock();
+        if (!object)
+            continue;
+
+        // 自分自身は除外
+        if (explosionSource && object == explosionSource)
+            continue;
+
+        auto body = object->getPhysicsBody();
+        if (!body || body->isStatic())
+            continue;
+
+        s3d::Vec3 objectPos = object->getPosition();
+        s3d::Vec3 direction = objectPos - center;
+        double distanceSq = direction.lengthSq();
+
+        // 最小距離チェック（二乗で比較して高速化）
+        const double minDistSq = ExplosionMinDistance * ExplosionMinDistance;
+        if (distanceSq <= minDistSq)
+            continue;
+
+        // ここで一度だけ平方根を計算
+        double distance = s3d::Math::Sqrt(distanceSq);
+        s3d::Vec3 normalizedDirection = direction / distance;  // 手動で正規化
+
+        double falloff = 1.0 - (distance / radius);
+        double explosionForce = ExplosionBasePower * falloff;
+        s3d::Vec3 force = normalizedDirection * explosionForce;
+
+        body->applyImpulse(force);
+        hitCount++;
+
+        // エネミーにダメージを与える
+        if (auto enemy = std::dynamic_pointer_cast<Enemy>(object))
+        {
+            int damage = static_cast<int>(falloff * 100);
+            enemy->takeDamage(damage);
+            s3d::Print << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
+        }
+        else
+        {
+            s3d::Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
+        }
+    }
+    s3d::Print << U"   Hit {} objects"_fmt(hitCount);
 }

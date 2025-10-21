@@ -12,22 +12,17 @@ Bomb::Bomb(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> 
 void Bomb::update()
 {
     // タイマーの更新はStopwatchが自動的に行う
+
+    if (isReadyToExplode())
+    {
+        // 爆発イベントを発行（物理的な力の適用、パーティクル、サウンドはSceneが処理）
+        emitEvent(ExplosionRequest{getPosition(), m_explosionRadius, weak_from_this()});
+
+        m_isExploded = true;
+    }
 }
 
 bool Bomb::shouldBeRemoved() const { return m_isExploded; }
-
-bool Bomb::isReadyToExplode() const { return m_timer.sF() >= m_duration && !m_isExploded; }
-
-void Bomb::triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects)
-{
-    if (m_isExploded)
-    {
-        return;
-    }
-
-    ExplosionHelper::CreateExplosion(particleSystem, gameObjects, getPosition(), m_explosionRadius, shared_from_this());
-    m_isExploded = true;
-}
 
 std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params)
 {
@@ -40,16 +35,4 @@ std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params
     auto bomb = std::make_shared<Bomb>(std::move(body), std::move(renderer), params.duration, params.explosionRadius);
     bomb->getPhysicsBody()->setOwner(bomb->weak_from_this());
     return bomb;
-}
-
-bool Bomb::handleExplosionCheck(ParticleSystem& particleSystem,
-                                const s3d::Array<std::shared_ptr<GameObject>>& gameObjects, s3d::Audio& explosionSound)
-{
-    if (isReadyToExplode())
-    {
-        triggerExplosion(particleSystem, gameObjects);
-        explosionSound.playOneShot();
-        return true;
-    }
-    return false;
 }
