@@ -55,8 +55,8 @@ void SceneGame::update()
 {
     updateCamera();
     updateInput();
-    updatePhysics();
     updateGameObjects();
+    updatePhysics();
     updateParticleSystem();
     updateSpawn();
     removeObjects();
@@ -119,11 +119,15 @@ void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTi
 
 void SceneGame::updateGameObjects()
 {
+    //全オブジェクトの状態更新
     for (const auto& object : m_gameObjects)
     {
         object->update();
+    }
 
-        // イベント処理
+    //全イベントの処理
+    for (const auto& object : m_gameObjects)
+    {
         for (auto& event : object->consumeEvents())
         {
             std::visit(
