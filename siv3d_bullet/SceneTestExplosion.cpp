@@ -84,8 +84,8 @@ void SceneTestExplosion::updateSceneSpecific()
         {
             const Vec3 startPos = m_camera.getEyePosition();
             const Vec3 targetPos = m_raycastResult.hitPoint;
-            constexpr float launchAngle = -10.0f; // 角度を少し下げる
-            constexpr float gravity = 9.8f;   // 物理ワールドの重力に合わせる
+            constexpr double launchAngle = -10.0;      // 角度を少し下げる
+            const Vec3 gravity = m_world.getGravity(); // 物理ワールドの重力を取得
 
             // 投擲に必要な初速を計算
             if (auto launchVelocity = PhysicsWorld::CalculateLaunchVelocity(startPos, targetPos, launchAngle, gravity))
@@ -118,6 +118,11 @@ void SceneTestExplosion::updateSceneSpecific()
                     // クールダウンを開始
                     m_throwCooldown.restart();
                 }
+            }
+            else
+            {
+                // 到達不可能な位置への投擲を試みた場合
+                Print << U"目標地点に到達できません";
             }
         }
     }
@@ -170,16 +175,16 @@ void SceneTestExplosion::draw() const
             const double progress = Min(m_throwCooldown.sF() / cooldownTime, 1.0);
 
             // 画面下部中央に配置
-            const RectF bar{ Arg::center(Scene::Center().x, Scene::Height() - 40), 400, 20 };
+            const RectF bar{Arg::center(Scene::Center().x, Scene::Height() - 40), 400, 20};
 
             // 背景
-            bar.draw(ColorF{ 0.0, 0.6 });
+            bar.draw(ColorF{0.0, 0.6});
 
             // 進捗
-            bar.stretched(0, -(bar.w * (1.0 - progress)), 0, 0).draw(ColorF{ 0.9, 0.8, 0.3 });
+            bar.stretched(0, -(bar.w * (1.0 - progress)), 0, 0).draw(ColorF{0.9, 0.8, 0.3});
 
             // 枠線
-            bar.drawFrame(1.5, ColorF{ 0.1 });
+            bar.drawFrame(1.5, ColorF{0.1});
 
             // テキスト（クールダウン完了時のみ表示）
             if (progress >= 1.0)

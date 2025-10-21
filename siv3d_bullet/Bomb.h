@@ -19,13 +19,14 @@ public:
         double explosionRadius = 5.0;
     };
 
-    Bomb(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, double duration, double explosionRadius);
+    Bomb(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, double duration,
+         double explosionRadius);
 
     void update() override;
     bool shouldBeRemoved() const override;
 
     bool isReadyToExplode() const;
-    
+
     void triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects);
 
     static std::shared_ptr<Bomb> Create(PhysicsWorld& world, const BombParams& params);

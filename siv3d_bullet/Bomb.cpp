@@ -2,10 +2,9 @@
 #include "PhysicsWorld.h"
 #include "Renderers.h"
 
-Bomb::Bomb(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, double duration, double explosionRadius)
-    : GameObject(std::move(physicsBody), std::move(renderer)), 
-      m_duration(duration),
-      m_explosionRadius(explosionRadius)
+Bomb::Bomb(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, double duration,
+           double explosionRadius)
+    : GameObject(std::move(physicsBody), std::move(renderer)), m_duration(duration), m_explosionRadius(explosionRadius)
 {
     m_timer.start();
 }
@@ -15,15 +14,9 @@ void Bomb::update()
     // タイマーの更新はStopwatchが自動的に行う
 }
 
-bool Bomb::shouldBeRemoved() const
-{
-    return m_isExploded;
-}
+bool Bomb::shouldBeRemoved() const { return m_isExploded; }
 
-bool Bomb::isReadyToExplode() const
-{
-    return m_timer.sF() >= m_duration && !m_isExploded;
-}
+bool Bomb::isReadyToExplode() const { return m_timer.sF() >= m_duration && !m_isExploded; }
 
 void Bomb::triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects)
 {

@@ -32,13 +32,17 @@ public:
 
     RaycastResult raycast(const s3d::Ray& ray, CollisionMask mask = MASK_ALL, double maxDistance = 1000.0);
 
+    // 重力取得
+    s3d::Vec3 getGravity() const;
+
     // オブジェクト追加（unique_ptrで返す）
     std::unique_ptr<PhysicsBody> createBox(const BoxDesc& desc, CollisionGroup group, CollisionMask mask);
     std::unique_ptr<PhysicsBody> createSphere(const SphereDesc& desc, CollisionGroup group, CollisionMask mask);
     std::unique_ptr<PhysicsBody> createCylinder(const CylinderDesc& desc, CollisionGroup group, CollisionMask mask);
 
     // --- static utilities ---
-    static std::optional<Vec3> CalculateLaunchVelocity(const Vec3& start, const Vec3& target, double launchAngleDeg, double gravity);
+    static std::optional<Vec3> CalculateLaunchVelocity(const Vec3& start, const Vec3& target, double launchAngleDeg,
+                                                       const Vec3& gravity);
 
 private:
     friend class PhysicsBody;

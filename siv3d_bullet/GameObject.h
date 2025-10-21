@@ -30,7 +30,7 @@ public:
     GameObject(GameObject&&) = default;
     GameObject& operator=(GameObject&&) = default;
 
-	virtual void update() {}
+    virtual void update() {}
     virtual bool shouldBeRemoved() const { return false; }
 
     void draw() const;

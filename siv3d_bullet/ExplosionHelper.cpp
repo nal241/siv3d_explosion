@@ -21,14 +21,12 @@ namespace
     // === 爆発の物理パラメータ ===
     constexpr double ExplosionBasePower = 10.0;
     constexpr double ExplosionMinDistance = 0.01;
-}
+} // namespace
 
-void ExplosionHelper::CreateExplosion(
-    ParticleSystem& particleSystem,
-    const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
-    const s3d::Vec3& center,
-    double radius,
-    const std::shared_ptr<GameObject>& bombObject)
+void ExplosionHelper::CreateExplosion(ParticleSystem& particleSystem,
+                                      const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
+                                      const s3d::Vec3& center, double radius,
+                                      const std::shared_ptr<GameObject>& bombObject)
 {
     s3d::Print << U"   Creating {} particles"_fmt(ParticleCount);
 
@@ -39,17 +37,16 @@ void ExplosionHelper::CreateExplosion(
         const double phi = s3d::Random(0.0, s3d::Math::Pi);
         const double speed = s3d::Random(MinParticleSpeed, MaxParticleSpeed);
 
-        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta), s3d::Math::Sin(phi) * s3d::Math::Sin(theta), s3d::Math::Cos(phi)};
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta), s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+                            s3d::Math::Cos(phi)};
 
-        Particle3D particle{
-            .position = center,
-            .velocity = direction * speed,
-            .color = s3d::HSV{s3d::Random(MinParticleHue, MaxParticleHue),
-                              s3d::Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
-            .size = s3d::Random(MinParticleSize, MaxParticleSize),
-            .life = s3d::Random(MinParticleLife, MaxParticleLife),
-            .active = true
-        };
+        Particle3D particle{.position = center,
+                            .velocity = direction * speed,
+                            .color = s3d::HSV{s3d::Random(MinParticleHue, MaxParticleHue),
+                                              s3d::Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
+                            .size = s3d::Random(MinParticleSize, MaxParticleSize),
+                            .life = s3d::Random(MinParticleLife, MaxParticleLife),
+                            .active = true};
         particleSystem.add(particle);
     }
 

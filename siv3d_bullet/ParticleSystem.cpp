@@ -36,7 +36,4 @@ void ParticleSystem::draw() const
     }
 }
 
-void ParticleSystem::add(const Particle3D& particle)
-{
-    m_particles.push_back(particle);
-}
+void ParticleSystem::add(const Particle3D& particle) { m_particles.push_back(particle); }
