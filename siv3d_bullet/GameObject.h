@@ -5,6 +5,7 @@
 #include "CollisionGroups.h"
 #include "PhysicsBody.h"
 #include "Renderers.h"
+#include "ParticleSystem.h"
 
 class PhysicsWorld;
 
@@ -32,6 +33,13 @@ public:
 
     virtual void update() {}
     virtual bool shouldBeRemoved() const { return false; }
+
+    virtual bool handleExplosionCheck(ParticleSystem& particleSystem,
+                                      const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
+                                      s3d::Audio& explosionSound)
+    {
+        return false;
+    }
 
     void draw() const;
     void drawWireframe() const;

@@ -25,6 +25,10 @@ public:
     void update() override;
     bool shouldBeRemoved() const override;
 
+    bool handleExplosionCheck(ParticleSystem& particleSystem,
+                              const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
+                              s3d::Audio& explosionSound) override;
+
     bool isReadyToExplode() const;
 
     void triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects);
