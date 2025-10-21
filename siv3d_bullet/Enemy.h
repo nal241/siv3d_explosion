@@ -28,13 +28,6 @@ public:
     int getHealth() const { return m_health; }
     int getMaxHealth() const { return m_maxHealth; }
 
-    bool isReadyToExplode() const;
-    void triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects);
-
-    bool handleExplosionCheck(ParticleSystem& particleSystem,
-                              const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
-                              s3d::Audio& explosionSound) override;
-
     static std::shared_ptr<Enemy> Create(PhysicsWorld& world, const EnemyParams& params);
 
 private:
@@ -44,6 +37,8 @@ private:
         Dying,
         Dead
     };
+
+    bool isReadyToExplode() const { return m_state == State::Dying && m_deathTimer.sF() >= 1.0; }
 
     int m_health;
     int m_maxHealth;
