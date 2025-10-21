@@ -74,6 +74,7 @@ public:
     std::weak_ptr<GameObject> getOwner() const;
     CollisionGroup getGroup() const { return m_group; }
     CollisionMask getMask() const { return m_mask; }
+    PhysicsWorld* getWorld() const { return m_world; }
 
 private:
     // PhysicsBody は PhysicsWorldで管理する。
