@@ -1,6 +1,5 @@
 #include "Enemy.h"
 #include "PhysicsWorld.h"
-#include "ExplosionHelper.h"
 
 Enemy::Enemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
              double explosionRadius)
@@ -45,25 +44,12 @@ std::shared_ptr<Enemy> Enemy::Create(PhysicsWorld& world, const EnemyParams& par
 void Enemy::update()
 {
     // タイマーの更新はStopwatchが自動的に行う
-}
 
-bool Enemy::isReadyToExplode() const { return (m_state == State::Dying && m_deathTimer.sF() >= 1.0); }
-
-void Enemy::triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects)
-{
-    ExplosionHelper::CreateExplosion(particleSystem, gameObjects, getPosition(), m_explosionRadius, shared_from_this());
-
-    m_state = State::Dead;
-}
-
-bool Enemy::handleExplosionCheck(ParticleSystem& particleSystem,
-                                 const s3d::Array<std::shared_ptr<GameObject>>& gameObjects, s3d::Audio& explosionSound)
-{
     if (isReadyToExplode())
     {
-        triggerExplosion(particleSystem, gameObjects);
-        explosionSound.playOneShot();
-        return true;
+        // 爆発イベントを発行（物理的な力の適用、パーティクル、サウンド）
+        emitEvent(ExplosionRequest{getPosition(), m_explosionRadius, weak_from_this()});
+
+        m_state = State::Dead;
     }
-    return false;
 }

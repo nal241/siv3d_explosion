@@ -74,6 +74,51 @@ RaycastResult PhysicsWorld::raycast(const s3d::Ray& ray, CollisionMask mask, dou
     return {}; // No hit
 }
 
+OverlapResult PhysicsWorld::overlapSphere(s3d::Vec3 center, double radius, CollisionMask mask)
+{
+    // Bulletの球体シェイプを作成
+    btSphereShape sphereShape(static_cast<btScalar>(radius));
+
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(ToBtVector3(center));
+
+    btCollisionObject testObject;
+    testObject.setCollisionShape(&sphereShape);
+    testObject.setWorldTransform(transform);
+
+    // コールバック定義
+    struct OverlapCallback : public btCollisionWorld::ContactResultCallback
+    {
+        s3d::Array<std::weak_ptr<GameObject>> results;
+        CollisionMask filterMask;
+
+        OverlapCallback(CollisionMask mask) : filterMask(mask) {}
+
+        btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0, int partId0, int index0,
+                                 const btCollisionObjectWrapper* colObj1, int partId1, int index1) override
+        {
+            const btRigidBody* body = btRigidBody::upcast(colObj1->getCollisionObject());
+            if (body && body->getUserPointer())
+            {
+                PhysicsBody* physicsBody = static_cast<PhysicsBody*>(body->getUserPointer());
+
+                // マスクフィルタリング
+                if ((physicsBody->getGroup() & filterMask) != 0)
+                {
+                    results.push_back(physicsBody->getOwner());
+                }
+            }
+            return 0;
+        }
+    };
+
+    OverlapCallback callback(mask);
+    m_dynamicsWorld->contactTest(&testObject, callback);
+
+    return OverlapResult{std::move(callback.results)};
+}
+
 // 箱を作成する
 std::unique_ptr<PhysicsBody> PhysicsWorld::createBox(const BoxDesc& desc, CollisionGroup group, CollisionMask mask)
 {

@@ -50,8 +50,6 @@ void SceneTestExplosion::updateSceneSpecific()
     const Ray ray = m_camera.screenToRay(Cursor::Pos());
     m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
 
-
-
     // このシーン固有の表示
     // s3d::Print << U"Particles: {} "_fmt(m_particleSystem.m_particles.size());
 

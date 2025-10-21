@@ -1,6 +1,5 @@
 #pragma once
 #include "GameObject.h"
-#include "ExplosionHelper.h"
 
 class Bomb : public GameObject
 {
@@ -25,17 +24,10 @@ public:
     void update() override;
     bool shouldBeRemoved() const override;
 
-    bool handleExplosionCheck(ParticleSystem& particleSystem,
-                              const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
-                              s3d::Audio& explosionSound) override;
-
-    bool isReadyToExplode() const;
-
-    void triggerExplosion(ParticleSystem& particleSystem, const s3d::Array<std::shared_ptr<GameObject>>& gameObjects);
-
     static std::shared_ptr<Bomb> Create(PhysicsWorld& world, const BombParams& params);
 
 private:
+    bool isReadyToExplode() const { return m_timer.sF() >= m_duration && !m_isExploded; }
     Stopwatch m_timer;
     double m_duration;
     bool m_isExploded = false;

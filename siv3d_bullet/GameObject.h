@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "CollisionGroups.h"
+#include "GameEvent.h"
 #include "PhysicsBody.h"
 #include "Renderers.h"
 #include "ParticleSystem.h"
@@ -34,12 +35,9 @@ public:
     virtual void update() {}
     virtual bool shouldBeRemoved() const { return false; }
 
-    virtual bool handleExplosionCheck(ParticleSystem& particleSystem,
-                                      const s3d::Array<std::shared_ptr<GameObject>>& gameObjects,
-                                      s3d::Audio& explosionSound)
-    {
-        return false;
-    }
+    /// @brief イベントを取得してクリア
+    /// @return 保留中のイベント配列
+    s3d::Array<GameEvent> consumeEvents() { return std::exchange(m_pendingEvents, s3d::Array<GameEvent>{}); }
 
     void draw() const;
     void drawWireframe() const;
@@ -112,7 +110,12 @@ protected:
     Vec3 m_position{0, 0, 0};
     Quaternion m_rotation = Quaternion::Identity();
 
+    /// @brief イベントを発行
+    template <typename T> void emitEvent(T&& event) { m_pendingEvents.emplace_back(std::forward<T>(event)); }
+
 private:
+    /// @brief 保留中のイベント
+    s3d::Array<GameEvent> m_pendingEvents;
     static inline IDType s_nextID = 0;
 
     std::unique_ptr<PhysicsBody> m_physicsBody;
