@@ -41,3 +41,15 @@ std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params
     bomb->getPhysicsBody()->setOwner(bomb->weak_from_this());
     return bomb;
 }
+
+bool Bomb::handleExplosionCheck(ParticleSystem& particleSystem,
+                                const s3d::Array<std::shared_ptr<GameObject>>& gameObjects, s3d::Audio& explosionSound)
+{
+    if (isReadyToExplode())
+    {
+        triggerExplosion(particleSystem, gameObjects);
+        explosionSound.playOneShot();
+        return true;
+    }
+    return false;
+}

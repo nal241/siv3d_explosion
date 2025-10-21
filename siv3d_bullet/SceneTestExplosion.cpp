@@ -50,22 +50,7 @@ void SceneTestExplosion::updateSceneSpecific()
     const Ray ray = m_camera.screenToRay(Cursor::Pos());
     m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
 
-    // --- 爆発の確認 ---
-    for (auto& object : m_gameObjects)
-    {
-        if (auto bomb = std::dynamic_pointer_cast<Bomb>(object))
-        {
-            bomb->update();
-            if (bomb->isReadyToExplode())
-            {
-                m_explosionSound.playOneShot();
-                bomb->triggerExplosion(m_particleSystem, m_gameObjects);
-            }
-        }
-    }
 
-    // --- パーティクルの更新 ---
-    m_particleSystem.update(Scene::DeltaTime());
 
     // このシーン固有の表示
     // s3d::Print << U"Particles: {} "_fmt(m_particleSystem.m_particles.size());
@@ -152,7 +137,6 @@ void SceneTestExplosion::draw() const
             Cylinder{m_raycastResult.hitPoint, 0.5, 0.05}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
         }
 
-        // 3D空間にパーティクルを描画（加算ブレンドで光らせる）
         m_particleSystem.draw();
     }
     // [2D rendering]

@@ -1,6 +1,7 @@
 #include "SceneGame.h"
 #include "Renderers.h"
 #include "Enemy.h"
+#include "Bomb.h"
 
 namespace
 {
@@ -39,6 +40,7 @@ void SceneGame::update()
     updateInput();
     updatePhysics();
     updateGameObjects();
+    updateParticleSystem();
     updateSpawn();
     removeObjects();
     updateSceneSpecific();
@@ -103,8 +105,11 @@ void SceneGame::updateGameObjects()
     for (const auto& object : m_gameObjects)
     {
         object->update();
+        object->handleExplosionCheck(m_particleSystem, m_gameObjects, m_explosionSound);
     }
 }
+
+void SceneGame::updateParticleSystem() { m_particleSystem.update(Scene::DeltaTime()); }
 
 void SceneGame::updateSpawn()
 {
@@ -148,6 +153,8 @@ void SceneGame::draw() const
         {
             object->draw();
         }
+
+        m_particleSystem.draw();
 
         // --- デバッグ描画 ---
 
@@ -241,5 +248,6 @@ void SceneGame::spawnEnemy()
                                                             .maxHealth = 100,
                                                             .color = HSV{0, 0.7, 0.9},
                                                             .group = GROUP_ATTRACTABLE,
-                                                            .mask = MASK_ALL}));
+                                                            .mask = MASK_ALL,
+                                                            .explosionRadius = 3.0}));
 }
