@@ -35,6 +35,10 @@ protected:
     void createExplosionParticles(const s3d::Vec3& center, double radius);
     void applyExplosionForce(const ExplosionRequest& request);
 
+protected:
+    // 画面揺れを開始する
+    void shake(double duration, double magnitude);
+
     // メンバ変数
     PhysicsWorld m_world;
 
@@ -50,7 +54,17 @@ protected:
     ColorF m_backgroundColor = ColorF{0.4, 0.6, 0.8}.removeSRGBCurve();
 
     const MSRenderTexture m_renderTexture;
-    DebugCamera3D m_camera;
+    BasicCamera3D m_camera;
+    s3d::Vec3 m_cameraPosition;
+    s3d::Vec3 m_cameraLookAt;
+
+    // 画面揺れ用
+    Stopwatch m_shakeTimer;
+    double m_shakeDuration = 0.0;
+    double m_shakeMagnitude = 0.0;
+    s3d::PerlinNoise m_shakeNoise;
+    double m_shakeNoiseTimeX = 0.0;
+    double m_shakeNoiseTimeY = 0.0;
 
     Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
     Model m_model{U"model/coin.obj"};
