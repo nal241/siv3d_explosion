@@ -85,11 +85,10 @@ void SceneGame::updateCamera()
         const double currentMagnitude = m_shakeMagnitude * (1.0 - (elapsed / m_shakeDuration));
 
         // Perlinノイズを使って滑らかな揺れを生成
-        m_shakeNoiseTimeX += Scene::DeltaTime() * ShakeSpeed;
-        m_shakeNoiseTimeY += Scene::DeltaTime() * ShakeSpeed;
+        m_shakeNoiseTime += Scene::DeltaTime() * ShakeSpeed;
 
-        const double x = m_shakeNoise.noise2D(m_shakeNoiseTimeX, NoiseSeedX) * currentMagnitude;
-        const double y = m_shakeNoise.noise2D(m_shakeNoiseTimeY, NoiseSeedY) * currentMagnitude;
+        const double x = m_shakeNoise.noise2D(m_shakeNoiseTime, NoiseSeedX) * currentMagnitude;
+        const double y = m_shakeNoise.noise2D(m_shakeNoiseTime, NoiseSeedY) * currentMagnitude;
 
         shakeOffset.set(x, y, 0);
     }
@@ -331,7 +330,7 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
     m_explosionSound.playOneShot();
 
     // 画面揺れを開始
-    shake(0.5, 0.2);
+    shake(1.0, 1.0);
 }
 
 void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
