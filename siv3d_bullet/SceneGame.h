@@ -59,7 +59,7 @@ protected:
     s3d::Vec3 m_cameraLookAt;
 
     // 画面揺れ用
-    Stopwatch m_shakeTimer;
+    Stopwatch m_shakeTimer{StartImmediately::No};
     double m_shakeDuration = 0.0;
     double m_shakeMagnitude = 0.0;
     s3d::PerlinNoise m_shakeNoise;

@@ -58,7 +58,7 @@ SceneGame::SceneGame(const InitData& init)
     m_camera.setView(m_cameraPosition, m_cameraLookAt);
 
     // 揺れノイズの初期化
-    m_noiseSeeds = s3d::Vec3{s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0)};  
+    m_noiseSeeds = s3d::Vec3{s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0)};
 }
 
 void SceneGame::update()
@@ -77,13 +77,12 @@ void SceneGame::updateCamera()
 {
     const double elapsed = m_shakeTimer.sF();
 
-    if (elapsed >= m_shakeDuration)
+    if (not m_shakeTimer.isStarted() || elapsed >= m_shakeDuration)
     {
         m_camera.setView(m_cameraPosition, m_cameraLookAt);
         return;
     }
 
-    Vec3 shakeOffset = Vec3::Zero();
     // 時間経過とともに揺れを減衰させる
     const double currentMagnitude = m_shakeMagnitude * (1.0 - (elapsed / m_shakeDuration));
 
@@ -94,9 +93,7 @@ void SceneGame::updateCamera()
     const double y = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.y) * currentMagnitude;
     const double z = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.z) * currentMagnitude;
 
-    shakeOffset.set(x, y, z);
-
-    const Vec3 finalPosition = m_cameraPosition + shakeOffset;
+    const Vec3 finalPosition = m_cameraPosition + Vec3{x, y, z};
     m_camera.setView(finalPosition, m_cameraLookAt);
 }
 
