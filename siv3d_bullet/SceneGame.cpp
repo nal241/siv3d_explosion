@@ -42,6 +42,9 @@ namespace
     constexpr double ShakeSpeed = 20.0;
     constexpr double NoiseSeedX = 123.456;
     constexpr double NoiseSeedY = 789.012;
+    constexpr double NoiseSeedZ = 345.678;
+    constexpr double ExplosionShakeDuration = 1.0;
+    constexpr double ExplosionShakeMagnitude = 1.0;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -89,8 +92,9 @@ void SceneGame::updateCamera()
 
         const double x = m_shakeNoise.noise2D(m_shakeNoiseTime, NoiseSeedX) * currentMagnitude;
         const double y = m_shakeNoise.noise2D(m_shakeNoiseTime, NoiseSeedY) * currentMagnitude;
+        const double z = m_shakeNoise.noise2D(m_shakeNoiseTime, NoiseSeedZ) * currentMagnitude;
 
-        shakeOffset.set(x, y, 0);
+        shakeOffset.set(x, y, z);
     }
 
     const Vec3 finalPosition = m_cameraPosition + shakeOffset;
@@ -330,7 +334,7 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
     m_explosionSound.playOneShot();
 
     // 画面揺れを開始
-    shake(1.0, 1.0);
+    shake(ExplosionShakeDuration, ExplosionShakeMagnitude);
 }
 
 void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
