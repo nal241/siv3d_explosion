@@ -63,8 +63,7 @@ protected:
     double m_shakeDuration = 0.0;
     double m_shakeMagnitude = 0.0;
     s3d::PerlinNoise m_shakeNoise;
-    double m_shakeNoiseTimeX = 0.0;
-    double m_shakeNoiseTimeY = 0.0;
+    double m_shakeNoiseTime = 0.0;
 
     Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
     Model m_model{U"model/coin.obj"};
