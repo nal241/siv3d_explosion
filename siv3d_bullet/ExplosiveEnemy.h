@@ -28,7 +28,7 @@ public:
     int getHealth() const { return m_health; }
     int getMaxHealth() const { return m_maxHealth; }
 
-    static std::shared_ptr<ExplosiveEnemy> Create(PhysicsWorld& world, const ExplosiveEnemyParams& params);
+    static std::shared_ptr<ExplosiveEnemy> Create(PhysicsWorld& world, const ExplosiveEnemyParams& params, const s3d::Model& model);
 
 private:
     enum class State
