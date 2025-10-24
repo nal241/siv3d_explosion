@@ -22,13 +22,13 @@ void EnemyNormal::takeDamage(int damage)
     }
 }
 
-std::shared_ptr<EnemyNormal> EnemyNormal::Create(PhysicsWorld& world, const EnemyNormalParams& params)
+std::shared_ptr<EnemyNormal> EnemyNormal::Create(PhysicsWorld& world, const EnemyNormalParams& params, const s3d::Model& model)
 {
     auto body = world.createSphere(SphereDesc{params.radius, params.position, params.mass}, params.group, params.mask);
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
 
-    auto renderer = std::make_unique<PhysicsShapeRenderer>(*body, params.color);
+    auto renderer = std::make_unique<ModelRenderer>(model);
 
     auto enemy = std::make_shared<EnemyNormal>(std::move(body), std::move(renderer), params.maxHealth);
     enemy->getPhysicsBody()->setOwner(enemy->weak_from_this());
