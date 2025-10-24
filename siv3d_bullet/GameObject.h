@@ -93,19 +93,6 @@ public:
         CollisionMask mask = MASK_ALL;
     };
 
-    struct PlaneParams
-    {
-        Vec3 normal;           // 平面の法線ベクトル
-        float distance;        // 原点からの距離
-        Vec3 position;         // 描画用の位置
-        Vec3 renderSize;       // 描画用のサイズ（Plane形状の表示範囲）
-        ColorF color = Linear::Palette::White; // デフォルトレンダラー用
-        float restitution = 0.5f;
-        float friction = 0.5f;
-        CollisionGroup group = GROUP_DEFAULT;
-        CollisionMask mask = MASK_ALL;
-    };
-
     // 汎用Factory Methods（レンダラーはオプショナル）
     static std::shared_ptr<GameObject> CreateBox(PhysicsWorld& world, const BoxParams& params,
                                                  std::unique_ptr<IRenderer> renderer = nullptr);
@@ -113,8 +100,6 @@ public:
                                                     std::unique_ptr<IRenderer> renderer = nullptr);
     static std::shared_ptr<GameObject> CreateCylinder(PhysicsWorld& world, const CylinderParams& params,
                                                       std::unique_ptr<IRenderer> renderer = nullptr);
-    static std::shared_ptr<GameObject> CreatePlane(PhysicsWorld& world, const PlaneParams& params,
-                                                   std::unique_ptr<IRenderer> renderer = nullptr);
 
     // コンストラクタ（Factoryからの使用を推奨）
     GameObject(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer);

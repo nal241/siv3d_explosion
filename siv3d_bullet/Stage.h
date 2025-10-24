@@ -43,4 +43,7 @@ private:
     float m_roadWidth;
     float m_grassWidth;
     float m_depth;
+
+    // UVタイリングの間隔（テクスチャ繰り返しの基準サイズ）
+    static constexpr double UV_TILING_INTERVAL = 5.0;
 };
