@@ -85,6 +85,15 @@ void PhysicsBody::setOwner(std::weak_ptr<GameObject> owner)
     m_body->setUserPointer(this);
 }
 
+void PhysicsBody::setCollisionCallback(std::function<void()> callback)
+{
+    m_collisionCallback = std::move(callback);
+    if (m_collisionCallback)
+    {
+        m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+    }
+}
+
 // 質量を取得
 float PhysicsBody::getMass() const
 {
