@@ -426,8 +426,10 @@ void SceneGame::spawnEnemy()
 void SceneGame::spawnEnemyNormal()
 {
 
-    const double x = Random(1.0, WallLength - 1.0);
-    const double z = Random(1.0, WallLength - 1.0);
+    // ステージ内のランダムな位置にスポーン
+    const double offset = 1.0;
+    const double x = Random(-m_roadWidth / 2.0 + offset, m_roadWidth / 2.0 - offset);
+    const double z = Random(10.0, 20.0);
     const double y = 2.0;
 
     addGameObject(EnemyNormal::Create(m_world, EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
