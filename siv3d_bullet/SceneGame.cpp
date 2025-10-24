@@ -95,8 +95,8 @@ void SceneGame::updateCamera()
     const double z = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.z) * currentMagnitude;
 
     const Vec3 finalPosition = m_cameraPosition + Vec3{x, y, z};
-    const Vec3 finaCameraLookAt = m_cameraLookAt + Vec3{x, y, z};
-    m_camera.setView(finalPosition, finaCameraLookAt);
+    const Vec3 finalCameraLookAt = m_cameraLookAt + Vec3{x, y, z};
+    m_camera.setView(finalPosition, finalCameraLookAt);
 }
 
 void SceneGame::updateInput()
