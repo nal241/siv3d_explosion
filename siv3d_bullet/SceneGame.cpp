@@ -67,6 +67,10 @@ SceneGame::SceneGame(const InitData& init)
 
     // 揺れノイズの初期化
     m_noiseSeeds = s3d::Vec3{s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0)};
+
+    // デバッグ描画の設定
+    m_world.setDebugDrawMode(btIDebugDraw::DBG_DrawWireframe);
+    m_world.setDebugDrawEnabled(true); // デフォルトで有効化
 }
 
 void SceneGame::update()
@@ -192,6 +196,13 @@ void SceneGame::updateInput()
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
+    // Dキーでデバッグ描画切り替え
+    if (KeyD.down())
+    {
+        m_debugDrawEnabled = !m_debugDrawEnabled;
+        m_world.setDebugDrawEnabled(m_debugDrawEnabled);
+    }
+
     // Tキーでタイトルへ
     if (KeyT.down())
     {
@@ -307,6 +318,9 @@ void SceneGame::draw() const
             // 地面にターゲットマーカーを描画
             Cylinder{m_raycastResult.hitPoint, 0.5, 0.05}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
         }
+
+        // Bulletデバッグ描画（Dキーでトグル）
+        m_world.debugDraw();
     }
 
     // [2D rendering]
@@ -323,7 +337,8 @@ void SceneGame::draw() const
         // UI を描画
         {
             m_instructionFont(U"B：爆弾を投げる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
-            m_instructionFont(U"T：タイトルへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"D：デバッグ描画 [{}]"_fmt(m_debugDrawEnabled ? U"ON" : U"OFF")).draw(30, 115, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"T：タイトルへ戻る").draw(30, 145, ColorF{1.0, 1.0, 1.0});
         }
 
         // クールダウンUIを描画
@@ -438,7 +453,7 @@ void SceneGame::spawnEnemyNormal()
                                                                            .maxHealth = 50,
                                                                            .color = HSV{120, 0.7, 0.9},
                                                                            .group = GROUP_ATTRACTABLE,
-                                                                           .mask = MASK_ALL}, m_enemyNormalModel));
+                                                                           .mask = MASK_ALL}, m_enemyNormalModel, U"LicensedAsset/normalEnemy.obj"));
 }
 
 void SceneGame::handleExplosion(const ExplosionRequest& request)

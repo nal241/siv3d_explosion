@@ -4,6 +4,7 @@
 
 #include "CollisionGroups.h"
 #include "PhysicsBody.h"
+#include "BulletSiv3DUtils.h"
 
 // 前方宣言
 class GameObject;
@@ -53,10 +54,21 @@ public:
     std::unique_ptr<PhysicsBody> createSphere(const SphereDesc& desc, CollisionGroup group, CollisionMask mask);
     std::unique_ptr<PhysicsBody> createCylinder(const CylinderDesc& desc, CollisionGroup group, CollisionMask mask);
     std::unique_ptr<PhysicsBody> createPlane(const PlaneDesc& desc, CollisionGroup group, CollisionMask mask);
+    std::unique_ptr<PhysicsBody> createConvexHull(const ConvexHullDesc& desc, CollisionGroup group, CollisionMask mask);
 
     // --- static utilities ---
     static std::optional<Vec3> CalculateLaunchVelocity(const Vec3& start, const Vec3& target, double launchAngleDeg,
                                                        const Vec3& gravity);
+
+    // --- デバッグ描画 ---
+    /// @brief デバッグ描画を有効化
+    void setDebugDrawEnabled(bool enabled);
+
+    /// @brief デバッグ描画モードを設定（btIDebugDraw::DebugDrawModesの組み合わせ）
+    void setDebugDrawMode(int mode);
+
+    /// @brief デバッグ描画を実行（Graphics3D::SetCameraTransform()で設定されたカメラを使用）
+    void debugDraw() const;
 
 private:
     friend class PhysicsBody;
@@ -70,6 +82,10 @@ private:
 
     // 作成したオブジェクトを管理
     s3d::HashSet<PhysicsBody*> m_registeredObjects;
+
+    // デバッグ描画（constメソッドから変更するためmutable）
+    mutable std::unique_ptr<BulletDebugDraw> m_debugDraw;
+    mutable bool m_debugDrawEnabled = false;
 
     // PhysicsObjectからの通知メソッド
     void registerObject(PhysicsBody* obj);
