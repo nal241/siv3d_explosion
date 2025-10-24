@@ -76,7 +76,7 @@ protected:
     Stopwatch m_enemyNormalSpawnTimer{StartImmediately::Yes};
     double m_normalSpawnInterval = 0.5; // normalEnemyは高頻度
     Stopwatch m_explosiveEnemySpawnTimer{StartImmediately::Yes};
-    double m_explosiveSpawnInterval = 4.0; // Enemyは低頻度
+    double m_explosiveSpawnInterval = 1.0; // Enemyは低頻度
 
     double m_spawnInterval = 3.0;
     double m_roadWidth = 0.0;
