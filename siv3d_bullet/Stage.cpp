@@ -11,14 +11,11 @@ Stage::Stage(std::unique_ptr<PhysicsBody> physicsBody, const StageParams& params
     m_groundTexture = Texture{U"example/texture/ground.jpg", TextureDesc::Mipped};
     m_grassTexture = Texture{U"example/texture/grass.jpg", TextureDesc::Mipped};
 
-    // 最大サイズ（奥行き）を基準にMeshを作成
-    // --- 道路のMesh作成 ---
-    // UVタイリング：実際のサイズ（幅x奥行き）に応じて設定
-    const Vec2 roadUvTiling{m_roadWidth / 5.0, m_depth / 5.0};
+    // Meshを作成（全て1000x1000の正方形、描画時にスケーリングして使用）
+    const Vec2 roadUvTiling{m_roadWidth / UV_TILING_INTERVAL, m_depth / UV_TILING_INTERVAL};
     m_roadMesh = Mesh{MeshData::OneSidedPlane(m_depth, roadUvTiling)};
 
-    // --- 草原のMesh作成 ---
-    const Vec2 grassUvTiling{m_grassWidth / 5.0, m_depth / 5.0};
+    const Vec2 grassUvTiling{m_grassWidth / UV_TILING_INTERVAL, m_depth / UV_TILING_INTERVAL};
     m_grassLeftMesh = Mesh{MeshData::OneSidedPlane(m_depth, grassUvTiling)};
     m_grassRightMesh = Mesh{MeshData::OneSidedPlane(m_depth, grassUvTiling)};
 }
@@ -52,43 +49,29 @@ void Stage::draw() const
 {
     const ScopedRenderStates3D sampler{SamplerState::RepeatLinear};
 
-    // Meshは中心が原点、1000x1000の正方形が-500〜+500の範囲
-    // スケール後: 例えば0.2倍すると200x1000になる（X:-100〜+100, Z:-500〜+500）
-
-    // 配置:
-    // 草原左: X範囲 [-250〜-50], 中心X=-150
-    // 道路:   X範囲 [-25〜+25],  中心X=0
-    // 草原右: X範囲 [+50〜+250], 中心X=+150
-
-    // --- 草原（左側）の描画 ---
+    // 草原（左側）の描画
     {
-        // 1000x1000のMeshを200x1000にスケール → [-100~+100, -500~+500]
-        // それを X=-125 に移動 → [-225~-25, -500~+500]
-        const Vec3 scale{m_grassWidth / m_depth, 1.0, 1.0};  // 0.2
-        const double leftCenterX = -m_roadWidth / 2.0 - m_grassWidth / 2.0;  // -125
+        const Vec3 scale{m_grassWidth / m_depth, 1.0, 1.0};
+        const double leftCenterX = -m_roadWidth / 2.0 - m_grassWidth / 2.0;
         const Vec3 leftPosition{leftCenterX, 0, m_depth / 2.0};
-        // 先にスケール、後で移動
         const Mat4x4 transform = Mat4x4::Scale(scale).translated(leftPosition);
         const Transformer3D transformer{transform};
         m_grassLeftMesh.draw(m_grassTexture);
     }
 
-    // --- 道路（中央）の描画 ---
+    // 道路（中央）の描画
     {
-        // 1000x1000のMeshを50x1000にスケール → [-25~+25, -500~+500]
-        const Vec3 scale{m_roadWidth / m_depth, 1.0, 1.0};  // 0.05
+        const Vec3 scale{m_roadWidth / m_depth, 1.0, 1.0};
         const Vec3 roadPosition{0, 0, m_depth / 2.0};
         const Mat4x4 transform = Mat4x4::Scale(scale).translated(roadPosition);
         const Transformer3D transformer{transform};
         m_roadMesh.draw(m_groundTexture);
     }
 
-    // --- 草原（右側）の描画 ---
+    // 草原（右側）の描画
     {
-        // 1000x1000のMeshを200x1000にスケール → [-100~+100, -500~+500]
-        // それを X=+125 に移動 → [+25~+225, -500~+500]
-        const Vec3 scale{m_grassWidth / m_depth, 1.0, 1.0};  // 0.2
-        const double rightCenterX = m_roadWidth / 2.0 + m_grassWidth / 2.0;  // +125
+        const Vec3 scale{m_grassWidth / m_depth, 1.0, 1.0};
+        const double rightCenterX = m_roadWidth / 2.0 + m_grassWidth / 2.0;
         const Vec3 rightPosition{rightCenterX, 0, m_depth / 2.0};
         const Mat4x4 transform = Mat4x4::Scale(scale).translated(rightPosition);
         const Transformer3D transformer{transform};

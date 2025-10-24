@@ -152,13 +152,13 @@ void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTi
 
 void SceneGame::updateGameObjects()
 {
-    //全オブジェクトの状態更新
+    // 全オブジェクトの状態更新
     for (const auto& object : m_gameObjects)
     {
         object->update();
     }
 
-    //全イベントの処理
+    // 全イベントの処理
     for (const auto& object : m_gameObjects)
     {
         for (auto& event : object->consumeEvents())
@@ -270,14 +270,12 @@ void SceneGame::addGameObject(std::shared_ptr<GameObject> obj) { m_gameObjects.p
 void SceneGame::createStage()
 {
     // Stageオブジェクトを作成
-    auto stage = Stage::Create(m_world, Stage::StageParams{
-        .roadWidth = 50.0f,
-        .grassWidth = 200.0f,
-        .depth = 1000.0f,
-        .position = Vec3{0, 0, 0},
-        .restitution = 0.8f,
-        .friction = 0.8f
-    });
+    auto stage = Stage::Create(m_world, Stage::StageParams{.roadWidth = 50.0f,
+                                                           .grassWidth = 200.0f,
+                                                           .depth = 1000.0f,
+                                                           .position = Vec3{0, 0, 0},
+                                                           .restitution = 0.8f,
+                                                           .friction = 0.8f});
 
     addGameObject(std::move(stage));
 }
