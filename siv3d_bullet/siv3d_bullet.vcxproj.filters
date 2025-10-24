@@ -162,6 +162,7 @@
     <ClCompile Include="Renderers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SceneTestExplosion.cpp">
     <ClCompile Include="Enemy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -177,6 +178,7 @@
     <ClCompile Include="SceneTitle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EnemyNormal.cpp">
     <ClCompile Include="Stage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -872,7 +874,7 @@
     <ClInclude Include="CollisionGroups.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Enemy.h">
+    <ClInclude Include="SceneTestExplosion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Bomb.h">
@@ -890,6 +892,7 @@
     <ClInclude Include="SceneTitle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EnemyNormal.h">
     <ClInclude Include="Stage.h">
       <Filter>Header Files</Filter>
     </ClInclude>

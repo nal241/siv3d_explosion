@@ -27,6 +27,7 @@ protected:
     void createStage();
     void addGameObject(std::shared_ptr<GameObject> obj);
     void spawnEnemy();
+    void spawnEnemyNormal();
     void handleExplosion(const ExplosionRequest& request);
 
     // 爆発処理
@@ -66,11 +67,17 @@ protected:
 
     Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
     Model m_model{U"model/coin.obj"};
+    s3d::Model m_enemyNormalModel;
+    s3d::Model m_explosiveEnemyModel;
 
     Player m_player;
 
     // エネミースポーン用
-    Stopwatch m_enemySpawnTimer{StartImmediately::Yes};
+    Stopwatch m_enemyNormalSpawnTimer{StartImmediately::Yes};
+    double m_normalSpawnInterval = 0.5; // normalEnemyは高頻度
+    Stopwatch m_explosiveEnemySpawnTimer{StartImmediately::Yes};
+    double m_explosiveSpawnInterval = 4.0; // Enemyは低頻度
+
     double m_spawnInterval = 3.0;
     double m_roadWidth = 0.0;
 
