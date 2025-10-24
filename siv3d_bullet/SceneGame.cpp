@@ -41,9 +41,9 @@ namespace
     constexpr double ExplosionMinDistance = 0.01;
 
     // === 画面揺れ設定 ===
-    constexpr double ShakeSpeed = 20.0;
-    constexpr double ExplosionShakeDuration = 1.0;
-    constexpr double ExplosionShakeMagnitude = 1.0;
+    constexpr double ShakeSpeed = 10.0;
+    constexpr double ExplosionShakeDuration = 0.5;
+    constexpr double ExplosionShakeMagnitude = 0.5;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -95,7 +95,8 @@ void SceneGame::updateCamera()
     const double z = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.z) * currentMagnitude;
 
     const Vec3 finalPosition = m_cameraPosition + Vec3{x, y, z};
-    m_camera.setView(finalPosition, m_cameraLookAt);
+    const Vec3 finaCameraLookAt = m_cameraLookAt + Vec3{x, y, z};
+    m_camera.setView(finalPosition, finaCameraLookAt);
 }
 
 void SceneGame::updateInput()
@@ -149,14 +150,15 @@ void SceneGame::updateInput()
                 const float radius = 0.4f;
 
                 // 爆弾のパラメータを設定（発射位置はカメラの位置）
-                Bomb::BombParams params{.position = startPos,
-                                        .radius = radius,
-                                        .mass = mass,
-                                        .duration = 3.0, // 3秒後に爆発
-                                        .color = ColorF{1.0, 0.5, 0.2},
-                                        .restitution = 0.4f,
-                                        .friction = 0.8f,
-                                        .explosionRadius = 5.0, // 爆発半径5
+                Bomb::BombParams params{
+                    .position = startPos,
+                    .radius = radius,
+                    .mass = mass,
+                    .duration = 3.0, // 3秒後に爆発
+                    .color = ColorF{1.0, 0.5, 0.2},
+                    .restitution = 0.4f,
+                    .friction = 0.8f,
+                    .explosionRadius = 5.0, // 爆発半径5
                 };
 
                 // Bombファクトリを使ってオブジェクトを生成
