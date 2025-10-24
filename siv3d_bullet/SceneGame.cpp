@@ -2,6 +2,7 @@
 #include "Renderers.h"
 #include "Enemy.h"
 #include "Bomb.h"
+#include "EnemyNormal.h"
 
 namespace
 {
@@ -149,10 +150,18 @@ void SceneGame::updateParticleSystem() { m_particleSystem.update(Scene::DeltaTim
 
 void SceneGame::updateSpawn()
 {
-    if (m_enemySpawnTimer.sF() >= m_spawnInterval)
+    // EnemyNormal
+    if (m_enemyNormalSpawnTimer.sF() >= m_normalSpawnInterval)
     {
-        spawnEnemy();
-        m_enemySpawnTimer.restart();
+        spawnEnemyNormal();
+        m_enemyNormalSpawnTimer.restart();
+    }
+
+    // Explosive Enemy
+    if (m_explosiveEnemySpawnTimer.sF() >= m_explosiveSpawnInterval)
+    {
+        spawnEnemy(); 
+        m_explosiveEnemySpawnTimer.restart();
     }
 }
 
@@ -288,6 +297,22 @@ void SceneGame::spawnEnemy()
                                                             .explosionRadius = 3.0}));
 }
 
+void SceneGame::spawnEnemyNormal()
+{
+
+    const double x = Random(1.0, WallLength - 1.0);
+    const double z = Random(1.0, WallLength - 1.0);
+    const double y = 2.0;
+
+    addGameObject(EnemyNormal::Create(m_world, EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
+                                                                           .radius = 0.5f,
+                                                                           .mass = 1.0f,
+                                                                           .maxHealth = 50,
+                                                                           .color = HSV{120, 0.7, 0.9},
+                                                                           .group = GROUP_ATTRACTABLE,
+                                                                           .mask = MASK_ALL}));
+}
+
 void SceneGame::handleExplosion(const ExplosionRequest& request)
 {
     // 爆発を実行（パーティクル + 物理的な力）
@@ -374,6 +399,12 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
             int damage = static_cast<int>(falloff * 100);
             enemy->takeDamage(damage);
             s3d::Print << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
+        }
+        else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+        {
+            int damage = static_cast<int>(falloff * 100);
+            enemyNormal->takeDamage(damage);
+            s3d::Print << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else
         {
