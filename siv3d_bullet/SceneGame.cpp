@@ -11,7 +11,6 @@ namespace
     constexpr double WallThickness = 1.0;
 
     // Camera settings
-    constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
     constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
     constexpr double CameraFov = 30_deg;
@@ -39,6 +38,11 @@ namespace
     // === 爆発の物理パラメータ ===
     constexpr double ExplosionBasePower = 10.0;
     constexpr double ExplosionMinDistance = 0.01;
+
+    // === 画面揺れ設定 ===
+    constexpr double ShakeSpeed = 20.0;
+    constexpr double ExplosionShakeDuration = 1.0;
+    constexpr double ExplosionShakeMagnitude = 1.0;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -52,7 +56,13 @@ SceneGame::SceneGame(const InitData& init)
     createStage();
 
     // カメラ設定
-    m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
+    m_camera = BasicCamera3D{m_renderTexture.size(), CameraFov};
+    m_cameraPosition = CameraInitialPosition;
+    m_cameraLookAt = CameraInitialLookAt;
+    m_camera.setView(m_cameraPosition, m_cameraLookAt);
+
+    // 揺れノイズの初期化
+    m_noiseSeeds = s3d::Vec3{s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0)};
 }
 
 void SceneGame::update()
@@ -67,7 +77,29 @@ void SceneGame::update()
     updateSceneSpecific();
 }
 
-void SceneGame::updateCamera() { m_camera.update(CameraSpeed); }
+void SceneGame::updateCamera()
+{
+    const double elapsed = m_shakeTimer.sF();
+
+    if (not m_shakeTimer.isStarted() || elapsed >= m_shakeDuration)
+    {
+        m_camera.setView(m_cameraPosition, m_cameraLookAt);
+        return;
+    }
+
+    // 時間経過とともに揺れを減衰させる
+    const double currentMagnitude = m_shakeMagnitude * (1.0 - (elapsed / m_shakeDuration));
+
+    // Perlinノイズを使って滑らかな揺れを生成
+    m_shakeNoiseTime += Scene::DeltaTime() * ShakeSpeed;
+
+    const double x = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.x) * currentMagnitude;
+    const double y = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.y) * currentMagnitude;
+    const double z = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.z) * currentMagnitude;
+
+    const Vec3 finalPosition = m_cameraPosition + Vec3{x, y, z};
+    m_camera.setView(finalPosition, m_cameraLookAt);
+}
 
 void SceneGame::updateInput()
 {
@@ -324,6 +356,9 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
 
     // サウンド再生
     m_explosionSound.playOneShot();
+
+    // 画面揺れを開始
+    shake(ExplosionShakeDuration, ExplosionShakeMagnitude);
 }
 
 void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
@@ -415,4 +450,11 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         }
     }
     s3d::Print << U"   Hit {} objects"_fmt(hitCount);
+}
+
+void SceneGame::shake(double duration, double magnitude)
+{
+    m_shakeDuration = duration;
+    m_shakeMagnitude = magnitude;
+    m_shakeTimer.restart();
 }
