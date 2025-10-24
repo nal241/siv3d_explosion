@@ -39,8 +39,8 @@ public:
     /// @return 保留中のイベント配列
     s3d::Array<GameEvent> consumeEvents() { return std::exchange(m_pendingEvents, s3d::Array<GameEvent>{}); }
 
-    void draw() const;
-    void drawWireframe() const;
+    virtual void draw() const;
+    virtual void drawWireframe() const;
 
     // --- Getters / Setters ---
     IDType getID() const { return m_id; }
