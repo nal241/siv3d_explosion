@@ -1,5 +1,6 @@
 #include "ExplosiveEnemy.h"
 #include "PhysicsWorld.h"
+#include "Renderers.h"
 
 ExplosiveEnemy::ExplosiveEnemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
              double explosionRadius)
@@ -24,7 +25,7 @@ void ExplosiveEnemy::takeDamage(int damage)
     }
 }
 
-std::shared_ptr<ExplosiveEnemy> ExplosiveEnemy::Create(PhysicsWorld& world, const ExplosiveEnemyParams& params)
+std::shared_ptr<ExplosiveEnemy> ExplosiveEnemy::Create(PhysicsWorld& world, const ExplosiveEnemyParams& params, const s3d::Model& model)
 {
     CollisionGroup group = params.group;
     CollisionMask mask = params.mask;
@@ -33,7 +34,7 @@ std::shared_ptr<ExplosiveEnemy> ExplosiveEnemy::Create(PhysicsWorld& world, cons
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
 
-    auto renderer = std::make_unique<PhysicsShapeRenderer>(*body, params.color);
+    auto renderer = std::make_unique<ModelRenderer>(model);
 
     auto enemy =
         std::make_shared<ExplosiveEnemy>(std::move(body), std::move(renderer), params.maxHealth, params.explosionRadius);

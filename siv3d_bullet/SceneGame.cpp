@@ -48,9 +48,11 @@ namespace
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
       m_player(&m_camera, m_model),
-      m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"}
+      m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
+      m_explosiveEnemyModel{U"LicensedAsset/explosiveEnemy.obj"}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
+    Model::RegisterDiffuseTextures(m_explosiveEnemyModel, TextureDesc::MippedSRGB);
 
     // stage作成
     createStage();
@@ -329,7 +331,7 @@ void SceneGame::spawnEnemy()
                                                             .color = HSV{0, 0.7, 0.9},
                                                             .group = GROUP_ATTRACTABLE,
                                                             .mask = MASK_ALL,
-                                                            .explosionRadius = 3.0}));
+                                                            .explosionRadius = 3.0}, m_explosiveEnemyModel));
 }
 
 void SceneGame::spawnEnemyNormal()
