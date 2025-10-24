@@ -10,7 +10,6 @@ namespace
     constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
     constexpr float WallRestitution = 1.0f;
-    constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
     constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
     constexpr double CameraFov = 30_deg;
@@ -40,8 +39,6 @@ SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
                                                                            .color = HSV{i * 45, 0.7, 0.9},
                                                                            .restitution = 0.5f}));
     }
-
-    m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov, CameraInitialPosition, CameraInitialLookAt};
 }
 
 void SceneTestExplosion::updateSceneSpecific()

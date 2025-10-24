@@ -25,7 +25,7 @@ namespace
     constexpr float CoinAngularDamping = 0.5f;
 } // namespace
 
-Player::Player(DebugCamera3D* camera, Model& coinModel) : m_camera(camera), m_coinModel(coinModel) {}
+Player::Player(BasicCamera3D* camera, Model& coinModel) : m_camera(camera), m_coinModel(coinModel) {}
 
 void Player::handleInput(PhysicsWorld& world, s3d::Array<std::shared_ptr<GameObject>>& objects)
 {
