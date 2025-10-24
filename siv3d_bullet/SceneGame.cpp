@@ -44,7 +44,7 @@ namespace
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
       m_player(&m_camera, m_model),
-      m_enemyNormalModel{U"model/normalEnemy.obj"}
+      m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
 

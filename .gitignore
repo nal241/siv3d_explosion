@@ -428,4 +428,4 @@ CLAUDE.md
 tmp/
 
 # モデルファイルはgitでは管理しない。
-siv3d_bullet/model/
+siv3d_bullet/App/LicensedAsset/*
