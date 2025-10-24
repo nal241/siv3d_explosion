@@ -10,7 +10,7 @@ public:
         Vec3 position;
         float radius = 0.5f;
         float mass = 2.0f;
-        int maxHealth = 100;
+        int maxHealth = 50;
         ColorF color = HSV{0, 0.7, 0.9};
         float restitution = 0.3f;
         float friction = 0.5f;

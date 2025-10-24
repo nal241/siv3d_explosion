@@ -21,8 +21,8 @@ namespace
     constexpr float StaticBoxRestitution = 1.0f;
 
     // 吸引機能の設定
-    constexpr double AttractionForce = 5.0;  // 吸引力の強さ（一定）
-    constexpr double AttractionRadius = 2.0; // 吸引力の有効半径
+    constexpr double AttractionForce = 10.0;  // 吸引力の強さ（一定）
+    constexpr double AttractionRadius = 5.0; // 吸引力の有効半径
 
     // === 爆発パーティクル設定 ===
     constexpr int32 ParticleCount = 50;
@@ -139,7 +139,7 @@ void SceneGame::updateInput()
     }
 
     // Bキーで爆弾を投げる
-    if (KeyB.down() && (m_throwCooldown.sF() >= 1.0 || !m_throwCooldown.isStarted()))
+    if (KeyB.down() && (m_throwCooldown.sF() >= 5.0 || !m_throwCooldown.isStarted()))
     {
         // マウスカーソル位置にレイがヒットしていたら
         if (m_raycastResult.hasHit)
@@ -328,7 +328,7 @@ void SceneGame::draw() const
 
         // クールダウンUIを描画
         {
-            constexpr double cooldownTime = 1.0;
+            constexpr double cooldownTime = 5.0;
             const double progress = Min(m_throwCooldown.sF() / cooldownTime, 1.0);
 
             // 画面下部中央に配置
@@ -416,7 +416,7 @@ void SceneGame::spawnEnemy()
     addGameObject(ExplosiveEnemy::Create(m_world, ExplosiveEnemy::ExplosiveEnemyParams{.position = Vec3{x, y, z},
                                                             .radius = 0.5f,
                                                             .mass = 2.0f,
-                                                            .maxHealth = 100,
+                                                            .maxHealth = 50,
                                                             .color = HSV{0, 0.7, 0.9},
                                                             .group = GROUP_ATTRACTABLE,
                                                             .mask = MASK_ALL,
