@@ -18,11 +18,11 @@ namespace
 
     constexpr float CoinRadius = 0.5f;
     constexpr float CoinHeight = 0.2f;
-    constexpr float CoinMass = 0.1f;
+    constexpr float CoinMass = 0.3f;
     constexpr float CoinRestitution = 0.0f;
-    constexpr float CoinFriction = 0.1f;
-    constexpr float CoinLinearDamping = 0.1f;
-    constexpr float CoinAngularDamping = 0.5f;
+    constexpr float CoinFriction = 0.4f;
+    constexpr float CoinLinearDamping = 0.3f;
+    constexpr float CoinAngularDamping = 0.8f;
 } // namespace
 
 Player::Player(BasicCamera3D* camera, Model& coinModel) : m_camera(camera), m_coinModel(coinModel) {}

@@ -13,12 +13,6 @@ void SceneTitle::update()
     {
         changeScene(State::Game);
     }
-
-    // Eキーで爆発デモ
-    if (KeyE.down())
-    {
-        changeScene(State::Explosion);
-    }
 }
 
 void SceneTitle::draw() const
@@ -30,6 +24,4 @@ void SceneTitle::draw() const
 
     // メニュー表示
     m_menuFont(U"[Space] ゲーム開始").drawAt(Scene::Center().x, 400, ColorF{0.8});
-
-    m_menuFont(U"[E] 爆発デモ").drawAt(Scene::Center().x, 450, ColorF{0.8});
 }
