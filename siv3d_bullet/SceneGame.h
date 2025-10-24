@@ -72,6 +72,7 @@ protected:
     // エネミースポーン用
     Stopwatch m_enemySpawnTimer{StartImmediately::Yes};
     double m_spawnInterval = 3.0;
+    double m_roadWidth = 0.0;
 
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};

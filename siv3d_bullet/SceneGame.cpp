@@ -7,7 +7,6 @@
 namespace
 {
     // World settings
-    constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
 
     // Camera settings
@@ -350,6 +349,7 @@ void SceneGame::createStage()
                                                 .friction = 0.8f};
 
     auto stage = Stage::Create(m_world, stageParams);
+    m_roadWidth = stageParams.roadWidth;
 
     // 木を配置 (Poisson Disk Sampling)
     const double minDistance = 15.0; // 木同士の最小距離 (密度を調整)
@@ -392,8 +392,9 @@ void SceneGame::createStage()
 void SceneGame::spawnEnemy()
 {
     // ステージ内のランダムな位置にスポーン
-    const double x = Random(1.0, WallLength - 1.0);
-    const double z = Random(1.0, WallLength - 1.0);
+    const double offset = 1.0;
+    const double x = Random(-m_roadWidth / 2.0 + offset, m_roadWidth / 2.0 - offset);
+    const double z = Random(10.0, 20.0);
     const double y = 2.0;
 
     addGameObject(Enemy::Create(m_world, Enemy::EnemyParams{.position = Vec3{x, y, z},
