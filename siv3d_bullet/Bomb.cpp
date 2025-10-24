@@ -38,12 +38,19 @@ std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
 
-    // 衝突コールバックを有効化
-    body->getBody()->setCollisionFlags(body->getBody()->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
-
     auto renderer = std::make_unique<PhysicsShapeRenderer>(*body, params.color);
 
     auto bomb = std::make_shared<Bomb>(std::move(body), std::move(renderer), params.duration, params.explosionRadius);
     bomb->getPhysicsBody()->setOwner(bomb->weak_from_this());
+
+    // 衝突コールバックを登録
+    bomb->getPhysicsBody()->setCollisionCallback([bombWeak = std::weak_ptr<Bomb>(bomb)]()
+    {
+        if (auto bombPtr = bombWeak.lock())
+        {
+            bombPtr->notifyCollision();
+        }
+    });
+
     return bomb;
 }

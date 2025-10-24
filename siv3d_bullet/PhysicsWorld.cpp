@@ -2,7 +2,6 @@
 #include "BulletSiv3DUtils.h"
 #include "GameObject.h"
 #include "PhysicsBody.h"
-#include "Bomb.h"
 
 namespace
 {
@@ -14,24 +13,18 @@ namespace
     bool contactAddedCallback(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0, int partId0, int index0,
                               const btCollisionObjectWrapper* colObj1, int partId1, int index1)
     {
-        auto notifyIfBomb = [](const btCollisionObject* obj)
+        auto notifyCollision = [](const btCollisionObject* obj)
         {
             const btRigidBody* body = btRigidBody::upcast(obj);
             if (body && body->getUserPointer())
             {
                 PhysicsBody* physicsBody = static_cast<PhysicsBody*>(body->getUserPointer());
-                if (auto owner = physicsBody->getOwner().lock())
-                {
-                    if (auto bomb = std::dynamic_pointer_cast<Bomb>(owner))
-                    {
-                        bomb->notifyCollision();
-                    }
-                }
+                physicsBody->onCollision();
             }
         };
 
-        notifyIfBomb(colObj0->getCollisionObject());
-        notifyIfBomb(colObj1->getCollisionObject());
+        notifyCollision(colObj0->getCollisionObject());
+        notifyCollision(colObj1->getCollisionObject());
 
         return false;
     }
