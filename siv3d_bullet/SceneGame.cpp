@@ -1,7 +1,8 @@
 #include "SceneGame.h"
 #include "Renderers.h"
-#include "Enemy.h"
+#include "ExplosiveEnemy.h"
 #include "Bomb.h"
+#include "EnemyNormal.h"
 #include "Stage.h"
 
 namespace
@@ -48,8 +49,13 @@ namespace
 
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera, m_model)
+      m_player(&m_camera, m_model),
+      m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
+      m_explosiveEnemyModel{U"LicensedAsset/explosiveEnemy.obj"}
 {
+    Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
+    Model::RegisterDiffuseTextures(m_explosiveEnemyModel, TextureDesc::MippedSRGB);
+
     // stage作成
     createStage();
 
@@ -233,10 +239,18 @@ void SceneGame::updateParticleSystem() { m_particleSystem.update(Scene::DeltaTim
 
 void SceneGame::updateSpawn()
 {
-    if (m_enemySpawnTimer.sF() >= m_spawnInterval)
+    // EnemyNormal
+    if (m_enemyNormalSpawnTimer.sF() >= m_normalSpawnInterval)
     {
-        spawnEnemy();
-        m_enemySpawnTimer.restart();
+        spawnEnemyNormal();
+        m_enemyNormalSpawnTimer.restart();
+    }
+
+    // Explosive Enemy
+    if (m_explosiveEnemySpawnTimer.sF() >= m_explosiveSpawnInterval)
+    {
+        spawnEnemy(); 
+        m_explosiveEnemySpawnTimer.restart();
     }
 }
 
@@ -399,14 +413,32 @@ void SceneGame::spawnEnemy()
     const double z = Random(10.0, 20.0);
     const double y = 2.0;
 
-    addGameObject(Enemy::Create(m_world, Enemy::EnemyParams{.position = Vec3{x, y, z},
+    addGameObject(ExplosiveEnemy::Create(m_world, ExplosiveEnemy::ExplosiveEnemyParams{.position = Vec3{x, y, z},
                                                             .radius = 0.5f,
                                                             .mass = 2.0f,
                                                             .maxHealth = 100,
                                                             .color = HSV{0, 0.7, 0.9},
                                                             .group = GROUP_ATTRACTABLE,
                                                             .mask = MASK_ALL,
-                                                            .explosionRadius = 3.0}));
+                                                            .explosionRadius = 3.0}, m_explosiveEnemyModel));
+}
+
+void SceneGame::spawnEnemyNormal()
+{
+
+    // ステージ内のランダムな位置にスポーン
+    const double offset = 1.0;
+    const double x = Random(-m_roadWidth / 2.0 + offset, m_roadWidth / 2.0 - offset);
+    const double z = Random(10.0, 20.0);
+    const double y = 2.0;
+
+    addGameObject(EnemyNormal::Create(m_world, EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
+                                                                           .radius = 0.5f,
+                                                                           .mass = 1.0f,
+                                                                           .maxHealth = 50,
+                                                                           .color = HSV{120, 0.7, 0.9},
+                                                                           .group = GROUP_ATTRACTABLE,
+                                                                           .mask = MASK_ALL}, m_enemyNormalModel));
 }
 
 void SceneGame::handleExplosion(const ExplosionRequest& request)
@@ -493,11 +525,17 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         hitCount++;
 
         // エネミーにダメージを与える
-        if (auto enemy = std::dynamic_pointer_cast<Enemy>(object))
+        if (auto enemy = std::dynamic_pointer_cast<ExplosiveEnemy>(object))
         {
             int damage = static_cast<int>(falloff * 100);
             enemy->takeDamage(damage);
             s3d::Print << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
+        }
+        else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+        {
+            int damage = static_cast<int>(falloff * 100);
+            enemyNormal->takeDamage(damage);
+            s3d::Print << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else
         {

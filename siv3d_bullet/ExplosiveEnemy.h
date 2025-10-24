@@ -2,10 +2,10 @@
 #include "GameObject.h"
 #include "ParticleSystem.h"
 
-class Enemy : public GameObject
+class ExplosiveEnemy : public GameObject
 {
 public:
-    struct EnemyParams
+    struct ExplosiveEnemyParams
     {
         Vec3 position;
         float radius = 0.5f;
@@ -19,8 +19,8 @@ public:
         double explosionRadius = 3.0;
     };
 
-    Enemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
-          double explosionRadius);
+    ExplosiveEnemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
+                   double explosionRadius);
 
     void update() override;
     void takeDamage(int damage);
@@ -28,7 +28,7 @@ public:
     int getHealth() const { return m_health; }
     int getMaxHealth() const { return m_maxHealth; }
 
-    static std::shared_ptr<Enemy> Create(PhysicsWorld& world, const EnemyParams& params);
+    static std::shared_ptr<ExplosiveEnemy> Create(PhysicsWorld& world, const ExplosiveEnemyParams& params, const s3d::Model& model);
 
 private:
     enum class State
