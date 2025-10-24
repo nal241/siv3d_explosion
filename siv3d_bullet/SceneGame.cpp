@@ -43,7 +43,8 @@ namespace
 
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera, m_model)
+      m_player(&m_camera, m_model),
+      m_enemyNormalModel{U"model/normalEnemy.obj"}
 {
     // stage作成
     createStage();
@@ -310,7 +311,7 @@ void SceneGame::spawnEnemyNormal()
                                                                            .maxHealth = 50,
                                                                            .color = HSV{120, 0.7, 0.9},
                                                                            .group = GROUP_ATTRACTABLE,
-                                                                           .mask = MASK_ALL}));
+                                                                           .mask = MASK_ALL}, m_enemyNormalModel));
 }
 
 void SceneGame::handleExplosion(const ExplosionRequest& request)
