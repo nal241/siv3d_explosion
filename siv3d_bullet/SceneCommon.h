@@ -7,7 +7,6 @@ enum class State
     Title,
     Game,
     Result,
-    Explosion,
 };
 
 // 共有するデータ

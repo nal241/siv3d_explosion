@@ -22,8 +22,6 @@ protected:
     virtual void updateGameObjects();
     virtual void updateParticleSystem();
     virtual void updateSpawn();
-    virtual void updateSceneSpecific() {}
-
     // ヘルパーメソッド
     void removeObjects();
     void createStage();
@@ -77,4 +75,12 @@ protected:
 
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
+
+    // UI用フォント
+    s3d::Font m_titleFont{40, s3d::Typeface::Bold};
+    s3d::Font m_instructionFont{24};
+    s3d::Font m_cooldownFont{16, s3d::Typeface::Bold};
+
+    // 爆弾投擲のクールダウンタイマー
+    s3d::Stopwatch m_throwCooldown;
 };

@@ -127,7 +127,6 @@
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="SceneResult.cpp" />
-    <ClCompile Include="SceneTestExplosion.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="PhysicsBody.cpp" />
@@ -353,7 +352,6 @@
     <ClInclude Include="GameEvent.h" />
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="SceneResult.h" />
-    <ClInclude Include="SceneTestExplosion.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="PhysicsBody.h" />
     <ClInclude Include="PhysicsWorld.h" />
