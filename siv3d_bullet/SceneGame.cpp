@@ -11,8 +11,10 @@ namespace
     constexpr double WallThickness = 1.0;
 
     // Camera settings
-    constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
-    constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
+
+    constexpr double CameraSpeed = 20.0;
+    constexpr s3d::Vec3 CameraInitialPosition{0, 5, -5};
+    constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 30};
     constexpr double CameraFov = 30_deg;
 
     // ステージオブジェクトのプリセット
@@ -270,12 +272,49 @@ void SceneGame::addGameObject(std::shared_ptr<GameObject> obj) { m_gameObjects.p
 void SceneGame::createStage()
 {
     // Stageオブジェクトを作成
-    auto stage = Stage::Create(m_world, Stage::StageParams{.roadWidth = 50.0f,
-                                                           .grassWidth = 200.0f,
-                                                           .depth = 1000.0f,
-                                                           .position = Vec3{0, 0, 0},
-                                                           .restitution = 0.8f,
-                                                           .friction = 0.8f});
+    const auto stageParams = Stage::StageParams{.roadWidth = 25.0,
+                                                .grassWidth = 100.0,
+                                                .depth = 500.0,
+                                                .position = Vec3{0, 0, 0},
+                                                .restitution = 0.8f,
+                                                .friction = 0.8f};
+
+    auto stage = Stage::Create(m_world, stageParams);
+
+    // 木を配置 (Poisson Disk Sampling)
+    const double minDistance = 15.0; // 木同士の最小距離 (密度を調整)
+    const double offset = -15.0;     // 領域の端から内側へのオフセット
+
+    // 左側の草原
+    {
+        const RectF leftGrassArea{-stageParams.roadWidth / 2 - stageParams.grassWidth, 0, stageParams.grassWidth,
+                                  stageParams.depth};
+        const RectF samplingArea = leftGrassArea.stretched(offset);
+        s3d::PoissonDisk2D sampler(samplingArea.size.asPoint(), minDistance);
+        const Array<Vec2> points = sampler.getPoints();
+        for (const auto& p : points)
+        {
+            const Vec2 translatedPos = p + samplingArea.pos;
+            const double scale = Random(2.5, 2.8);
+            const double rot = Random(0.0, Math::TwoPi);
+            stage->addTree(Vec3{translatedPos.x, 0, translatedPos.y}, scale, rot);
+        }
+    }
+
+    // 右側の草原
+    {
+        const RectF rightGrassArea{stageParams.roadWidth / 2, 0, stageParams.grassWidth, stageParams.depth};
+        const RectF samplingArea = rightGrassArea.stretched(offset);
+        s3d::PoissonDisk2D sampler(samplingArea.size.asPoint(), minDistance);
+        const Array<Vec2> points = sampler.getPoints();
+        for (const auto& p : points)
+        {
+            const Vec2 translatedPos = p + samplingArea.pos;
+            const double scale = Random(2.5, 2.8);
+            const double rot = Random(0.0, Math::TwoPi);
+            stage->addTree(Vec3{translatedPos.x, 0, translatedPos.y}, scale, rot);
+        }
+    }
 
     addGameObject(std::move(stage));
 }

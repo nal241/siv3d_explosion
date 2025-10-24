@@ -9,9 +9,9 @@ class Stage : public GameObject
 public:
     struct StageParams
     {
-        float roadWidth = 50.0f;       // 道路の幅
-        float grassWidth = 200.0f;     // 草原の幅（片側）
-        float depth = 1000.0f;         // 奥行き
+        double roadWidth = 15.0;       // 道路の幅
+        double grassWidth = 50.0;      // 草原の幅（片側）
+        double depth = 200.0;          // 奥行き
         Vec3 position = Vec3{0, 0, 0}; // 位置
         float restitution = 0.5f;      // 反発係数
         float friction = 0.8f;         // 摩擦係数
@@ -26,6 +26,9 @@ public:
     /// @brief ワイヤーフレーム描画
     void drawWireframe() const override;
 
+    /// @brief 木を追加
+    void addTree(const Vec3& position, double scale, double rotationY);
+
 private:
     // コンストラクタ（Factoryから使用）
     Stage(std::unique_ptr<PhysicsBody> physicsBody, const StageParams& params);
@@ -39,10 +42,14 @@ private:
     Texture m_groundTexture;
     Texture m_grassTexture;
 
+    // モデル
+    Model m_treeModel;
+    Array<Mat4x4> m_treeTransforms;
+
     // サイズ情報（描画位置計算用）
-    float m_roadWidth;
-    float m_grassWidth;
-    float m_depth;
+    double m_roadWidth;
+    double m_grassWidth;
+    double m_depth;
 
     // UVタイリングの間隔（テクスチャ繰り返しの基準サイズ）
     static constexpr double UV_TILING_INTERVAL = 5.0;
