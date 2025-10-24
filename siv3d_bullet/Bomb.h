@@ -24,12 +24,15 @@ public:
     void update() override;
     bool shouldBeRemoved() const override;
 
+    void notifyCollision();
+
     static std::shared_ptr<Bomb> Create(PhysicsWorld& world, const BombParams& params);
 
 private:
-    bool isReadyToExplode() const { return m_timer.sF() >= m_duration && !m_isExploded; }
+    bool isReadyToExplode() const { return (m_timer.sF() >= m_duration || m_hasCollided) && !m_isExploded; }
     Stopwatch m_timer;
     double m_duration;
     bool m_isExploded = false;
     double m_explosionRadius;
+    bool m_hasCollided = false;
 };
