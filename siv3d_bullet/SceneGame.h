@@ -29,6 +29,7 @@ protected:
     void createStage();
     void addGameObject(std::shared_ptr<GameObject> obj);
     void spawnEnemy();
+    void spawnEnemyNormal();
     void handleExplosion(const ExplosionRequest& request);
 
     // 爆発処理
@@ -58,8 +59,10 @@ protected:
     Player m_player;
 
     // エネミースポーン用
-    Stopwatch m_enemySpawnTimer{StartImmediately::Yes};
-    double m_spawnInterval = 3.0;
+    Stopwatch m_enemyNormalSpawnTimer{StartImmediately::Yes};
+    double m_normalSpawnInterval = 0.5; // normalEnemyは高頻度
+    Stopwatch m_explosiveEnemySpawnTimer{StartImmediately::Yes};
+    double m_explosiveSpawnInterval = 4.0; // Enemyは低頻度
 
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};

@@ -125,6 +125,7 @@
   <ItemGroup>
     <ClCompile Include="Bomb.cpp" />
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="EnemyNormal.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="SceneResult.cpp" />
     <ClCompile Include="SceneTestExplosion.cpp" />
@@ -349,6 +350,7 @@
     <ClInclude Include="BulletSiv3DUtils.h" />
     <ClInclude Include="CollisionGroups.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="EnemyNormal.h" />
     <ClInclude Include="GameEvent.h" />
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="SceneResult.h" />
