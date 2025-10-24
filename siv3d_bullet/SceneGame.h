@@ -51,7 +51,7 @@ protected:
     RaycastResult m_raycastResult;
 
     // Background color (remove SRGB curve for a linear workflow)
-    ColorF m_backgroundColor = ColorF{0.4, 0.6, 0.8}.removeSRGBCurve();
+    ColorF m_backgroundColor = ColorF{0.5, 0.7, 0.9}.removeSRGBCurve();
 
     const MSRenderTexture m_renderTexture;
     BasicCamera3D m_camera;
