@@ -3,9 +3,7 @@
 
 Stage::Stage(std::unique_ptr<PhysicsBody> physicsBody, const StageParams& params)
     : GameObject(std::move(physicsBody), nullptr), // レンダラーはnullptr（自前で描画）
-      m_roadWidth(params.roadWidth),
-      m_grassWidth(params.grassWidth),
-      m_depth(params.depth)
+      m_roadWidth(params.roadWidth), m_grassWidth(params.grassWidth), m_depth(params.depth)
 {
     // テクスチャの読み込み
     m_groundTexture = Texture{U"example/texture/ground.jpg", TextureDesc::Mipped};
@@ -26,14 +24,7 @@ std::shared_ptr<Stage> Stage::Create(PhysicsWorld& world, const StageParams& par
     const float totalWidth = params.grassWidth * 2 + params.roadWidth;
 
     auto planeBody = world.createPlane(
-        PlaneDesc{
-            .normal = Vec3{0, 1, 0},
-            .distance = 0.0f,
-            .position = params.position
-        },
-        GROUP_STATIC,
-        MASK_ALL
-    );
+        PlaneDesc{.normal = Vec3{0, 1, 0}, .distance = 0.0f, .position = params.position}, GROUP_STATIC, MASK_ALL);
 
     planeBody->setRestitution(params.restitution);
     planeBody->setFriction(params.friction);

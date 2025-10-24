@@ -9,12 +9,12 @@ class Stage : public GameObject
 public:
     struct StageParams
     {
-        float roadWidth = 50.0f;          // 道路の幅
-        float grassWidth = 200.0f;        // 草原の幅（片側）
-        float depth = 1000.0f;            // 奥行き
-        Vec3 position = Vec3{0, 0, 0};    // 位置
-        float restitution = 0.5f;         // 反発係数
-        float friction = 0.8f;            // 摩擦係数
+        float roadWidth = 50.0f;       // 道路の幅
+        float grassWidth = 200.0f;     // 草原の幅（片側）
+        float depth = 1000.0f;         // 奥行き
+        Vec3 position = Vec3{0, 0, 0}; // 位置
+        float restitution = 0.5f;      // 反発係数
+        float friction = 0.8f;         // 摩擦係数
     };
 
     /// @brief Stageを作成するファクトリーメソッド
