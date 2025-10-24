@@ -20,6 +20,8 @@ public:
     /// @brief Stageを作成するファクトリーメソッド
     static std::shared_ptr<Stage> Create(PhysicsWorld& world, const StageParams& params);
 
+    double getRoadWidth() const { return m_roadWidth; }
+
     /// @brief 描画（3つのMeshを描画）
     void draw() const override;
 
