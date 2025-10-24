@@ -24,9 +24,6 @@ Stage::Stage(std::unique_ptr<PhysicsBody> physicsBody, const StageParams& params
 
 std::shared_ptr<Stage> Stage::Create(PhysicsWorld& world, const StageParams& params)
 {
-    // 地面全体をカバーする大きなPlaneを作成
-    const double totalWidth = params.grassWidth * 2 + params.roadWidth;
-
     auto planeBody = world.createPlane(
         PlaneDesc{.normal = Vec3{0, 1, 0}, .distance = 0.0f, .position = params.position}, GROUP_STATIC, MASK_ALL);
 
