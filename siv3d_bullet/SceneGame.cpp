@@ -1,6 +1,6 @@
 #include "SceneGame.h"
 #include "Renderers.h"
-#include "Enemy.h"
+#include "ExplosiveEnemy.h"
 #include "Bomb.h"
 #include "EnemyNormal.h"
 
@@ -287,7 +287,7 @@ void SceneGame::spawnEnemy()
     const double z = Random(1.0, WallLength - 1.0);
     const double y = 2.0;
 
-    addGameObject(Enemy::Create(m_world, Enemy::EnemyParams{.position = Vec3{x, y, z},
+    addGameObject(ExplosiveEnemy::Create(m_world, ExplosiveEnemy::ExplosiveEnemyParams{.position = Vec3{x, y, z},
                                                             .radius = 0.5f,
                                                             .mass = 2.0f,
                                                             .maxHealth = 100,
@@ -394,7 +394,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         hitCount++;
 
         // エネミーにダメージを与える
-        if (auto enemy = std::dynamic_pointer_cast<Enemy>(object))
+        if (auto enemy = std::dynamic_pointer_cast<ExplosiveEnemy>(object))
         {
             int damage = static_cast<int>(falloff * 100);
             enemy->takeDamage(damage);

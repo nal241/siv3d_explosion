@@ -1,14 +1,14 @@
-#include "Enemy.h"
+#include "ExplosiveEnemy.h"
 #include "PhysicsWorld.h"
 
-Enemy::Enemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
+ExplosiveEnemy::ExplosiveEnemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
              double explosionRadius)
     : GameObject(std::move(physicsBody), std::move(renderer)), m_health(maxHealth), m_maxHealth(maxHealth),
       m_explosionRadius(explosionRadius)
 {
 }
 
-void Enemy::takeDamage(int damage)
+void ExplosiveEnemy::takeDamage(int damage)
 {
     if (m_state != State::Alive)
     {
@@ -24,7 +24,7 @@ void Enemy::takeDamage(int damage)
     }
 }
 
-std::shared_ptr<Enemy> Enemy::Create(PhysicsWorld& world, const EnemyParams& params)
+std::shared_ptr<ExplosiveEnemy> ExplosiveEnemy::Create(PhysicsWorld& world, const ExplosiveEnemyParams& params)
 {
     CollisionGroup group = params.group;
     CollisionMask mask = params.mask;
@@ -36,12 +36,12 @@ std::shared_ptr<Enemy> Enemy::Create(PhysicsWorld& world, const EnemyParams& par
     auto renderer = std::make_unique<PhysicsShapeRenderer>(*body, params.color);
 
     auto enemy =
-        std::make_shared<Enemy>(std::move(body), std::move(renderer), params.maxHealth, params.explosionRadius);
+        std::make_shared<ExplosiveEnemy>(std::move(body), std::move(renderer), params.maxHealth, params.explosionRadius);
     enemy->getPhysicsBody()->setOwner(enemy->weak_from_this());
     return enemy;
 }
 
-void Enemy::update()
+void ExplosiveEnemy::update()
 {
     // タイマーの更新はStopwatchが自動的に行う
 

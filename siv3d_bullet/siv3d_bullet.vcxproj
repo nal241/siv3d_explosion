@@ -123,8 +123,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ExplosiveEnemy.cpp" />
     <ClCompile Include="Bomb.cpp" />
-    <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EnemyNormal.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="SceneResult.cpp" />
@@ -346,10 +346,10 @@
     <Xml Include="App\example\xml\test.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ExplosiveEnemy.h" />
     <ClInclude Include="Bomb.h" />
     <ClInclude Include="BulletSiv3DUtils.h" />
     <ClInclude Include="CollisionGroups.h" />
-    <ClInclude Include="Enemy.h" />
     <ClInclude Include="EnemyNormal.h" />
     <ClInclude Include="GameEvent.h" />
     <ClInclude Include="ParticleSystem.h" />
