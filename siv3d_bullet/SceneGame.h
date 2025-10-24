@@ -22,8 +22,6 @@ protected:
     virtual void updateGameObjects();
     virtual void updateParticleSystem();
     virtual void updateSpawn();
-    virtual void updateSceneSpecific() {}
-
     // ヘルパーメソッド
     void removeObjects();
     void createStage();
@@ -51,7 +49,7 @@ protected:
     RaycastResult m_raycastResult;
 
     // Background color (remove SRGB curve for a linear workflow)
-    ColorF m_backgroundColor = ColorF{0.4, 0.6, 0.8}.removeSRGBCurve();
+    ColorF m_backgroundColor = ColorF{0.5, 0.7, 0.9}.removeSRGBCurve();
 
     const MSRenderTexture m_renderTexture;
     BasicCamera3D m_camera;
@@ -74,7 +72,16 @@ protected:
     // エネミースポーン用
     Stopwatch m_enemySpawnTimer{StartImmediately::Yes};
     double m_spawnInterval = 3.0;
+    double m_roadWidth = 0.0;
 
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
+
+    // UI用フォント
+    s3d::Font m_titleFont{40, s3d::Typeface::Bold};
+    s3d::Font m_instructionFont{24};
+    s3d::Font m_cooldownFont{16, s3d::Typeface::Bold};
+
+    // 爆弾投擲のクールダウンタイマー
+    s3d::Stopwatch m_throwCooldown;
 };

@@ -2,16 +2,18 @@
 #include "Renderers.h"
 #include "Enemy.h"
 #include "Bomb.h"
+#include "Stage.h"
 
 namespace
 {
     // World settings
-    constexpr double WallLength = 10.0;
     constexpr double WallThickness = 1.0;
 
     // Camera settings
-    constexpr s3d::Vec3 CameraInitialPosition{5, 15, -20};
-    constexpr s3d::Vec3 CameraInitialLookAt{5, 0, 10};
+
+    constexpr double CameraSpeed = 20.0;
+    constexpr s3d::Vec3 CameraInitialPosition{0, 5, -5};
+    constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 30};
     constexpr double CameraFov = 30_deg;
 
     // ステージオブジェクトのプリセット
@@ -39,9 +41,9 @@ namespace
     constexpr double ExplosionMinDistance = 0.01;
 
     // === 画面揺れ設定 ===
-    constexpr double ShakeSpeed = 20.0;
-    constexpr double ExplosionShakeDuration = 1.0;
-    constexpr double ExplosionShakeMagnitude = 1.0;
+    constexpr double ShakeSpeed = 10.0;
+    constexpr double ExplosionShakeDuration = 0.5;
+    constexpr double ExplosionShakeMagnitude = 0.5;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -70,7 +72,6 @@ void SceneGame::update()
     updateParticleSystem();
     updateSpawn();
     removeObjects();
-    updateSceneSpecific();
 }
 
 void SceneGame::updateCamera()
@@ -94,14 +95,14 @@ void SceneGame::updateCamera()
     const double z = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.z) * currentMagnitude;
 
     const Vec3 finalPosition = m_cameraPosition + Vec3{x, y, z};
-    m_camera.setView(finalPosition, m_cameraLookAt);
+    const Vec3 finalCameraLookAt = m_cameraLookAt + Vec3{x, y, z};
+    m_camera.setView(finalPosition, finalCameraLookAt);
 }
 
 void SceneGame::updateInput()
 {
     ClearPrint();
     Print << U"Object num:{}"_fmt(m_gameObjects.size());
-    Print << U"Tキーでシーン移動";
     Print << Profiler::FPS();
 
     // マウスカーソルから静的オブジェクトへのレイキャスト
@@ -131,13 +132,64 @@ void SceneGame::updateInput()
         }
     }
 
+    // Bキーで爆弾を投げる
+    if (KeyB.down() && (m_throwCooldown.sF() >= 1.0 || !m_throwCooldown.isStarted()))
+    {
+        // マウスカーソル位置にレイがヒットしていたら
+        if (m_raycastResult.hasHit)
+        {
+            const Vec3 startPos = m_camera.getEyePosition();
+            const Vec3 targetPos = m_raycastResult.hitPoint;
+            constexpr double launchAngle = -10.0;      // 角度を少し下げる
+            const Vec3 gravity = m_world.getGravity(); // 物理ワールドの重力を取得
+
+            // 投擲に必要な初速を計算
+            if (auto launchVelocity = PhysicsWorld::CalculateLaunchVelocity(startPos, targetPos, launchAngle, gravity))
+            {
+                const float mass = 2.0f;
+                const float radius = 0.4f;
+
+                // 爆弾のパラメータを設定（発射位置はカメラの位置）
+                Bomb::BombParams params{
+                    .position = startPos,
+                    .radius = radius,
+                    .mass = mass,
+                    .duration = 3.0, // 3秒後に爆発
+                    .color = ColorF{1.0, 0.5, 0.2},
+                    .restitution = 0.4f,
+                    .friction = 0.8f,
+                    .explosionRadius = 5.0, // 爆発半径5
+                };
+
+                // Bombファクトリを使ってオブジェクトを生成
+                if (auto newBomb = Bomb::Create(m_world, params))
+                {
+                    // 計算された初速からインパルスを適用
+                    const Vec3 impulse = *launchVelocity * mass;
+                    newBomb->getPhysicsBody()->applyImpulse(impulse);
+
+                    // シーンにオブジェクトを追加
+                    addGameObject(std::move(newBomb));
+
+                    // クールダウンを開始
+                    m_throwCooldown.restart();
+                }
+            }
+            else
+            {
+                // 到達不可能な位置への投擲を試みた場合
+                Print << U"目標地点に到達できません";
+            }
+        }
+    }
+
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
-    // シーン遷移
+    // Tキーでタイトルへ
     if (KeyT.down())
     {
-        changeScene(State::Explosion, 1.0s);
+        changeScene(State::Title, 1.0s);
     }
 
     // Rキーでリザルトへ
@@ -151,13 +203,13 @@ void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTi
 
 void SceneGame::updateGameObjects()
 {
-    //全オブジェクトの状態更新
+    // 全オブジェクトの状態更新
     for (const auto& object : m_gameObjects)
     {
         object->update();
     }
 
-    //全イベントの処理
+    // 全イベントの処理
     for (const auto& object : m_gameObjects)
     {
         for (auto& event : object->consumeEvents())
@@ -225,7 +277,6 @@ void SceneGame::draw() const
         m_particleSystem.draw();
 
         // --- デバッグ描画 ---
-
         // 吸引範囲の可視化
         if (MouseL.pressed() && m_raycastResult.hasHit)
         {
@@ -233,21 +284,14 @@ void SceneGame::draw() const
             Sphere{m_raycastResult.hitPoint, AttractionRadius}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
         }
 
-        // レイキャストの結果を視覚化
+        // 狙っている場所を可視化
         if (m_raycastResult.hasHit)
         {
-            // ヒットしたオブジェクトをワイヤーフレームで描画
-            if (auto hitObject = m_raycastResult.hitObject.lock())
-            {
-                hitObject->drawWireframe();
-            }
-
             // ヒットした座標に小さな球を描画
             Sphere{m_raycastResult.hitPoint, 0.1}.draw(Palette::Red);
 
-            // ヒットした座標の法線を描画
-            const Vec3 normalEnd = m_raycastResult.hitPoint + m_raycastResult.hitNormal;
-            Line3D{m_raycastResult.hitPoint, normalEnd}.draw(Palette::Yellow);
+            // 地面にターゲットマーカーを描画
+            Cylinder{m_raycastResult.hitPoint, 0.5, 0.05}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
         }
     }
 
@@ -261,6 +305,36 @@ void SceneGame::draw() const
 
         // Transfer renderTexture to the current 2D scene (default scene)
         Shader::LinearToScreen(m_renderTexture);
+
+        // UI を描画
+        {
+            m_instructionFont(U"B：爆弾を投げる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"T：タイトルへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
+        }
+
+        // クールダウンUIを描画
+        {
+            constexpr double cooldownTime = 1.0;
+            const double progress = Min(m_throwCooldown.sF() / cooldownTime, 1.0);
+
+            // 画面下部中央に配置
+            const RectF bar{Arg::center(Scene::Center().x, Scene::Height() - 40), 400, 20};
+
+            // 背景
+            bar.draw(ColorF{0.0, 0.6});
+
+            // 進捗
+            bar.stretched(0, -(bar.w * (1.0 - progress)), 0, 0).draw(ColorF{0.9, 0.8, 0.3});
+
+            // 枠線
+            bar.drawFrame(1.5, ColorF{0.1});
+
+            // テキスト（クールダウン完了時のみ表示）
+            if (progress >= 1.0)
+            {
+                m_cooldownFont(U"BOMB READY").drawAt(bar.center(), ColorF{0.0});
+            }
+        }
     }
 }
 
@@ -268,46 +342,61 @@ void SceneGame::addGameObject(std::shared_ptr<GameObject> obj) { m_gameObjects.p
 
 void SceneGame::createStage()
 {
-    // Floor
-    addGameObject(GameObject::CreateBox(
-        m_world, GameObject::BoxParams{.size = s3d::Vec3(WallLength, WallThickness, WallLength),
-                                       .position = s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2),
-                                       .mass = 0.0f, // 静的オブジェクト
-                                       .color = s3d::Linear::Palette::Silver,
-                                       .restitution = StaticBoxRestitution}));
+    // Stageオブジェクトを作成
+    const auto stageParams = Stage::StageParams{.roadWidth = 25.0,
+                                                .grassWidth = 100.0,
+                                                .depth = 500.0,
+                                                .position = Vec3{0, 0, 0},
+                                                .restitution = 0.8f,
+                                                .friction = 0.8f};
 
-    // Left Wall
-    addGameObject(GameObject::CreateBox(
-        m_world, GameObject::BoxParams{.size = s3d::Vec3(WallThickness, WallLength, WallLength),
-                                       .position = s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2),
-                                       .mass = 0.0f,
-                                       .color = s3d::Linear::Palette::Powderblue,
-                                       .restitution = StaticBoxRestitution}));
+    auto stage = Stage::Create(m_world, stageParams);
+    m_roadWidth = stageParams.roadWidth;
 
-    // Right Wall
-    addGameObject(GameObject::CreateBox(
-        m_world,
-        GameObject::BoxParams{.size = s3d::Vec3(WallThickness, WallLength, WallLength),
-                              .position = s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2),
-                              .mass = 0.0f,
-                              .color = s3d::Linear::Palette::Powderblue,
-                              .restitution = StaticBoxRestitution}));
+    // 木を配置 (Poisson Disk Sampling)
+    const double minDistance = 15.0; // 木同士の最小距離 (密度を調整)
+    const double offset = -15.0;     // 領域の端から内側へのオフセット
 
-    // Back Wall
-    addGameObject(GameObject::CreateBox(
-        m_world,
-        GameObject::BoxParams{.size = s3d::Vec3(WallLength, WallLength, WallThickness),
-                              .position = s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2),
-                              .mass = 0.0f,
-                              .color = s3d::Linear::Palette::Powderblue,
-                              .restitution = StaticBoxRestitution}));
+    // 左側の草原
+    {
+        const RectF leftGrassArea{-stageParams.roadWidth / 2 - stageParams.grassWidth, 0, stageParams.grassWidth,
+                                  stageParams.depth};
+        const RectF samplingArea = leftGrassArea.stretched(offset);
+        s3d::PoissonDisk2D sampler(samplingArea.size.asPoint(), minDistance);
+        const Array<Vec2> points = sampler.getPoints();
+        for (const auto& p : points)
+        {
+            const Vec2 translatedPos = p + samplingArea.pos;
+            const double scale = Random(2.5, 2.8);
+            const double rot = Random(0.0, Math::TwoPi);
+            stage->addTree(Vec3{translatedPos.x, 0, translatedPos.y}, scale, rot);
+        }
+    }
+
+    // 右側の草原
+    {
+        const RectF rightGrassArea{stageParams.roadWidth / 2, 0, stageParams.grassWidth, stageParams.depth};
+        const RectF samplingArea = rightGrassArea.stretched(offset);
+        s3d::PoissonDisk2D sampler(samplingArea.size.asPoint(), minDistance);
+        const Array<Vec2> points = sampler.getPoints();
+        for (const auto& p : points)
+        {
+            const Vec2 translatedPos = p + samplingArea.pos;
+            const double scale = Random(2.5, 2.8);
+            const double rot = Random(0.0, Math::TwoPi);
+            stage->addTree(Vec3{translatedPos.x, 0, translatedPos.y}, scale, rot);
+        }
+    }
+
+    addGameObject(std::move(stage));
 }
 
 void SceneGame::spawnEnemy()
 {
     // ステージ内のランダムな位置にスポーン
-    const double x = Random(1.0, WallLength - 1.0);
-    const double z = Random(1.0, WallLength - 1.0);
+    const double offset = 1.0;
+    const double x = Random(-m_roadWidth / 2.0 + offset, m_roadWidth / 2.0 - offset);
+    const double z = Random(10.0, 20.0);
     const double y = 2.0;
 
     addGameObject(Enemy::Create(m_world, Enemy::EnemyParams{.position = Vec3{x, y, z},

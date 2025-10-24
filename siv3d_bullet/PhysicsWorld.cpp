@@ -144,6 +144,14 @@ std::unique_ptr<PhysicsBody> PhysicsWorld::createCylinder(const CylinderDesc& de
                                          mask);
 }
 
+// 平面を作成する
+std::unique_ptr<PhysicsBody> PhysicsWorld::createPlane(const PlaneDesc& desc, CollisionGroup group, CollisionMask mask)
+{
+    // btStaticPlaneShapeは無限平面を表す（質量は常に0で静的オブジェクト）
+    auto shape = std::make_unique<btStaticPlaneShape>(ToBtVector3(desc.normal), desc.distance);
+    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Plane, desc.position, 0.0f, group, mask);
+}
+
 void PhysicsWorld::registerObject(PhysicsBody* obj)
 {
     m_registeredObjects.insert(obj);
