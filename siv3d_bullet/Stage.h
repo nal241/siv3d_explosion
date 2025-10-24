@@ -9,11 +9,11 @@ class Stage : public GameObject
 public:
     struct StageParams
     {
-        double roadWidth = 15.0;       // 道路の幅
-        double grassWidth = 50.0;      // 草原の幅（片側）
+        double roadWidth = 10.0;       // 道路の幅
+        double grassWidth = 30.0;      // 草原の幅（片側）
         double depth = 200.0;          // 奥行き
         Vec3 position = Vec3{0, 0, 0}; // 位置
-        float restitution = 0.5f;      // 反発係数
+        float restitution = 0.1f;      // 反発係数
         float friction = 0.8f;         // 摩擦係数
     };
 
