@@ -165,3 +165,26 @@ std::shared_ptr<GameObject> GameObject::CreateCylinder(PhysicsWorld& world, cons
     gameObject->getPhysicsBody()->setOwner(gameObject->weak_from_this());
     return gameObject;
 }
+
+std::shared_ptr<GameObject> GameObject::CreatePlane(PhysicsWorld& world, const PlaneParams& params,
+                                                    std::unique_ptr<IRenderer> renderer)
+{
+    // Planeは常に静的オブジェクト（質量0）
+    CollisionGroup group = GROUP_STATIC;
+    CollisionMask mask = MASK_ALL;
+
+    auto body = world.createPlane(PlaneDesc{params.normal, params.distance, params.position}, group, mask);
+    body->setRestitution(params.restitution);
+    body->setFriction(params.friction);
+
+    // レンダラーが指定されていなければデフォルト（PhysicsShapeRenderer）を使用
+    if (!renderer)
+    {
+        renderer = std::make_unique<PhysicsShapeRenderer>(*body, params.color);
+    }
+
+    // GameObjectを生成
+    auto gameObject = std::make_shared<GameObject>(std::move(body), std::move(renderer));
+    gameObject->getPhysicsBody()->setOwner(gameObject->weak_from_this());
+    return gameObject;
+}

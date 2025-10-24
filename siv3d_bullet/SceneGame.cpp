@@ -2,6 +2,7 @@
 #include "Renderers.h"
 #include "Enemy.h"
 #include "Bomb.h"
+#include "Stage.h"
 
 namespace
 {
@@ -268,39 +269,17 @@ void SceneGame::addGameObject(std::shared_ptr<GameObject> obj) { m_gameObjects.p
 
 void SceneGame::createStage()
 {
-    // Floor
-    addGameObject(GameObject::CreateBox(
-        m_world, GameObject::BoxParams{.size = s3d::Vec3(WallLength, WallThickness, WallLength),
-                                       .position = s3d::Vec3(WallLength / 2, -WallThickness / 2, WallLength / 2),
-                                       .mass = 0.0f, // 静的オブジェクト
-                                       .color = s3d::Linear::Palette::Silver,
-                                       .restitution = StaticBoxRestitution}));
+    // Stageオブジェクトを作成
+    auto stage = Stage::Create(m_world, Stage::StageParams{
+        .roadWidth = 50.0f,
+        .grassWidth = 200.0f,
+        .depth = 1000.0f,
+        .position = Vec3{0, 0, 0},
+        .restitution = 0.8f,
+        .friction = 0.8f
+    });
 
-    // Left Wall
-    addGameObject(GameObject::CreateBox(
-        m_world, GameObject::BoxParams{.size = s3d::Vec3(WallThickness, WallLength, WallLength),
-                                       .position = s3d::Vec3(-WallThickness / 2, WallLength / 2, WallLength / 2),
-                                       .mass = 0.0f,
-                                       .color = s3d::Linear::Palette::Powderblue,
-                                       .restitution = StaticBoxRestitution}));
-
-    // Right Wall
-    addGameObject(GameObject::CreateBox(
-        m_world,
-        GameObject::BoxParams{.size = s3d::Vec3(WallThickness, WallLength, WallLength),
-                              .position = s3d::Vec3(WallLength + WallThickness / 2, WallLength / 2, WallLength / 2),
-                              .mass = 0.0f,
-                              .color = s3d::Linear::Palette::Powderblue,
-                              .restitution = StaticBoxRestitution}));
-
-    // Back Wall
-    addGameObject(GameObject::CreateBox(
-        m_world,
-        GameObject::BoxParams{.size = s3d::Vec3(WallLength, WallLength, WallThickness),
-                              .position = s3d::Vec3(WallLength / 2, WallLength / 2, WallLength + WallThickness / 2),
-                              .mass = 0.0f,
-                              .color = s3d::Linear::Palette::Powderblue,
-                              .restitution = StaticBoxRestitution}));
+    addGameObject(std::move(stage));
 }
 
 void SceneGame::spawnEnemy()

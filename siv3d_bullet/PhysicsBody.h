@@ -30,11 +30,19 @@ struct CylinderDesc
     float mass;
 };
 
+struct PlaneDesc
+{
+    s3d::Vec3 normal;  // 平面の法線ベクトル
+    float distance;    // 原点からの距離
+    s3d::Vec3 position; // 描画用の位置（物理演算では使われない）
+};
+
 enum class ShapeType
 {
     Box,
     Sphere,
     Cylinder,
+    Plane,
 };
 
 class PhysicsBody
