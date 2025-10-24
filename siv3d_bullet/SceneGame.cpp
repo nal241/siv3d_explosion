@@ -46,6 +46,8 @@ SceneGame::SceneGame(const InitData& init)
       m_player(&m_camera, m_model),
       m_enemyNormalModel{U"model/normalEnemy.obj"}
 {
+    Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
+
     // stage作成
     createStage();
 
