@@ -146,7 +146,7 @@ void SceneGame::updateInput()
         {
             const Vec3 startPos = m_camera.getEyePosition();
             const Vec3 targetPos = m_raycastResult.hitPoint;
-            constexpr double launchAngle = -10.0;      // 角度を少し下げる
+            constexpr double launchAngle = 10.0;      // 角度を少し下げる
             const Vec3 gravity = m_world.getGravity(); // 物理ワールドの重力を取得
 
             // 投擲に必要な初速を計算
