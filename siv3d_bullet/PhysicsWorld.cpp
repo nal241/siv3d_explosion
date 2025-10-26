@@ -15,6 +15,8 @@ namespace
     {
         auto notifyCollision = [](const btCollisionObject* obj)
         {
+            if (!(obj->getCollisionFlags() & btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK))
+                return false;
             const btRigidBody* body = btRigidBody::upcast(obj);
             if (body && body->getUserPointer())
             {
@@ -26,6 +28,7 @@ namespace
         notifyCollision(colObj0->getCollisionObject());
         notifyCollision(colObj1->getCollisionObject());
 
+        // falseを返すことで、Bulletの標準的な衝突応答をそのまま適用する
         return false;
     }
 } // namespace
@@ -42,7 +45,7 @@ PhysicsWorld::PhysicsWorld()
     m_dynamicsWorld->setGravity(btVector3(0, static_cast<float>(GravityY), 0));
     m_dynamicsWorld->getSolverInfo().m_numIterations = SolverIterations;
 
-    // 衝突コールバックを登録
+    // Bullet Physicsのグローバルな衝突コールバック関数を登録
     gContactAddedCallback = contactAddedCallback;
 }
 
