@@ -38,12 +38,22 @@ struct PlaneDesc
     s3d::Vec3 position; // 描画用の位置（物理演算では使われない）
 };
 
+struct ConvexHullDesc
+{
+    const s3d::Model* model; // モデルへのポインタ
+    s3d::FilePath modelPath; // OBJファイルのパス（MeshData読み込み用）
+    s3d::Vec3 position;
+    float mass;
+    s3d::Vec3 scale = s3d::Vec3{1.0, 1.0, 1.0}; // スケール（デフォルトは等倍）
+};
+
 enum class ShapeType
 {
     Box,
     Sphere,
     Cylinder,
     Plane,
+    ConvexHull,
 };
 
 class PhysicsBody
