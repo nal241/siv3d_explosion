@@ -16,7 +16,7 @@ namespace
         auto notifyCollision = [](const btCollisionObject* obj)
         {
             if (!(obj->getCollisionFlags() & btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK))
-                return false;
+                return;
             const btRigidBody* body = btRigidBody::upcast(obj);
             if (body && body->getUserPointer())
             {
