@@ -22,9 +22,15 @@ void EnemyNormal::takeDamage(int damage)
     }
 }
 
-std::shared_ptr<EnemyNormal> EnemyNormal::Create(PhysicsWorld& world, const EnemyNormalParams& params, const s3d::Model& model)
+std::shared_ptr<EnemyNormal> EnemyNormal::Create(PhysicsWorld& world, const EnemyNormalParams& params, const s3d::Model& model, const s3d::FilePath& modelPath)
 {
-    auto body = world.createSphere(SphereDesc{params.radius, params.position, params.mass}, params.group, params.mask);
+    // モデルパスからConvex Hullを作成
+    // NOTE: OBJファイルのスケールをそろえるため2倍に調整
+    // NOTE: Z軸を反転（前後が逆だったため）
+    const double scaleMultiplier = 2.0;
+    auto body = world.createConvexHull(
+        ConvexHullDesc{&model, modelPath, params.position, params.mass, Vec3{params.radius * scaleMultiplier, params.radius * scaleMultiplier, -params.radius * scaleMultiplier}},
+        params.group, params.mask);
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
 
