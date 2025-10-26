@@ -24,13 +24,7 @@ void Bomb::update()
 
 bool Bomb::shouldBeRemoved() const { return m_isExploded; }
 
-void Bomb::notifyCollision()
-{
-    if (!m_hasCollided)
-    {
-        m_hasCollided = true;
-    }
-}
+void Bomb::notifyCollision() { m_hasCollided = true; }
 
 std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params)
 {
@@ -44,13 +38,14 @@ std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params
     bomb->getPhysicsBody()->setOwner(bomb->weak_from_this());
 
     // 衝突コールバックを登録
-    bomb->getPhysicsBody()->setCollisionCallback([bombWeak = std::weak_ptr<Bomb>(bomb)]()
-    {
-        if (auto bombPtr = bombWeak.lock())
+    bomb->getPhysicsBody()->setCollisionCallback(
+        [bombWeak = std::weak_ptr<Bomb>(bomb)]()
         {
-            bombPtr->notifyCollision();
-        }
-    });
+            if (auto bombPtr = bombWeak.lock())
+            {
+                bombPtr->notifyCollision();
+            }
+        });
 
     return bomb;
 }
