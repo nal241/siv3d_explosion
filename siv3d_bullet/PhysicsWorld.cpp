@@ -17,10 +17,14 @@ PhysicsWorld::PhysicsWorld()
       m_broadphase(std::make_unique<btDbvtBroadphase>()),
       m_solver(std::make_unique<btSequentialImpulseConstraintSolver>()),
       m_dynamicsWorld(std::make_unique<btDiscreteDynamicsWorld>(m_dispatcher.get(), m_broadphase.get(), m_solver.get(),
-                                                                m_collisionConfig.get()))
+                                                                m_collisionConfig.get())),
+      m_debugDraw(std::make_unique<BulletDebugDraw>())
 {
     m_dynamicsWorld->setGravity(btVector3(0, static_cast<float>(GravityY), 0));
     m_dynamicsWorld->getSolverInfo().m_numIterations = SolverIterations;
+
+    // デバッグ描画を設定
+    m_dynamicsWorld->setDebugDrawer(m_debugDraw.get());
 }
 
 // デストラクタ：確保した全てのリソースを解放する
@@ -152,6 +156,78 @@ std::unique_ptr<PhysicsBody> PhysicsWorld::createPlane(const PlaneDesc& desc, Co
     return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::Plane, desc.position, 0.0f, group, mask);
 }
 
+// OBJファイルから頂点データを読み込む簡易パーサー
+static s3d::Array<s3d::Vec3> LoadOBJVertices(const s3d::FilePath& path)
+{
+    s3d::Array<s3d::Vec3> vertices;
+    s3d::TextReader reader(path);
+
+    if (!reader)
+    {
+        throw std::runtime_error("Failed to open OBJ file");
+    }
+
+    s3d::String line;
+    while (reader.readLine(line))
+    {
+        // 頂点行 "v x y z" をパース
+        if (line.starts_with(U"v "))
+        {
+            // "v " 以降をスペースで分割
+            const auto parts = line.substr(2).split(U' ');
+            if (parts.size() >= 3)
+            {
+                const double x = s3d::ParseFloat<double>(parts[0]);
+                const double y = s3d::ParseFloat<double>(parts[1]);
+                const double z = s3d::ParseFloat<double>(parts[2]);
+                vertices.push_back(s3d::Vec3{x, y, z});
+            }
+        }
+    }
+
+    return vertices;
+}
+
+// Convex Hullを作成する
+std::unique_ptr<PhysicsBody> PhysicsWorld::createConvexHull(const ConvexHullDesc& desc, CollisionGroup group,
+                                                            CollisionMask mask)
+{
+    if (desc.modelPath.isEmpty())
+    {
+        throw std::invalid_argument("ConvexHullDesc::modelPath is empty");
+    }
+
+    // OBJファイルから頂点データを読み込む
+    const s3d::Array<s3d::Vec3> objVertices = LoadOBJVertices(desc.modelPath);
+
+    if (objVertices.isEmpty())
+    {
+        throw std::invalid_argument("Model has no vertices");
+    }
+
+    // 頂点データを収集してスケールを適用
+    s3d::Array<btVector3> vertices;
+    vertices.reserve(objVertices.size());
+
+    for (const auto& vertex : objVertices)
+    {
+        // スケールを適用した頂点座標を追加
+        s3d::Vec3 scaledPos = vertex * desc.scale;
+        vertices.push_back(ToBtVector3(scaledPos));
+    }
+
+    // btConvexHullShapeを作成
+    auto shape = std::make_unique<btConvexHullShape>(reinterpret_cast<const btScalar*>(vertices.data()),
+                                                     static_cast<int>(vertices.size()), sizeof(btVector3));
+
+    // 凸包の最適化（頂点数を減らして計算効率を向上）
+    // NOTE: optimizeConvexHull()は形状を縮小する可能性があるため一旦コメントアウト
+    // shape->optimizeConvexHull();
+
+    return std::make_unique<PhysicsBody>(this, std::move(shape), ShapeType::ConvexHull, desc.position, desc.mass, group,
+                                         mask);
+}
+
 void PhysicsWorld::registerObject(PhysicsBody* obj)
 {
     m_registeredObjects.insert(obj);
@@ -206,4 +282,32 @@ std::optional<Vec3> PhysicsWorld::CalculateLaunchVelocity(const Vec3& start, con
     const double v = Sqrt(v_pow2);
 
     return diffXZ.normalized() * v * cosAngle + Vec3{0, v * Sin(launchAngleRad), 0};
+}
+
+// デバッグ描画を有効化
+void PhysicsWorld::setDebugDrawEnabled(bool enabled) { m_debugDrawEnabled = enabled; }
+
+// デバッグ描画モードを設定
+void PhysicsWorld::setDebugDrawMode(int mode)
+{
+    if (m_debugDraw)
+    {
+        m_debugDraw->setDebugMode(mode);
+    }
+}
+
+// デバッグ描画を実行
+void PhysicsWorld::debugDraw() const
+{
+    if (!m_debugDrawEnabled || !m_debugDraw)
+        return;
+
+    // 前フレームの線をクリア
+    m_debugDraw->clearLines();
+
+    // Bulletにデバッグ描画を実行させる（m_debugDrawに線データが蓄積される）
+    m_dynamicsWorld->debugDrawWorld();
+
+    // 蓄積された線を実際に描画
+    m_debugDraw->render();
 }

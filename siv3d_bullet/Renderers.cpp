@@ -50,6 +50,9 @@ void PhysicsShapeRenderer::draw(const Vec3& position, const Quaternion& rotation
         cylinder.draw(m_color);
         break;
     }
+    case ShapeType::ConvexHull:
+        // ConvexHullの描画は複雑なため、BulletDebugDrawを使用してください
+        break;
     }
 }
 
@@ -86,5 +89,8 @@ void PhysicsShapeRenderer::drawWireframe(const Vec3& position, const Quaternion&
         cylinder.draw(Palette::Orange);
         break;
     }
+    case ShapeType::ConvexHull:
+        // ConvexHullのワイヤーフレーム描画は複雑なため、BulletDebugDrawを使用してください
+        break;
     }
 }
