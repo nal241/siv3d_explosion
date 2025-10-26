@@ -91,4 +91,7 @@ protected:
 
     // 爆弾投擲のクールダウンタイマー
     s3d::Stopwatch m_throwCooldown;
+
+    // デバッグ描画の有効/無効
+    bool m_debugDrawEnabled = true;
 };
