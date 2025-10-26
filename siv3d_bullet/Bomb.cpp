@@ -39,7 +39,7 @@ std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params
 
     // 衝突コールバックを登録
     bomb->getPhysicsBody()->setCollisionCallback(
-        [bombWeak = std::weak_ptr<Bomb>(bomb)]()
+        [bombWeak = bomb->weak_from_this()]()
         {
             if (auto bombPtr = bombWeak.lock())
             {
