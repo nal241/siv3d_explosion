@@ -2,6 +2,7 @@
 #include <Siv3D.hpp>
 #include <btBulletDynamicsCommon.h>
 #include "CollisionGroups.h"
+#include <functional>
 
 // 前方宣言
 class PhysicsWorld;
@@ -75,6 +76,7 @@ public:
     void setOwner(std::weak_ptr<GameObject> owner);
     void setPosition(const s3d::Vec3& pos);
     void setRotation(const s3d::Quaternion& rot);
+    void setCollisionCallback(std::function<void()> callback);
 
     float getMass() const;
 
@@ -94,6 +96,14 @@ public:
     CollisionMask getMask() const { return m_mask; }
     PhysicsWorld* getWorld() const { return m_world; }
 
+    void onCollision() const
+    {
+        if (m_collisionCallback)
+        {
+            m_collisionCallback();
+        }
+    }
+
 private:
     // PhysicsBody は PhysicsWorldで管理する。
     friend class PhysicsWorld;
@@ -107,4 +117,5 @@ private:
     ShapeType m_shapeType;
     CollisionGroup m_group;
     CollisionMask m_mask;
+    std::function<void()> m_collisionCallback;
 };

@@ -57,7 +57,7 @@ void SceneTestExplosion::updateSceneSpecific()
     }
 
     // Bキーで爆弾を投げる
-    if (KeyB.down() && (m_throwCooldown.sF() >= 1.0 || !m_throwCooldown.isStarted()))
+    if (KeyB.down() && (m_throwCooldown.sF() >= 5.0 || !m_throwCooldown.isStarted()))
     {
         // マウスカーソル位置にレイがヒットしていたら
         if (m_raycastResult.hasHit)
@@ -150,7 +150,7 @@ void SceneTestExplosion::draw() const
 
         // クールダウンUIを描画
         {
-            constexpr double cooldownTime = 1.0;
+            constexpr double cooldownTime = 5.0;
             const double progress = Min(m_throwCooldown.sF() / cooldownTime, 1.0);
 
             // 画面下部中央に配置

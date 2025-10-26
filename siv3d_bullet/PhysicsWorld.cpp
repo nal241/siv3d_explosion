@@ -8,6 +8,29 @@ namespace
     constexpr double GravityY = -9.81;
     constexpr int SolverIterations = 10;
     constexpr int MaxSubSteps = 5;
+
+    // 衝突コールバック
+    bool contactAddedCallback(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0, int partId0, int index0,
+                              const btCollisionObjectWrapper* colObj1, int partId1, int index1)
+    {
+        auto notifyCollision = [](const btCollisionObject* obj)
+        {
+            if (!(obj->getCollisionFlags() & btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK))
+                return;
+            const btRigidBody* body = btRigidBody::upcast(obj);
+            if (body && body->getUserPointer())
+            {
+                PhysicsBody* physicsBody = static_cast<PhysicsBody*>(body->getUserPointer());
+                physicsBody->onCollision();
+            }
+        };
+
+        notifyCollision(colObj0->getCollisionObject());
+        notifyCollision(colObj1->getCollisionObject());
+
+        // falseを返すことで、Bulletの標準的な衝突応答をそのまま適用する
+        return false;
+    }
 } // namespace
 
 // コンストラクタ：ワールドのセットアップを行う
@@ -23,6 +46,8 @@ PhysicsWorld::PhysicsWorld()
     m_dynamicsWorld->setGravity(btVector3(0, static_cast<float>(GravityY), 0));
     m_dynamicsWorld->getSolverInfo().m_numIterations = SolverIterations;
 
+    // Bullet Physicsのグローバルな衝突コールバック関数を登録
+    gContactAddedCallback = contactAddedCallback;
     // デバッグ描画を設定
     m_dynamicsWorld->setDebugDrawer(m_debugDraw.get());
 }

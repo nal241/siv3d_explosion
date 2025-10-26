@@ -24,6 +24,8 @@ void Bomb::update()
 
 bool Bomb::shouldBeRemoved() const { return m_isExploded; }
 
+void Bomb::notifyCollision() { m_hasCollided = true; }
+
 std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params)
 {
     auto body = world.createSphere(SphereDesc{params.radius, params.position, params.mass}, params.group, params.mask);
@@ -34,5 +36,16 @@ std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params
 
     auto bomb = std::make_shared<Bomb>(std::move(body), std::move(renderer), params.duration, params.explosionRadius);
     bomb->getPhysicsBody()->setOwner(bomb->weak_from_this());
+
+    // 衝突コールバックを登録
+    bomb->getPhysicsBody()->setCollisionCallback(
+        [bombWeak = bomb->weak_from_this()]()
+        {
+            if (auto bombPtr = bombWeak.lock())
+            {
+                bombPtr->notifyCollision();
+            }
+        });
+
     return bomb;
 }
