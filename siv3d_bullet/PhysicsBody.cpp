@@ -92,16 +92,18 @@ void PhysicsBody::setCollisionCallback(std::function<void()> callback)
     m_collisionCallback = std::move(callback);
 
     // コールバックが設定されている場合、Bulletにカスタムマテリアルコールバックフラグを設定
+    int flags = m_body->getCollisionFlags();
     if (m_collisionCallback)
     {
         // このフラグにより、衝突判定時に独自の処理を実行できるようになる
-        m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+        flags |= btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK;
     }
     else
     {
         // コールバック解除
         flags &= ~btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK;
     }
+    m_body->setCollisionFlags(flags);
 }
 
 // 質量を取得
