@@ -79,6 +79,18 @@ void PhysicsBody::setRotation(const s3d::Quaternion& rot)
     m_body->setWorldTransform(transform);
 }
 
+void PhysicsBody::setAngularFactor(const s3d::Vec3& angFac)
+{
+    if (m_body)
+        m_body->setAngularFactor(ToBtVector3(angFac));
+}
+
+void PhysicsBody::setGravity(const s3d::Vec3& gravity)
+{
+    if (m_body)
+        m_body->setGravity(ToBtVector3(gravity));
+}
+
 void PhysicsBody::setOwner(std::weak_ptr<GameObject> owner)
 {
     m_owner = std::move(owner);
@@ -132,13 +144,30 @@ bool PhysicsBody::isStatic() const
 
 s3d::Vec3 PhysicsBody::getPosition() const
 {
+    if (!m_body)
+    {
+        return s3d::Vec3{0, 0, 0};
+    }
     btTransform transform;
     m_body->getMotionState()->getWorldTransform(transform);
     return ToSiv3DVec3(transform.getOrigin());
 }
 
+s3d::Vec3 PhysicsBody::getLinearVelocity() const
+{
+    if (!m_body)
+    {
+        return s3d::Vec3{0, 0, 0};
+    }
+    return ToSiv3DVec3(m_body->getLinearVelocity());
+}
+
 s3d::Quaternion PhysicsBody::getRotation() const
 {
+    if (!m_body)
+    {
+        return s3d::Quaternion::Identity();
+    }
     btTransform transform;
     m_body->getMotionState()->getWorldTransform(transform);
     return ToSiv3DQuaternion(transform.getRotation());

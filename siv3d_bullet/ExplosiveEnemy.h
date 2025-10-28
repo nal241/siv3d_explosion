@@ -28,7 +28,8 @@ public:
     int getHealth() const { return m_health; }
     int getMaxHealth() const { return m_maxHealth; }
 
-    static std::shared_ptr<ExplosiveEnemy> Create(PhysicsWorld& world, const ExplosiveEnemyParams& params, const s3d::Model& model);
+    static std::shared_ptr<ExplosiveEnemy> Create(PhysicsWorld& world, const ExplosiveEnemyParams& params,
+                                                  const s3d::Model& model);
 
 private:
     enum class State
@@ -45,4 +46,19 @@ private:
     double m_explosionRadius;
     State m_state = State::Alive;
     Stopwatch m_deathTimer;
+
+    // 位置の制御
+    const double targetAltitude = 1.5;
+    const double targetSpeed = -2.0;
+    double m_initialX = 0.0;
+
+    const double hoverKpY = 10.0;
+    const double hoverKdY = 0.3;
+
+    const double moveKpX = 1.0;
+    const double moveKdX = 0.1;
+
+    const double moveKpZ = 2.0;
+
+    void applyPDControl();
 };
