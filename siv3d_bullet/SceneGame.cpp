@@ -385,7 +385,7 @@ void SceneGame::spawnEnemyNormal()
 
     addGameObject(EnemyNormal::Create(m_world,
                                       EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
-                                                                     .radius = 0.5f,
+                                                                     .radius = 1.0f,
                                                                      .mass = 1.0f,
                                                                      .maxHealth = 50,
                                                                      .color = HSV{120, 0.7, 0.9},

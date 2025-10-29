@@ -54,6 +54,7 @@ enum class ShapeType
     Cylinder,
     Plane,
     ConvexHull,
+    Compound,
 };
 
 class PhysicsBody
