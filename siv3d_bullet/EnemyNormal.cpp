@@ -22,17 +22,24 @@ void EnemyNormal::takeDamage(int damage)
     }
 }
 
-std::shared_ptr<EnemyNormal> EnemyNormal::Create(PhysicsWorld& world, const EnemyNormalParams& params, const s3d::Model& model, const s3d::FilePath& modelPath)
+std::shared_ptr<EnemyNormal> EnemyNormal::Create(PhysicsWorld& world, const EnemyNormalParams& params,
+                                                 const s3d::Model& model, const s3d::FilePath& modelPath)
 {
-    // モデルパスからConvex Hullを作成
-    // NOTE: OBJファイルのスケールをそろえるため2倍に調整
-    // NOTE: Z軸を反転（前後が逆だったため）
-    const double scaleMultiplier = 2.0;
-    auto body = world.createConvexHull(
-        ConvexHullDesc{&model, modelPath, params.position, params.mass, Vec3{params.radius * scaleMultiplier, params.radius * scaleMultiplier, -params.radius * scaleMultiplier}},
-        params.group, params.mask);
+    // コンパウンドシェイプ（楕円体+円錐）を作成
+    const float ellipsoidRadiusX = params.radius * 0.48;
+    const float ellipsoidRadiusY = params.radius * 0.36f;
+    const float ellipsoidRadiusZ = params.radius * 0.48;
+    const float coneRadius = params.radius * 0.4f;
+    const float coneHeight = params.radius * 0.3f;
+
+    auto body = world.createCompoundShape()
+                    .addEllipsoid({0, ellipsoidRadiusY, 0}, {ellipsoidRadiusX, ellipsoidRadiusY, ellipsoidRadiusZ})
+                    .addCone({0, ellipsoidRadiusY * 2, 0}, coneRadius, coneHeight)
+                    .build(params.position, params.mass, params.group, params.mask);
+
     body->setRestitution(params.restitution);
     body->setFriction(params.friction);
+    body->setDamping(0.1f, 0.8f);
 
     auto renderer = std::make_unique<ModelRenderer>(model);
 
