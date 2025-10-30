@@ -3,6 +3,7 @@
 #include "PhysicsWorld.h"
 #include "Player.h"
 #include "ParticleSystem.h"
+#include "ItemSelectorUI.h"
 
 // ゲームシーン
 class SceneGame : public App::Scene
@@ -29,6 +30,15 @@ protected:
     void spawnEnemy();
     void spawnEnemyNormal();
     void handleExplosion(const ExplosionRequest& request);
+
+    // アイテム投擲
+    void throwBomb(const Vec3& targetPos);
+    void throwGravity(const Vec3& targetPos);
+    void throwItem(ItemType itemType, const Vec3& targetPos);
+
+    // 重力場更新
+    void updateGravityField();
+    void applyGravityFieldForce();
 
     // 爆発処理
     void createExplosionParticles(const s3d::Vec3& center, double radius);
@@ -87,11 +97,19 @@ protected:
     // UI用フォント
     s3d::Font m_titleFont{40, s3d::Typeface::Bold};
     s3d::Font m_instructionFont{24};
-    s3d::Font m_cooldownFont{16, s3d::Typeface::Bold};
-
-    // 爆弾投擲のクールダウンタイマー
-    s3d::Stopwatch m_throwCooldown;
 
     // デバッグ描画の有効/無効
     bool m_debugDrawEnabled = true;
+
+    // アイテム選択UI
+    ItemSelectorUI m_itemSelectorUI;
+
+    // 重力場
+    struct GravityField
+    {
+        Vec3 position;
+        double remainingTime;
+        double radius;
+    };
+    s3d::Optional<GravityField> m_gravityField;
 };

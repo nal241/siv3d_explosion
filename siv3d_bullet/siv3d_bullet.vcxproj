@@ -126,6 +126,7 @@
     <ClCompile Include="ExplosiveEnemy.cpp" />
     <ClCompile Include="Bomb.cpp" />
     <ClCompile Include="EnemyNormal.cpp" />
+    <ClCompile Include="ItemSelectorUI.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="SceneResult.cpp" />
     <ClCompile Include="GameObject.cpp" />
@@ -352,6 +353,7 @@
     <ClInclude Include="CollisionGroups.h" />
     <ClInclude Include="EnemyNormal.h" />
     <ClInclude Include="GameEvent.h" />
+    <ClInclude Include="ItemSelectorUI.h" />
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="SceneResult.h" />
     <ClInclude Include="GameObject.h" />
