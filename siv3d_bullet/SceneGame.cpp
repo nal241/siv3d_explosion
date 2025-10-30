@@ -77,14 +77,13 @@ void SceneGame::update()
 {
     updateCamera();
     updateInput();
+    updateUI();
+    updateItems();
     updateGameObjects();
     updatePhysics();
     updateParticleSystem();
     updateSpawn();
     removeObjects();
-
-    // UIを更新
-    m_ui.update(Scene::DeltaTime());
 }
 
 void SceneGame::updateCamera()
@@ -118,24 +117,6 @@ void SceneGame::updateInput()
     Print << U"Object num:{}"_fmt(m_gameObjects.size());
     Print << Profiler::FPS();
 
-    // UIのクリック判定
-    const bool uiClicked = m_ui.handleClick();
-
-    // マウスカーソルから静的オブジェクトへのレイキャスト
-    const Ray ray = m_camera.screenToRay(Cursor::Pos());
-    m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
-
-    // 重力場更新
-    updateGravityField();
-
-    // アイテム投擲（UI経由、UIクリックでない場合のみ）
-    if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
-    {
-        const ItemType selectedItem = m_ui.getSelectedItem();
-        throwItem(selectedItem, m_raycastResult.hitPoint);
-        m_ui.startReload(selectedItem);
-    }
-
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
@@ -160,6 +141,29 @@ void SceneGame::updateInput()
 }
 
 void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTime())); }
+
+void SceneGame::updateUI() { m_ui.update(Scene::DeltaTime()); }
+
+void SceneGame::updateItems()
+{
+    // UIのクリック判定
+    const bool uiClicked = m_ui.handleClick();
+
+    // マウスカーソルから静的オブジェクトへのレイキャスト
+    const Ray ray = m_camera.screenToRay(Cursor::Pos());
+    m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
+
+    // 重力場更新
+    updateGravityField();
+
+    // アイテム投擲（UI経由、UIクリックでない場合のみ）
+    if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
+    {
+        const ItemType selectedItem = m_ui.getSelectedItem();
+        throwItem(selectedItem, m_raycastResult.hitPoint);
+        m_ui.startReload(selectedItem);
+    }
+}
 
 void SceneGame::updateGameObjects()
 {

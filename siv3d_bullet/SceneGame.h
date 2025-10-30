@@ -23,6 +23,8 @@ protected:
     virtual void updateGameObjects();
     virtual void updateParticleSystem();
     virtual void updateSpawn();
+    virtual void updateUI();
+    virtual void updateItems();
     // ヘルパーメソッド
     void removeObjects();
     void createStage();
