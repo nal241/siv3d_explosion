@@ -23,6 +23,7 @@ namespace
     // 吸引機能の設定
     constexpr double AttractionForce = 10.0;  // 吸引力の強さ（一定）
     constexpr double AttractionRadius = 5.0; // 吸引力の有効半径
+    constexpr double GravityFieldDuration = 3.0; // 重力場の持続時間
 
     // === 爆発パーティクル設定 ===
     constexpr int32 ParticleCount = 50;
@@ -156,7 +157,7 @@ void SceneGame::updateItems()
     // 重力場更新
     updateGravityField();
 
-    // アイテム投擲（UI経由、UIクリックでない場合のみ）
+    // アイテム投擲
     if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
     {
         const ItemType selectedItem = m_ui.getSelectedItem();
@@ -529,10 +530,9 @@ void SceneGame::throwBomb(const Vec3& targetPos)
 
 void SceneGame::throwGravity(const Vec3& targetPos)
 {
-    // 既存の重力場を上書き
     m_gravityField = GravityField{
         .position = targetPos,
-        .remainingTime = 3.0,
+        .remainingTime = GravityFieldDuration,
         .radius = AttractionRadius,
     };
 }

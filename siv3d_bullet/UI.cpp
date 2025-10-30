@@ -11,10 +11,10 @@ UI::UI()
     : m_selectedItem(ItemType::Bomb),
       m_font(FontMethod::MSDF, 24, Typeface::Bold)
 {
-    m_itemInfos.push_back({U"Bomb 💣", Texture{U"💣"_emoji}, BombReloadTime});
-    m_itemInfos.push_back({U"Gravity 🌀", Texture{U"🌀"_emoji}, DefaultReloadTime});
-    m_itemInfos.push_back({U"Freeze ❄️", Texture{U"❄️"_emoji}, DefaultReloadTime});
-    m_itemInfos.push_back({U"Wind 💨", Texture{U"💨"_emoji}, DefaultReloadTime});
+    m_itemInfos.push_back({U"Bomb", Texture{U"💣"_emoji}, BombReloadTime});
+    m_itemInfos.push_back({U"Gravity", Texture{U"🌀"_emoji}, DefaultReloadTime});
+    m_itemInfos.push_back({U"Freeze", Texture{U"❄️"_emoji}, DefaultReloadTime});
+    m_itemInfos.push_back({U"Wind", Texture{U"💨"_emoji}, DefaultReloadTime});
 
     m_reloadTimers.resize(m_itemInfos.size(), 0.0);
 }
@@ -37,7 +37,8 @@ void UI::update(double deltaTime)
 
 Rect UI::getButtonRect(int32 index) const
 {
-    const int32 totalWidth = (ButtonWidth * 4) + (ButtonSpacing * 3);
+    const int32 itemCount = static_cast<int32>(m_itemInfos.size());
+    const int32 totalWidth = (ButtonWidth * itemCount) + (ButtonSpacing * (itemCount - 1));
     const int32 startX = (Scene::Width() - totalWidth) / 2;
     const int32 y = Scene::Height() - ButtonHeight - 20;
     const int32 x = startX + index * (ButtonWidth + ButtonSpacing);
@@ -117,7 +118,7 @@ void UI::startReload(ItemType itemType)
     const int32 index = static_cast<int32>(itemType);
 
     // 境界チェック
-    if (index < 0 || index >= m_reloadTimers.size())
+    if (index < 0 || static_cast<size_t>(index) >= m_reloadTimers.size())
     {
         return;
     }
@@ -130,7 +131,7 @@ bool UI::canUseSelectedItem() const
     const int32 index = static_cast<int32>(m_selectedItem);
 
     // 境界チェック
-    if (index < 0 || index >= m_reloadTimers.size())
+    if (index < 0 || static_cast<size_t>(index) >= m_reloadTimers.size())
     {
         return false;
     }
