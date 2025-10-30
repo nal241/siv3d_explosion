@@ -75,16 +75,16 @@ void ItemSelectorUI::draw() const
         }
 
         // 絵文字
-        info.emoji.scaled(0.4).drawAt(buttonRect.center().x, buttonRect.y + 30);
+        info.emoji.scaled(ItemSelectorUI::IconScale).drawAt(buttonRect.center().x, buttonRect.y + ItemSelectorUI::IconOffsetY);
 
         // アイテム名
-        m_font(info.name).drawAt(18, buttonRect.center().x, buttonRect.y + ButtonHeight - 20, Palette::White);
+        m_font(info.name).drawAt(ItemSelectorUI::NameFontSize, buttonRect.center().x, buttonRect.y + ItemSelectorUI::ButtonHeight - ItemSelectorUI::NameOffsetY, Palette::White);
 
         // リロードバー
         if (!isReady)
         {
             const double progress = 1.0 - (reloadTimer / info.reloadTime);
-            const RectF reloadBar{buttonRect.x + 5.0, buttonRect.y + 5.0, (ButtonWidth - 10.0) * progress, 5.0};
+            const RectF reloadBar{buttonRect.x + ItemSelectorUI::ReloadBarHPadding, buttonRect.y + ItemSelectorUI::ReloadBarVOffsetY, (ItemSelectorUI::ButtonWidth - ItemSelectorUI::ReloadBarHPadding * 2) * progress, ItemSelectorUI::ReloadBarHeight};
             reloadBar.draw(ColorF{0.9, 0.8, 0.3});
         }
 
@@ -115,11 +115,25 @@ bool ItemSelectorUI::handleClick()
 void ItemSelectorUI::startReload(ItemType itemType)
 {
     const int32 index = static_cast<int32>(itemType);
+
+    // 境界チェック
+    if (index < 0 || index >= m_reloadTimers.size())
+    {
+        return;
+    }
+
     m_reloadTimers[index] = m_itemInfos[index].reloadTime;
 }
 
 bool ItemSelectorUI::canUseSelectedItem() const
 {
     const int32 index = static_cast<int32>(m_selectedItem);
+
+    // 境界チェック
+    if (index < 0 || index >= m_reloadTimers.size())
+    {
+        return false;
+    }
+
     return m_reloadTimers[index] <= 0.0;
 }

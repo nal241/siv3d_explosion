@@ -54,4 +54,13 @@ private:
     static constexpr int32 ButtonWidth = 150;
     static constexpr int32 ButtonHeight = 80;
     static constexpr int32 ButtonSpacing = 20;
+
+    // UI描画の定数
+    static constexpr double IconScale = 0.4;
+    static constexpr double IconOffsetY = 30.0;
+    static constexpr double NameFontSize = 18.0;
+    static constexpr double NameOffsetY = 20.0;
+    static constexpr double ReloadBarHPadding = 5.0;
+    static constexpr double ReloadBarVOffsetY = 5.0;
+    static constexpr double ReloadBarHeight = 5.0;
 };
