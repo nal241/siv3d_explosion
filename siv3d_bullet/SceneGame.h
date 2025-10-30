@@ -3,7 +3,7 @@
 #include "PhysicsWorld.h"
 #include "Player.h"
 #include "ParticleSystem.h"
-#include "ItemSelectorUI.h"
+#include "UI.h"
 
 // ゲームシーン
 class SceneGame : public App::Scene
@@ -101,8 +101,8 @@ protected:
     // デバッグ描画の有効/無効
     bool m_debugDrawEnabled = true;
 
-    // アイテム選択UI
-    ItemSelectorUI m_itemSelectorUI;
+    // UI
+    UI m_ui;
 
     // 重力場
     struct GravityField

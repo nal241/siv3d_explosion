@@ -1,4 +1,4 @@
-#include "ItemSelectorUI.h"
+#include "UI.h"
 
 namespace
 {
@@ -7,7 +7,7 @@ namespace
     constexpr double DefaultReloadTime = 3.0;
 }
 
-ItemSelectorUI::ItemSelectorUI()
+UI::UI()
     : m_selectedItem(ItemType::Bomb),
       m_font(FontMethod::MSDF, 24, Typeface::Bold)
 {
@@ -19,7 +19,7 @@ ItemSelectorUI::ItemSelectorUI()
     m_reloadTimers.resize(m_itemInfos.size(), 0.0);
 }
 
-void ItemSelectorUI::update(double deltaTime)
+void UI::update(double deltaTime)
 {
     // リロードタイマーを更新
     for (auto& timer : m_reloadTimers)
@@ -35,7 +35,7 @@ void ItemSelectorUI::update(double deltaTime)
     }
 }
 
-Rect ItemSelectorUI::getButtonRect(int32 index) const
+Rect UI::getButtonRect(int32 index) const
 {
     const int32 totalWidth = (ButtonWidth * 4) + (ButtonSpacing * 3);
     const int32 startX = (Scene::Width() - totalWidth) / 2;
@@ -44,7 +44,7 @@ Rect ItemSelectorUI::getButtonRect(int32 index) const
     return Rect{x, y, ButtonWidth, ButtonHeight};
 }
 
-void ItemSelectorUI::draw() const
+void UI::draw() const
 {
     for (int32 i = 0; i < static_cast<int32>(m_itemInfos.size()); ++i)
     {
@@ -75,16 +75,16 @@ void ItemSelectorUI::draw() const
         }
 
         // 絵文字
-        info.emoji.scaled(ItemSelectorUI::IconScale).drawAt(buttonRect.center().x, buttonRect.y + ItemSelectorUI::IconOffsetY);
+        info.emoji.scaled(UI::IconScale).drawAt(buttonRect.center().x, buttonRect.y + UI::IconOffsetY);
 
         // アイテム名
-        m_font(info.name).drawAt(ItemSelectorUI::NameFontSize, buttonRect.center().x, buttonRect.y + ItemSelectorUI::ButtonHeight - ItemSelectorUI::NameOffsetY, Palette::White);
+        m_font(info.name).drawAt(UI::NameFontSize, buttonRect.center().x, buttonRect.y + UI::ButtonHeight - UI::NameOffsetY, Palette::White);
 
         // リロードバー
         if (!isReady)
         {
             const double progress = 1.0 - (reloadTimer / info.reloadTime);
-            const RectF reloadBar{buttonRect.x + ItemSelectorUI::ReloadBarHPadding, buttonRect.y + ItemSelectorUI::ReloadBarVOffsetY, (ItemSelectorUI::ButtonWidth - ItemSelectorUI::ReloadBarHPadding * 2) * progress, ItemSelectorUI::ReloadBarHeight};
+            const RectF reloadBar{buttonRect.x + UI::ReloadBarHPadding, buttonRect.y + UI::ReloadBarVOffsetY, (UI::ButtonWidth - UI::ReloadBarHPadding * 2) * progress, UI::ReloadBarHeight};
             reloadBar.draw(ColorF{0.9, 0.8, 0.3});
         }
 
@@ -96,7 +96,7 @@ void ItemSelectorUI::draw() const
     }
 }
 
-bool ItemSelectorUI::handleClick()
+bool UI::handleClick()
 {
     for (int32 i = 0; i < static_cast<int32>(m_itemInfos.size()); ++i)
     {
@@ -112,7 +112,7 @@ bool ItemSelectorUI::handleClick()
     return false;
 }
 
-void ItemSelectorUI::startReload(ItemType itemType)
+void UI::startReload(ItemType itemType)
 {
     const int32 index = static_cast<int32>(itemType);
 
@@ -125,7 +125,7 @@ void ItemSelectorUI::startReload(ItemType itemType)
     m_reloadTimers[index] = m_itemInfos[index].reloadTime;
 }
 
-bool ItemSelectorUI::canUseSelectedItem() const
+bool UI::canUseSelectedItem() const
 {
     const int32 index = static_cast<int32>(m_selectedItem);
 

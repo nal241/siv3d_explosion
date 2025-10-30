@@ -18,10 +18,10 @@ struct ItemInfo
     double reloadTime;
 };
 
-class ItemSelectorUI
+class UI
 {
 public:
-    ItemSelectorUI();
+    UI();
 
     void update(double deltaTime);
 

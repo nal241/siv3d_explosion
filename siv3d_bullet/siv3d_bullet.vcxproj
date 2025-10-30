@@ -126,7 +126,6 @@
     <ClCompile Include="ExplosiveEnemy.cpp" />
     <ClCompile Include="Bomb.cpp" />
     <ClCompile Include="EnemyNormal.cpp" />
-    <ClCompile Include="ItemSelectorUI.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="SceneResult.cpp" />
     <ClCompile Include="GameObject.cpp" />
@@ -138,6 +137,7 @@
     <ClCompile Include="SceneGame.cpp" />
     <ClCompile Include="SceneTitle.cpp" />
     <ClCompile Include="Stage.cpp" />
+    <ClCompile Include="UI.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -353,7 +353,6 @@
     <ClInclude Include="CollisionGroups.h" />
     <ClInclude Include="EnemyNormal.h" />
     <ClInclude Include="GameEvent.h" />
-    <ClInclude Include="ItemSelectorUI.h" />
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="SceneResult.h" />
     <ClInclude Include="GameObject.h" />
@@ -365,6 +364,7 @@
     <ClInclude Include="SceneGame.h" />
     <ClInclude Include="SceneTitle.h" />
     <ClInclude Include="Stage.h" />
+    <ClInclude Include="UI.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

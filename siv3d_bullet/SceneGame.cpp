@@ -83,8 +83,8 @@ void SceneGame::update()
     updateSpawn();
     removeObjects();
 
-    // アイテム選択UIを更新
-    m_itemSelectorUI.update(Scene::DeltaTime());
+    // UIを更新
+    m_ui.update(Scene::DeltaTime());
 }
 
 void SceneGame::updateCamera()
@@ -119,7 +119,7 @@ void SceneGame::updateInput()
     Print << Profiler::FPS();
 
     // UIのクリック判定
-    const bool uiClicked = m_itemSelectorUI.handleClick();
+    const bool uiClicked = m_ui.handleClick();
 
     // マウスカーソルから静的オブジェクトへのレイキャスト
     const Ray ray = m_camera.screenToRay(Cursor::Pos());
@@ -129,11 +129,11 @@ void SceneGame::updateInput()
     updateGravityField();
 
     // アイテム投擲（UI経由、UIクリックでない場合のみ）
-    if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_itemSelectorUI.canUseSelectedItem())
+    if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
     {
-        const ItemType selectedItem = m_itemSelectorUI.getSelectedItem();
+        const ItemType selectedItem = m_ui.getSelectedItem();
         throwItem(selectedItem, m_raycastResult.hitPoint);
-        m_itemSelectorUI.startReload(selectedItem);
+        m_ui.startReload(selectedItem);
     }
 
     // プレイヤー入力
@@ -283,8 +283,8 @@ void SceneGame::draw() const
             m_instructionFont(U"T：タイトルへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
         }
 
-        // アイテム選択UIを描画
-        m_itemSelectorUI.draw();
+        // UIを描画
+        m_ui.draw();
     }
 }
 
