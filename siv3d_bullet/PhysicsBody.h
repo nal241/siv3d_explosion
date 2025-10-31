@@ -54,6 +54,7 @@ enum class ShapeType
     Cylinder,
     Plane,
     ConvexHull,
+    Compound,
 };
 
 class PhysicsBody
@@ -70,14 +71,17 @@ public:
     PhysicsBody(PhysicsWorld* world, std::unique_ptr<btCollisionShape> shape, ShapeType type, const s3d::Vec3& position,
                 float mass, CollisionGroup group, CollisionMask mask);
 
+    void setOwner(std::weak_ptr<GameObject> owner);
+
     void setRestitution(float restitution);
     void setFriction(float friction);
     void setDamping(float lin_damping, float ang_damping);
     void setLinearVelocity(const s3d::Vec3& velocity);
     void setAngularVelocity(const s3d::Vec3& velocity);
-    void setOwner(std::weak_ptr<GameObject> owner);
     void setPosition(const s3d::Vec3& pos);
     void setRotation(const s3d::Quaternion& rot);
+    void setAngularFactor(const s3d::Vec3& ang);
+    void setGravity(const s3d::Vec3& gravity);
     void setCollisionCallback(std::function<void()> callback);
 
     float getMass() const;
@@ -90,6 +94,7 @@ public:
     // --- Getters ---
     btRigidBody* getBody() const { return m_body.get(); }
     s3d::Vec3 getPosition() const;
+    s3d::Vec3 getLinearVelocity() const;
     s3d::Quaternion getRotation() const;
     ShapeType getShapeType() const { return m_shapeType; }
     btCollisionShape* getShape() const { return m_shape.get(); }

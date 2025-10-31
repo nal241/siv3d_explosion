@@ -8,6 +8,7 @@
 
 // 前方宣言
 class GameObject;
+class CompoundShapeBuilder;
 
 struct RaycastResult
 {
@@ -56,6 +57,8 @@ public:
     std::unique_ptr<PhysicsBody> createPlane(const PlaneDesc& desc, CollisionGroup group, CollisionMask mask);
     std::unique_ptr<PhysicsBody> createConvexHull(const ConvexHullDesc& desc, CollisionGroup group, CollisionMask mask);
 
+    CompoundShapeBuilder createCompoundShape();
+
     // --- static utilities ---
     static std::optional<Vec3> CalculateLaunchVelocity(const Vec3& start, const Vec3& target, double launchAngleDeg,
                                                        const Vec3& gravity);
@@ -90,4 +93,48 @@ private:
     // PhysicsObjectからの通知メソッド
     void registerObject(PhysicsBody* obj);
     void unregisterObject(PhysicsBody* obj);
+};
+
+/// @brief コンパウンドシェイプを構築するビルダークラス
+class CompoundShapeBuilder
+{
+public:
+    CompoundShapeBuilder(PhysicsWorld* world);
+
+    /// @brief 球体を追加
+    CompoundShapeBuilder& addSphere(s3d::Vec3 localPos, float radius,
+                                    s3d::Quaternion localRot = s3d::Quaternion::Identity());
+
+    /// @brief 楕円体を追加（btMultiSphereShape + スケーリング）
+    /// @param localPos ローカル位置
+    /// @param radii 各軸の半径 (x, y, z)
+    /// @param localRot ローカル回転
+    CompoundShapeBuilder& addEllipsoid(s3d::Vec3 localPos, s3d::Vec3 radii,
+                                       s3d::Quaternion localRot = s3d::Quaternion::Identity());
+
+    /// @brief 箱を追加
+    CompoundShapeBuilder& addBox(s3d::Vec3 localPos, s3d::Vec3 size,
+                                 s3d::Quaternion localRot = s3d::Quaternion::Identity());
+
+    /// @brief 円錐を追加（Y軸方向）
+    CompoundShapeBuilder& addCone(s3d::Vec3 localPos, float radius, float height,
+                                  s3d::Quaternion localRot = s3d::Quaternion::Identity());
+
+    /// @brief 円柱を追加（Y軸方向）
+    CompoundShapeBuilder& addCylinder(s3d::Vec3 localPos, float radius, float height,
+                                      s3d::Quaternion localRot = s3d::Quaternion::Identity());
+
+    /// @brief コンパウンドシェイプをビルドしてPhysicsBodyを生成
+    std::unique_ptr<PhysicsBody> build(s3d::Vec3 position, float mass,
+                                       CollisionGroup group, CollisionMask mask);
+
+private:
+    struct ChildShapeData
+    {
+        std::unique_ptr<btCollisionShape> shape;
+        btTransform localTransform;
+    };
+
+    PhysicsWorld* m_world;
+    s3d::Array<ChildShapeData> m_children;
 };

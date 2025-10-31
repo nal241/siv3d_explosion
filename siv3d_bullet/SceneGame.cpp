@@ -14,15 +14,15 @@ namespace
 
     constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{0, 5, -5};
-    constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 30};
+    constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 40};
     constexpr double CameraFov = 30_deg;
 
     // ステージオブジェクトのプリセット
     constexpr float StaticBoxRestitution = 1.0f;
 
     // 吸引機能の設定
-    constexpr double AttractionForce = 10.0;  // 吸引力の強さ（一定）
-    constexpr double AttractionRadius = 5.0; // 吸引力の有効半径
+    constexpr double AttractionForce = 10.0;     // 吸引力の強さ（一定）
+    constexpr double AttractionRadius = 5.0;     // 吸引力の有効半径
     constexpr double GravityFieldDuration = 3.0; // 重力場の持続時間
 
     // === アイテムエフェクト色設定 ===
@@ -89,7 +89,8 @@ SceneGame::SceneGame(const InitData& init)
     createStage();
 
     // カメラ設定
-    m_camera = BasicCamera3D{m_renderTexture.size(), CameraFov};
+    // m_camera = BasicCamera3D{m_renderTexture.size(), CameraFov};
+    m_camera = DebugCamera3D{m_renderTexture.size(), CameraFov};
     m_cameraPosition = CameraInitialPosition;
     m_cameraLookAt = CameraInitialLookAt;
     m_camera.setView(m_cameraPosition, m_cameraLookAt);
@@ -119,6 +120,7 @@ void SceneGame::update()
 
 void SceneGame::updateCamera()
 {
+    m_camera.update(20.0);
     const double elapsed = m_shakeTimer.sF();
 
     if (not m_shakeTimer.isStarted() || elapsed >= m_shakeDuration)
@@ -244,7 +246,7 @@ void SceneGame::updateSpawn()
     // Explosive Enemy
     if (m_explosiveEnemySpawnTimer.sF() >= m_explosiveSpawnInterval)
     {
-        spawnEnemy(); 
+        spawnEnemy();
         m_explosiveEnemySpawnTimer.restart();
     }
 }
@@ -345,6 +347,12 @@ void SceneGame::draw() const
                 }
             }
         }
+        // 10x10のグリッド、1マス1.0単位 （デバッグ）
+        for (int i = -15; i <= 15; ++i)
+        {
+            s3d::Line3D({i, 1, -15}, {i, 1, 15}).draw(s3d::Palette::Gray);
+            s3d::Line3D({-15, 1, i}, {15, 1, i}).draw(s3d::Palette::Gray);
+        }
 
         // Bulletデバッグ描画（Dキーでトグル）
         m_world.debugDraw();
@@ -363,7 +371,8 @@ void SceneGame::draw() const
 
         // UI を描画
         {
-            m_instructionFont(U"D：デバッグ描画 [{}]"_fmt(m_debugDrawEnabled ? U"ON" : U"OFF")).draw(30, 85, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"D：デバッグ描画 [{}]"_fmt(m_debugDrawEnabled ? U"ON" : U"OFF"))
+                .draw(30, 85, ColorF{1.0, 1.0, 1.0});
             m_instructionFont(U"T：タイトルへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
         }
 
@@ -430,17 +439,19 @@ void SceneGame::spawnEnemy()
     // ステージ内のランダムな位置にスポーン
     const double offset = 1.0;
     const double x = Random(-m_roadWidth / 2.0 + offset, m_roadWidth / 2.0 - offset);
-    const double z = Random(10.0, 20.0);
+    const double z = Random(38.0, 42.0);
     const double y = 2.0;
 
-    addGameObject(ExplosiveEnemy::Create(m_world, ExplosiveEnemy::ExplosiveEnemyParams{.position = Vec3{x, y, z},
-                                                            .radius = 0.5f,
-                                                            .mass = 2.0f,
-                                                            .maxHealth = 50,
-                                                            .color = HSV{0, 0.7, 0.9},
-                                                            .group = GROUP_ATTRACTABLE,
-                                                            .mask = MASK_ALL,
-                                                            .explosionRadius = 3.0}, m_explosiveEnemyModel));
+    addGameObject(ExplosiveEnemy::Create(m_world,
+                                         ExplosiveEnemy::ExplosiveEnemyParams{.position = Vec3{x, y, z},
+                                                                              .radius = 0.5f,
+                                                                              .mass = 2.0f,
+                                                                              .maxHealth = 50,
+                                                                              .color = HSV{0, 0.7, 0.9},
+                                                                              .group = GROUP_ATTRACTABLE,
+                                                                              .mask = MASK_ALL,
+                                                                              .explosionRadius = 3.0},
+                                         m_explosiveEnemyModel));
 }
 
 void SceneGame::spawnEnemyNormal()
@@ -449,16 +460,18 @@ void SceneGame::spawnEnemyNormal()
     // ステージ内のランダムな位置にスポーン
     const double offset = 1.0;
     const double x = Random(-m_roadWidth / 2.0 + offset, m_roadWidth / 2.0 - offset);
-    const double z = Random(10.0, 20.0);
+    const double z = Random(38.0, 42.0);
     const double y = 2.0;
 
-    addGameObject(EnemyNormal::Create(m_world, EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
-                                                                           .radius = 0.5f,
-                                                                           .mass = 1.0f,
-                                                                           .maxHealth = 50,
-                                                                           .color = HSV{120, 0.7, 0.9},
-                                                                           .group = GROUP_ATTRACTABLE,
-                                                                           .mask = MASK_ALL}, m_enemyNormalModel, U"LicensedAsset/normalEnemy.obj"));
+    addGameObject(EnemyNormal::Create(m_world,
+                                      EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
+                                                                     .radius = 1.0f,
+                                                                     .mass = 1.0f,
+                                                                     .maxHealth = 50,
+                                                                     .color = HSV{120, 0.7, 0.9},
+                                                                     .group = GROUP_ATTRACTABLE,
+                                                                     .mask = MASK_ALL},
+                                      m_enemyNormalModel, U"LicensedAsset/normalEnemy.obj"));
 }
 
 void SceneGame::handleExplosion(const ExplosionRequest& request)
@@ -549,17 +562,17 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         {
             int damage = static_cast<int>(falloff * 100);
             enemy->takeDamage(damage);
-            s3d::Print << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
+            Logger << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
             int damage = static_cast<int>(falloff * 100);
             enemyNormal->takeDamage(damage);
-            s3d::Print << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
+            Logger << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else
         {
-            s3d::Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
+            Logger << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
         }
     }
     s3d::Print << U"   Hit {} objects"_fmt(hitCount);
