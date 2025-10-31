@@ -25,13 +25,25 @@ namespace
     constexpr double AttractionRadius = 5.0; // 吸引力の有効半径
     constexpr double GravityFieldDuration = 3.0; // 重力場の持続時間
 
+    // === アイテムエフェクト色設定 ===
+    const ColorF GravityEffectColor{0.8, 0.4, 1.0};
+    const ColorF FreezeEffectColor{0.5, 0.8, 1.0};
+    const ColorF WindEffectColor{0.3, 1.0, 0.8};
+    const ColorF BombIndicatorColor{1.0, 0.4, 0.2};
+
+    // === アイテムインジケータ設定 ===
+    constexpr double IndicatorHeight = 0.05;
+    constexpr Duration IndicatorPulseDuration = 1.0s;
+    constexpr double IndicatorPulseMaxAlpha = 0.8;
+    constexpr double IndicatorPulseMinAlpha = 0.4;
+
     // Freezeアイテムの設定
     constexpr double FreezeRadius = 5.0;
     constexpr double FreezeDuration = 3.0;
 
     // 風の設定
     constexpr double WindBoxWidth = 8.0;
-    constexpr double WindBoxHeight = 5.0;
+    constexpr double WindBoxHeight = 2.0;
     constexpr double WindBoxDepth = 30.0;
     constexpr double WindForce = 15.0;
     constexpr double WindDuration = 3.0;
@@ -271,31 +283,60 @@ void SceneGame::draw() const
         if (m_gravityField)
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_gravityField->position, m_gravityField->radius}.draw(ColorF{0.5, 0.0, 1.0, 0.3});
+            Sphere{m_gravityField->position, m_gravityField->radius}.draw(GravityEffectColor.withA(0.3));
         }
 
         // freeze範囲の可視化
         if (m_freezeField)
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_freezeField->position, m_freezeField->radius}.draw(ColorF(0.3, 0.5, 1.0, 0.3));
+            Sphere{m_freezeField->position, m_freezeField->radius}.draw(FreezeEffectColor.withA(0.3));
         }
 
         // wind範囲の可視化
         if (m_windField)
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            m_windField->area.draw(ColorF(0.3, 1.0, 0.8, 0.3));
+            m_windField->area.draw(WindEffectColor.withA(0.3));
         }
 
-        // 狙っている場所を可視化
+        // アイテムの着地点と範囲の可視化
         if (m_raycastResult.hasHit)
         {
-            // ヒットした座標に小さな球を描画
-            Sphere{m_raycastResult.hitPoint, 0.1}.draw(Palette::Red);
+            const ItemType selectedItem = m_ui.getSelectedItem();
+            const Vec3& targetPos = m_raycastResult.hitPoint;
 
-            // 地面にターゲットマーカーを描画
-            Cylinder{m_raycastResult.hitPoint, 0.5, 0.05}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
+            // インジケータのアルファ値を時間で変化させる
+            const double alpha = Periodic::Sine0_1(IndicatorPulseDuration) * (IndicatorPulseMaxAlpha - IndicatorPulseMinAlpha) + IndicatorPulseMinAlpha;
+
+            // 中心のマーカー
+            Sphere{targetPos, 0.1}.draw(Palette::Red);
+
+            const ScopedRenderStates3D blend{ BlendState::Additive };
+
+            switch (selectedItem)
+            {
+                case ItemType::Bomb:
+                {
+                    Cylinder{targetPos, 5.0f, IndicatorHeight}.draw(BombIndicatorColor.withA(alpha));
+                    break;
+                }
+                case ItemType::Gravity:
+                {
+                    Cylinder{targetPos, AttractionRadius, IndicatorHeight}.draw(GravityEffectColor.withA(alpha));
+                    break;
+                }
+                case ItemType::Freeze:
+                {
+                    Cylinder{targetPos, FreezeRadius, IndicatorHeight}.draw(FreezeEffectColor.withA(alpha));
+                    break;
+                }
+                case ItemType::Wind:
+                {
+                    Box{targetPos, Vec3{WindBoxWidth, IndicatorHeight, WindBoxDepth}}.draw(WindEffectColor.withA(alpha));
+                    break;
+                }
+            }
         }
 
         // Bulletデバッグ描画（Dキーでトグル）
@@ -543,7 +584,7 @@ void SceneGame::throwBomb(const Vec3& targetPos)
             .color = ColorF{1.0, 0.5, 0.2},
             .restitution = 0.4f,
             .friction = 0.8f,
-            .explosionRadius = 5.0,
+            .explosionRadius = 5.0f,
         };
 
         if (auto newBomb = Bomb::Create(m_world, params))
