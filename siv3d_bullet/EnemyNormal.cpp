@@ -10,15 +10,29 @@ void EnemyNormal::takeDamage(int damage)
 {
     if (m_state != State::Alive)
     {
+        Logger << U"[EnemyNormal ID:" << getID() << U"] ダメージ無視: 既に死亡状態";
         return;
     }
 
+    // 爆発を受けた時、回転制限を解除
+    if (m_rotationLocked)
+    {
+        m_rotationLocked = false;
+        getPhysicsBody()->setAngularFactor(Vec3{1.0, 1.0, 1.0}); // すべての軸で回転可能に
+        Logger << U"[EnemyNormal ID:" << getID() << U"] y軸回転の制限を解除";
+    }
+
+    const int prevHealth = m_health;
     m_health -= damage;
+    Logger << U"[EnemyNormal ID:" << getID() << U"] ダメージ受けた: " << damage << U" (HP: " << prevHealth << U" -> "
+           << m_health << U")";
+
     if (m_health <= 0)
     {
         m_health = 0;
         m_state = State::Dying;
         m_deathTimer.start();
+        Logger << U"[EnemyNormal ID:" << getID() << U"] 死亡状態に移行";
     }
 }
 
@@ -41,6 +55,9 @@ std::shared_ptr<EnemyNormal> EnemyNormal::Create(PhysicsWorld& world, const Enem
     body->setFriction(params.friction);
     body->setDamping(0.1f, 0.8f);
 
+    // y軸回転を禁止（x軸とz軸は許可）
+    body->setAngularFactor(Vec3{1.0, 0.0, 1.0});
+
     auto renderer = std::make_unique<ModelRenderer>(model);
 
     auto enemy = std::make_shared<EnemyNormal>(std::move(body), std::move(renderer), params.maxHealth);
@@ -54,5 +71,16 @@ void EnemyNormal::update()
     if (m_state == State::Dying && m_deathTimer.sF() >= 1.0)
     {
         m_state = State::Dead;
+    }
+
+    // 生存中のみジャンプ
+    if (m_state == State::Alive && m_jumpTimer.sF() >= m_jumpInterval)
+    {
+        // 前方（Z軸の負の方向）と上方向にインパルスを加える
+        const Vec3 jumpImpulse{0, 5.0, -3.0}; // Y: 上方向, Z: 前方向
+        getPhysicsBody()->applyImpulse(jumpImpulse);
+
+        // タイマーをリセット
+        m_jumpTimer.restart();
     }
 }
