@@ -37,6 +37,7 @@ protected:
     void throwBomb(const Vec3& targetPos);
     void throwGravity(const Vec3& targetPos);
     void throwFreeze(const Vec3& targetPos);
+    void throwWind(const Vec3& targetPos);
     void throwItem(ItemType itemType, const Vec3& targetPos);
 
     // 重力アイテム
@@ -46,6 +47,10 @@ protected:
     // Freezeアイテム
     void updateFreezeField();
     void applyFreezeEffect();
+
+    // Windアイテム用
+    void updateWindField();
+    void applyWindEffect();
 
     // 爆発処理
     void createExplosionParticles(const s3d::Vec3& center, double radius);
@@ -128,4 +133,13 @@ protected:
         double radius;
     };
     s3d::Optional<FreezeField> m_freezeField;
+
+    // Windアイテム用
+    struct WindField
+    {
+        s3d::Box area;
+        Vec3 force;
+        double remainingTime;
+    };
+    s3d::Optional<WindField> m_windField;
 };

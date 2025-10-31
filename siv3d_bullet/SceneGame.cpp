@@ -29,6 +29,13 @@ namespace
     constexpr double FreezeRadius = 5.0;
     constexpr double FreezeDuration = 3.0;
 
+    // 風の設定
+    constexpr double WindBoxWidth = 8.0;
+    constexpr double WindBoxHeight = 5.0;
+    constexpr double WindBoxDepth = 30.0;
+    constexpr double WindForce = 15.0;
+    constexpr double WindDuration = 3.0;
+
     // === 爆発パーティクル設定 ===
     constexpr int32 ParticleCount = 50;
     constexpr double MinParticleSpeed = 3.0;
@@ -164,6 +171,9 @@ void SceneGame::updateItems()
     // Freezeアイテム更新
     updateFreezeField();
 
+    // Windアイテム更新
+    updateWindField();
+
     // アイテム投擲
     if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
     {
@@ -269,6 +279,13 @@ void SceneGame::draw() const
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
             Sphere{m_freezeField->position, m_freezeField->radius}.draw(ColorF(0.3, 0.5, 1.0, 0.3));
+        }
+
+        // wind範囲の可視化
+        if (m_windField)
+        {
+            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
+            m_windField->area.draw(ColorF(0.3, 1.0, 0.8, 0.3));
         }
 
         // 狙っている場所を可視化
@@ -565,7 +582,7 @@ void SceneGame::throwItem(ItemType itemType, const Vec3& targetPos)
         throwFreeze(targetPos);
         break;
     case ItemType::Wind:
-        // 未実装
+        throwWind(targetPos);
         break;
     }
 }
@@ -648,6 +665,51 @@ void SceneGame::applyFreezeEffect()
             {
                 body->setLinearVelocity(Vec3::Zero());
                 body->setAngularVelocity(Vec3::Zero());
+            }
+        }
+    }
+}
+
+void SceneGame::throwWind(const Vec3& targetPos)
+{
+    const Vec3 boxCenter = Vec3{targetPos.x, WindBoxHeight / 2.0, targetPos.z};
+    const Vec3 boxSize = Vec3{WindBoxWidth, WindBoxHeight, WindBoxDepth};
+
+    m_windField = WindField{
+        .area = Box{boxCenter, boxSize},
+        .force = Vec3{0, 0, WindForce},
+        .remainingTime = WindDuration,
+    };
+}
+
+void SceneGame::updateWindField()
+{
+    if (!m_windField)
+        return;
+
+    m_windField->remainingTime -= Scene::DeltaTime();
+
+    if (m_windField->remainingTime <= 0.0)
+    {
+        m_windField.reset();
+        return;
+    }
+
+    applyWindEffect();
+}
+
+void SceneGame::applyWindEffect()
+{
+    const Vec3 windForce = m_windField->force;
+
+    for (const auto& object : m_gameObjects)
+    {
+        if (auto body = object->getPhysicsBody();
+            body && body->getGroup() == GROUP_ATTRACTABLE)
+        {
+            if (m_windField->area.contains(object->getPosition()))
+            {
+                body->applyForce(windForce);
             }
         }
     }
