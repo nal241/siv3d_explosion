@@ -25,6 +25,10 @@ namespace
     constexpr double AttractionRadius = 5.0; // 吸引力の有効半径
     constexpr double GravityFieldDuration = 3.0; // 重力場の持続時間
 
+    // Freezeアイテムの設定
+    constexpr double FreezeRadius = 5.0;
+    constexpr double FreezeDuration = 3.0;
+
     // === 爆発パーティクル設定 ===
     constexpr int32 ParticleCount = 50;
     constexpr double MinParticleSpeed = 3.0;
@@ -154,8 +158,11 @@ void SceneGame::updateItems()
     const Ray ray = m_camera.screenToRay(Cursor::Pos());
     m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
 
-    // 重力場更新
+    // Gravityアイテム更新
     updateGravityField();
+
+    // Freezeアイテム更新
+    updateFreezeField();
 
     // アイテム投擲
     if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
@@ -255,6 +262,13 @@ void SceneGame::draw() const
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
             Sphere{m_gravityField->position, m_gravityField->radius}.draw(ColorF{0.5, 0.0, 1.0, 0.3});
+        }
+
+        // freeze範囲の可視化
+        if (m_freezeField)
+        {
+            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
+            Sphere{m_freezeField->position, m_freezeField->radius}.draw(ColorF(0.3, 0.5, 1.0, 0.3));
         }
 
         // 狙っている場所を可視化
@@ -548,7 +562,7 @@ void SceneGame::throwItem(ItemType itemType, const Vec3& targetPos)
         throwGravity(targetPos);
         break;
     case ItemType::Freeze:
-        // 未実装
+        throwFreeze(targetPos);
         break;
     case ItemType::Wind:
         // 未実装
@@ -588,6 +602,52 @@ void SceneGame::applyGravityFieldForce()
             {
                 const Vec3 force = direction.normalized() * AttractionForce;
                 body->applyForce(force);
+            }
+        }
+    }
+}
+
+void SceneGame::throwFreeze(const Vec3& targetPos)
+{
+    m_freezeField = FreezeField{
+        .position = targetPos,
+        .remainingTime = FreezeDuration,
+        .radius = FreezeRadius,
+    };
+}
+
+void SceneGame::updateFreezeField()
+{
+    if (!m_freezeField)
+        return;
+
+    m_freezeField->remainingTime -= Scene::DeltaTime();
+
+    if (m_freezeField->remainingTime <= 0.0)
+    {
+        m_freezeField.reset();
+        return;
+    }
+
+    applyFreezeEffect();
+}
+
+void SceneGame::applyFreezeEffect()
+{
+    const Vec3& centerPos = m_freezeField->position;
+
+    for (const auto& object : m_gameObjects)
+    {
+        if (auto body = object->getPhysicsBody();
+            body && body->getGroup() == GROUP_ATTRACTABLE)
+        {
+            const Vec3 objPos = object->getPosition();
+            const double distanceSq = (centerPos - objPos).lengthSq();
+
+            if (distanceSq < (m_freezeField->radius * m_freezeField->radius))
+            {
+                body->setLinearVelocity(Vec3::Zero());
+                body->setAngularVelocity(Vec3::Zero());
             }
         }
     }

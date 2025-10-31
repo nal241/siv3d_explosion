@@ -73,6 +73,8 @@ public:
     void setRestitution(float restitution);
     void setFriction(float friction);
     void setDamping(float lin_damping, float ang_damping);
+    void setLinearVelocity(const s3d::Vec3& velocity);
+    void setAngularVelocity(const s3d::Vec3& velocity);
     void setOwner(std::weak_ptr<GameObject> owner);
     void setPosition(const s3d::Vec3& pos);
     void setRotation(const s3d::Quaternion& rot);

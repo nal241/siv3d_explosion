@@ -47,6 +47,24 @@ void PhysicsBody::setRestitution(float restitution) { m_body->setRestitution(res
 void PhysicsBody::setFriction(float friction) { m_body->setFriction(friction); }
 void PhysicsBody::setDamping(float lin_damping, float ang_damping) { m_body->setDamping(lin_damping, ang_damping); }
 
+void PhysicsBody::setLinearVelocity(const Vec3& velocity)
+{
+    if (m_body)
+    {
+        m_body->activate(true);
+        m_body->setLinearVelocity(ToBtVector3(velocity));
+    }
+}
+
+void PhysicsBody::setAngularVelocity(const Vec3& velocity)
+{
+    if (m_body)
+    {
+        m_body->activate(true);
+        m_body->setAngularVelocity(ToBtVector3(velocity));
+    }
+}
+
 void PhysicsBody::applyForce(const Vec3& force)
 {
     if (m_body)

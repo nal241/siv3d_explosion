@@ -36,11 +36,16 @@ protected:
     // アイテム投擲
     void throwBomb(const Vec3& targetPos);
     void throwGravity(const Vec3& targetPos);
+    void throwFreeze(const Vec3& targetPos);
     void throwItem(ItemType itemType, const Vec3& targetPos);
 
-    // 重力場更新
+    // 重力アイテム
     void updateGravityField();
     void applyGravityFieldForce();
+
+    // Freezeアイテム
+    void updateFreezeField();
+    void applyFreezeEffect();
 
     // 爆発処理
     void createExplosionParticles(const s3d::Vec3& center, double radius);
@@ -106,7 +111,7 @@ protected:
     // UI
     UI m_ui;
 
-    // 重力場
+    // Gravityアイテム
     struct GravityField
     {
         Vec3 position;
@@ -114,4 +119,13 @@ protected:
         double radius;
     };
     s3d::Optional<GravityField> m_gravityField;
+
+    // Freezeアイテム
+    struct FreezeField
+    {
+        Vec3 position;
+        double remainingTime;
+        double radius;
+    };
+    s3d::Optional<FreezeField> m_freezeField;
 };
