@@ -65,7 +65,8 @@ protected:
     ColorF m_backgroundColor = ColorF{0.5, 0.7, 0.9}.removeSRGBCurve();
 
     const MSRenderTexture m_renderTexture;
-    BasicCamera3D m_camera;
+    // BasicCamera3D m_camera;
+    DebugCamera3D m_camera;
     s3d::Vec3 m_cameraPosition;
     s3d::Vec3 m_cameraLookAt;
 
