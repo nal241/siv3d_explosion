@@ -40,4 +40,11 @@ private:
     int m_maxHealth;
     State m_state = State::Alive;
     Stopwatch m_deathTimer;
+
+    // ジャンプ用
+    Stopwatch m_jumpTimer{StartImmediately::Yes};
+    double m_jumpInterval = 1.5; // ジャンプ間隔（秒）
+
+    // 回転制限フラグ
+    bool m_rotationLocked = true; // 初期状態ではy軸回転を禁止
 };

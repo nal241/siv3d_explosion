@@ -213,6 +213,9 @@ static s3d::Array<s3d::Vec3> LoadOBJVertices(const s3d::FilePath& path)
     return vertices;
 }
 
+// コンパウンドシェイプビルダーを作成
+CompoundShapeBuilder PhysicsWorld::createCompoundShape() { return CompoundShapeBuilder(this); }
+
 // Convex Hullを作成する
 std::unique_ptr<PhysicsBody> PhysicsWorld::createConvexHull(const ConvexHullDesc& desc, CollisionGroup group,
                                                             CollisionMask mask)
@@ -335,4 +338,102 @@ void PhysicsWorld::debugDraw() const
 
     // 蓄積された線を実際に描画
     m_debugDraw->render();
+}
+
+CompoundShapeBuilder::CompoundShapeBuilder(PhysicsWorld* world) : m_world(world) {}
+
+CompoundShapeBuilder& CompoundShapeBuilder::addSphere(s3d::Vec3 localPos, float radius, s3d::Quaternion localRot)
+{
+    auto shape = std::make_unique<btSphereShape>(radius);
+
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(ToBtVector3(localPos));
+    transform.setRotation(ToBtQuaternion(localRot));
+
+    m_children.push_back({std::move(shape), transform});
+    return *this;
+}
+
+CompoundShapeBuilder& CompoundShapeBuilder::addEllipsoid(s3d::Vec3 localPos, s3d::Vec3 radii, s3d::Quaternion localRot)
+{
+    // btMultiSphereShapeで半径1の球を作成し、スケーリングで楕円にする
+    btVector3 position(0, 0, 0);
+    btScalar radius = 1.0f;
+    auto shape = std::make_unique<btMultiSphereShape>(&position, &radius, 1);
+
+    // 非一様スケールを適用して楕円体にする
+    shape->setLocalScaling(ToBtVector3(radii));
+
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(ToBtVector3(localPos));
+    transform.setRotation(ToBtQuaternion(localRot));
+
+    m_children.push_back({std::move(shape), transform});
+    return *this;
+}
+
+CompoundShapeBuilder& CompoundShapeBuilder::addBox(s3d::Vec3 localPos, s3d::Vec3 size, s3d::Quaternion localRot)
+{
+    auto shape = std::make_unique<btBoxShape>(ToBtVector3(size * 0.5));
+
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(ToBtVector3(localPos));
+    transform.setRotation(ToBtQuaternion(localRot));
+
+    m_children.push_back({std::move(shape), transform});
+    return *this;
+}
+
+CompoundShapeBuilder& CompoundShapeBuilder::addCone(s3d::Vec3 localPos, float radius, float height,
+                                                    s3d::Quaternion localRot)
+{
+    // btConeShapeはY軸方向の円錐
+    auto shape = std::make_unique<btConeShape>(radius, height);
+
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(ToBtVector3(localPos));
+    transform.setRotation(ToBtQuaternion(localRot));
+
+    m_children.push_back({std::move(shape), transform});
+    return *this;
+}
+
+CompoundShapeBuilder& CompoundShapeBuilder::addCylinder(s3d::Vec3 localPos, float radius, float height,
+                                                        s3d::Quaternion localRot)
+{
+    auto shape = std::make_unique<btCylinderShape>(btVector3{radius, height * 0.5, radius});
+
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(ToBtVector3(localPos));
+    transform.setRotation(ToBtQuaternion(localRot));
+
+    m_children.push_back({std::move(shape), transform});
+    return *this;
+}
+
+std::unique_ptr<PhysicsBody> CompoundShapeBuilder::build(s3d::Vec3 position, float mass, CollisionGroup group,
+                                                         CollisionMask mask)
+{
+    if (m_children.isEmpty())
+    {
+        throw std::runtime_error("CompoundShapeBuilder: No child shapes added");
+    }
+
+    // btCompoundShapeを作成
+    auto compoundShape = std::make_unique<btCompoundShape>();
+
+    // 子シェイプを追加（所有権はcompoundShapeに移譲）
+    for (auto& child : m_children)
+    {
+        compoundShape->addChildShape(child.localTransform, child.shape.release());
+    }
+
+    // PhysicsBodyを作成して返す
+    return std::make_unique<PhysicsBody>(m_world, std::move(compoundShape), ShapeType::Compound, position, mass, group,
+                                         mask);
 }
