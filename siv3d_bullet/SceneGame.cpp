@@ -575,6 +575,7 @@ void SceneGame::shake(double duration, double magnitude)
 void SceneGame::throwBomb(const Vec3& targetPos)
 {
     m_launchBombSound.playOneShot();
+
     const Vec3 startPos = m_camera.getEyePosition();
     constexpr double launchAngle = 10.0;
     const Vec3 gravity = m_world.getGravity();

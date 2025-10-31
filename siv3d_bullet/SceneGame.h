@@ -36,6 +36,7 @@ protected:
     // アイテム投擲
     void throwBomb(const Vec3& targetPos);
     void throwGravity(const Vec3& targetPos);
+
     void throwFreeze(const Vec3& targetPos);
     void throwWind(const Vec3& targetPos);
     void throwItem(ItemType itemType, const Vec3& targetPos);
