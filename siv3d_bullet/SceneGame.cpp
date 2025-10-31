@@ -90,27 +90,27 @@ void SceneGame::update()
 void SceneGame::updateCamera()
 {
     m_camera.update(20.0);
-    // const double elapsed = m_shakeTimer.sF();
+    const double elapsed = m_shakeTimer.sF();
 
-    // if (not m_shakeTimer.isStarted() || elapsed >= m_shakeDuration)
-    // {
-    //     m_camera.setView(m_cameraPosition, m_cameraLookAt);
-    //     return;
-    // }
+    if (not m_shakeTimer.isStarted() || elapsed >= m_shakeDuration)
+    {
+        m_camera.setView(m_cameraPosition, m_cameraLookAt);
+        return;
+    }
 
-    // // 時間経過とともに揺れを減衰させる
-    // const double currentMagnitude = m_shakeMagnitude * (1.0 - (elapsed / m_shakeDuration));
+    // 時間経過とともに揺れを減衰させる
+    const double currentMagnitude = m_shakeMagnitude * (1.0 - (elapsed / m_shakeDuration));
 
-    // // Perlinノイズを使って滑らかな揺れを生成
-    // m_shakeNoiseTime += Scene::DeltaTime() * ShakeSpeed;
+    // Perlinノイズを使って滑らかな揺れを生成
+    m_shakeNoiseTime += Scene::DeltaTime() * ShakeSpeed;
 
-    // const double x = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.x) * currentMagnitude;
-    // const double y = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.y) * currentMagnitude;
-    // const double z = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.z) * currentMagnitude;
+    const double x = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.x) * currentMagnitude;
+    const double y = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.y) * currentMagnitude;
+    const double z = m_shakeNoise.noise2D(m_shakeNoiseTime, m_noiseSeeds.z) * currentMagnitude;
 
-    // const Vec3 finalPosition = m_cameraPosition + Vec3{x, y, z};
-    // const Vec3 finalCameraLookAt = m_cameraLookAt + Vec3{x, y, z};
-    // m_camera.setView(finalPosition, finalCameraLookAt);
+    const Vec3 finalPosition = m_cameraPosition + Vec3{x, y, z};
+    const Vec3 finalCameraLookAt = m_cameraLookAt + Vec3{x, y, z};
+    m_camera.setView(finalPosition, finalCameraLookAt);
 }
 
 void SceneGame::updateInput()
@@ -267,7 +267,7 @@ void SceneGame::draw() const
             // 地面にターゲットマーカーを描画
             Cylinder{m_raycastResult.hitPoint, 0.5, 0.05}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
         }
-        // 10x10のグリッド、1マス1.0単位
+        // 10x10のグリッド、1マス1.0単位 （デバッグ）
         for (int i = -15; i <= 15; ++i)
         {
             s3d::Line3D({i, 1, -15}, {i, 1, 15}).draw(s3d::Palette::Gray);
@@ -482,17 +482,17 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         {
             int damage = static_cast<int>(falloff * 100);
             enemy->takeDamage(damage);
-            s3d::Print << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
+            Logger << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
             int damage = static_cast<int>(falloff * 100);
             enemyNormal->takeDamage(damage);
-            s3d::Print << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
+            Logger << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else
         {
-            s3d::Print << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
+            Logger << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
         }
     }
     s3d::Print << U"   Hit {} objects"_fmt(hitCount);
