@@ -23,6 +23,7 @@ namespace
     // 吸引機能の設定
     constexpr double AttractionForce = 10.0;  // 吸引力の強さ（一定）
     constexpr double AttractionRadius = 5.0; // 吸引力の有効半径
+    constexpr double GravityFieldDuration = 3.0; // 重力場の持続時間
 
     // === 爆発パーティクル設定 ===
     constexpr int32 ParticleCount = 50;
@@ -77,6 +78,8 @@ void SceneGame::update()
 {
     updateCamera();
     updateInput();
+    updateUI();
+    updateItems();
     updateGameObjects();
     updatePhysics();
     updateParticleSystem();
@@ -115,84 +118,6 @@ void SceneGame::updateInput()
     Print << U"Object num:{}"_fmt(m_gameObjects.size());
     Print << Profiler::FPS();
 
-    // マウスカーソルから静的オブジェクトへのレイキャスト
-    const Ray ray = m_camera.screenToRay(Cursor::Pos());
-    m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
-
-    // 吸引処理
-    if (MouseL.pressed() && m_raycastResult.hasHit)
-    {
-        const Vec3& hitPoint = m_raycastResult.hitPoint;
-
-        for (const auto& object : m_gameObjects)
-        {
-            if (auto body = object->getPhysicsBody(); body && body->getGroup() == GROUP_ATTRACTABLE)
-            {
-                const Vec3 objPos = object->getPosition();
-                const Vec3 direction = (hitPoint - objPos);
-                const double distanceSq = direction.lengthSq();
-
-                // 有効範囲内かチェック
-                if (distanceSq < (AttractionRadius * AttractionRadius))
-                {
-                    const Vec3 force = direction.normalized() * AttractionForce;
-                    body->applyForce(force);
-                }
-            }
-        }
-    }
-
-    // Bキーで爆弾を投げる
-    if (KeyB.down() && (m_throwCooldown.sF() >= 5.0 || !m_throwCooldown.isStarted()))
-    {
-        // マウスカーソル位置にレイがヒットしていたら
-        if (m_raycastResult.hasHit)
-        {
-            const Vec3 startPos = m_camera.getEyePosition();
-            const Vec3 targetPos = m_raycastResult.hitPoint;
-            constexpr double launchAngle = 10.0;      // 角度を少し下げる
-            const Vec3 gravity = m_world.getGravity(); // 物理ワールドの重力を取得
-
-            // 投擲に必要な初速を計算
-            if (auto launchVelocity = PhysicsWorld::CalculateLaunchVelocity(startPos, targetPos, launchAngle, gravity))
-            {
-                const float mass = 2.0f;
-                const float radius = 0.4f;
-
-                // 爆弾のパラメータを設定（発射位置はカメラの位置）
-                Bomb::BombParams params{
-                    .position = startPos,
-                    .radius = radius,
-                    .mass = mass,
-                    .duration = 3.0, // 3秒後に爆発
-                    .color = ColorF{1.0, 0.5, 0.2},
-                    .restitution = 0.4f,
-                    .friction = 0.8f,
-                    .explosionRadius = 5.0, // 爆発半径5
-                };
-
-                // Bombファクトリを使ってオブジェクトを生成
-                if (auto newBomb = Bomb::Create(m_world, params))
-                {
-                    // 計算された初速からインパルスを適用
-                    const Vec3 impulse = *launchVelocity * mass;
-                    newBomb->getPhysicsBody()->applyImpulse(impulse);
-
-                    // シーンにオブジェクトを追加
-                    addGameObject(std::move(newBomb));
-
-                    // クールダウンを開始
-                    m_throwCooldown.restart();
-                }
-            }
-            else
-            {
-                // 到達不可能な位置への投擲を試みた場合
-                Print << U"目標地点に到達できません";
-            }
-        }
-    }
-
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
@@ -217,6 +142,29 @@ void SceneGame::updateInput()
 }
 
 void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTime())); }
+
+void SceneGame::updateUI() { m_ui.update(Scene::DeltaTime()); }
+
+void SceneGame::updateItems()
+{
+    // UIのクリック判定
+    const bool uiClicked = m_ui.handleClick();
+
+    // マウスカーソルから静的オブジェクトへのレイキャスト
+    const Ray ray = m_camera.screenToRay(Cursor::Pos());
+    m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
+
+    // 重力場更新
+    updateGravityField();
+
+    // アイテム投擲
+    if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
+    {
+        const ItemType selectedItem = m_ui.getSelectedItem();
+        throwItem(selectedItem, m_raycastResult.hitPoint);
+        m_ui.startReload(selectedItem);
+    }
+}
 
 void SceneGame::updateGameObjects()
 {
@@ -303,10 +251,10 @@ void SceneGame::draw() const
 
         // --- デバッグ描画 ---
         // 吸引範囲の可視化
-        if (MouseL.pressed() && m_raycastResult.hasHit)
+        if (m_gravityField)
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_raycastResult.hitPoint, AttractionRadius}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
+            Sphere{m_gravityField->position, m_gravityField->radius}.draw(ColorF{0.5, 0.0, 1.0, 0.3});
         }
 
         // 狙っている場所を可視化
@@ -336,34 +284,12 @@ void SceneGame::draw() const
 
         // UI を描画
         {
-            m_instructionFont(U"B：爆弾を投げる").draw(30, 85, ColorF{1.0, 1.0, 1.0});
-            m_instructionFont(U"D：デバッグ描画 [{}]"_fmt(m_debugDrawEnabled ? U"ON" : U"OFF")).draw(30, 115, ColorF{1.0, 1.0, 1.0});
-            m_instructionFont(U"T：タイトルへ戻る").draw(30, 145, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"D：デバッグ描画 [{}]"_fmt(m_debugDrawEnabled ? U"ON" : U"OFF")).draw(30, 85, ColorF{1.0, 1.0, 1.0});
+            m_instructionFont(U"T：タイトルへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
         }
 
-        // クールダウンUIを描画
-        {
-            constexpr double cooldownTime = 5.0;
-            const double progress = Min(m_throwCooldown.sF() / cooldownTime, 1.0);
-
-            // 画面下部中央に配置
-            const RectF bar{Arg::center(Scene::Center().x, Scene::Height() - 40), 400, 20};
-
-            // 背景
-            bar.draw(ColorF{0.0, 0.6});
-
-            // 進捗
-            bar.stretched(0, -(bar.w * (1.0 - progress)), 0, 0).draw(ColorF{0.9, 0.8, 0.3});
-
-            // 枠線
-            bar.drawFrame(1.5, ColorF{0.1});
-
-            // テキスト（クールダウン完了時のみ表示）
-            if (progress >= 1.0)
-            {
-                m_cooldownFont(U"BOMB READY").drawAt(bar.center(), ColorF{0.0});
-            }
-        }
+        // UIを描画
+        m_ui.draw();
     }
 }
 
@@ -565,4 +491,104 @@ void SceneGame::shake(double duration, double magnitude)
     m_shakeDuration = duration;
     m_shakeMagnitude = magnitude;
     m_shakeTimer.restart();
+}
+
+void SceneGame::throwBomb(const Vec3& targetPos)
+{
+    const Vec3 startPos = m_camera.getEyePosition();
+    constexpr double launchAngle = 10.0;
+    const Vec3 gravity = m_world.getGravity();
+
+    if (auto launchVelocity = PhysicsWorld::CalculateLaunchVelocity(startPos, targetPos, launchAngle, gravity))
+    {
+        const float mass = 2.0f;
+        const float radius = 0.4f;
+
+        Bomb::BombParams params{
+            .position = startPos,
+            .radius = radius,
+            .mass = mass,
+            .duration = 3.0,
+            .color = ColorF{1.0, 0.5, 0.2},
+            .restitution = 0.4f,
+            .friction = 0.8f,
+            .explosionRadius = 5.0,
+        };
+
+        if (auto newBomb = Bomb::Create(m_world, params))
+        {
+            const Vec3 impulse = *launchVelocity * mass;
+            newBomb->getPhysicsBody()->applyImpulse(impulse);
+            addGameObject(std::move(newBomb));
+        }
+    }
+    else
+    {
+        Print << U"目標地点に到達できません";
+    }
+}
+
+void SceneGame::throwGravity(const Vec3& targetPos)
+{
+    m_gravityField = GravityField{
+        .position = targetPos,
+        .remainingTime = GravityFieldDuration,
+        .radius = AttractionRadius,
+    };
+}
+
+void SceneGame::throwItem(ItemType itemType, const Vec3& targetPos)
+{
+    switch (itemType)
+    {
+    case ItemType::Bomb:
+        throwBomb(targetPos);
+        break;
+    case ItemType::Gravity:
+        throwGravity(targetPos);
+        break;
+    case ItemType::Freeze:
+        // 未実装
+        break;
+    case ItemType::Wind:
+        // 未実装
+        break;
+    }
+}
+
+void SceneGame::updateGravityField()
+{
+    if (!m_gravityField)
+        return;
+
+    m_gravityField->remainingTime -= Scene::DeltaTime();
+
+    if (m_gravityField->remainingTime <= 0.0)
+    {
+        m_gravityField.reset();
+        return;
+    }
+
+    applyGravityFieldForce();
+}
+
+void SceneGame::applyGravityFieldForce()
+{
+    const Vec3& hitPoint = m_gravityField->position;
+
+    for (const auto& object : m_gameObjects)
+    {
+        if (auto body = object->getPhysicsBody(); body && body->getGroup() == GROUP_ATTRACTABLE)
+        {
+            const Vec3 objPos = object->getPosition();
+            const Vec3 direction = (hitPoint - objPos);
+            const double distanceSq = direction.lengthSq();
+
+            if (distanceSq < (m_gravityField->radius * m_gravityField->radius))
+            {
+                const Vec3 force = direction.normalized() * AttractionForce;
+                body->applyForce(force);
+            }
+        }
+    }
 }
