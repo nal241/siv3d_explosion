@@ -75,7 +75,12 @@ SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
       m_player(&m_camera, m_model),
       m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
-      m_explosiveEnemyModel{U"LicensedAsset/explosiveEnemy.obj"}
+      m_explosiveEnemyModel{U"LicensedAsset/explosiveEnemy.obj"},
+      m_launchBombSound{U"LicensedAsset/launchBomb.mp3"},
+      m_gravitySound{U"LicensedAsset/gravity.mp3"},
+      m_freezeSound{U"LicensedAsset/freeze.mp3"},
+      m_windSound{U"LicensedAsset/wind.mp3"},
+      m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_explosiveEnemyModel, TextureDesc::MippedSRGB);
@@ -95,6 +100,8 @@ SceneGame::SceneGame(const InitData& init)
     // デバッグ描画の設定
     m_world.setDebugDrawMode(btIDebugDraw::DBG_DrawWireframe);
     m_world.setDebugDrawEnabled(true); // デフォルトで有効化
+
+    m_bgm.play();
 }
 
 void SceneGame::update()
@@ -567,6 +574,7 @@ void SceneGame::shake(double duration, double magnitude)
 
 void SceneGame::throwBomb(const Vec3& targetPos)
 {
+    m_launchBombSound.playOneShot();
     const Vec3 startPos = m_camera.getEyePosition();
     constexpr double launchAngle = 10.0;
     const Vec3 gravity = m_world.getGravity();
@@ -602,6 +610,7 @@ void SceneGame::throwBomb(const Vec3& targetPos)
 
 void SceneGame::throwGravity(const Vec3& targetPos)
 {
+    m_gravitySound.playOneShot();
     m_gravityField = GravityField{
         .position = targetPos,
         .remainingTime = GravityFieldDuration,
@@ -667,6 +676,7 @@ void SceneGame::applyGravityFieldForce()
 
 void SceneGame::throwFreeze(const Vec3& targetPos)
 {
+    m_freezeSound.playOneShot();
     m_freezeField = FreezeField{
         .position = targetPos,
         .remainingTime = FreezeDuration,
@@ -713,6 +723,7 @@ void SceneGame::applyFreezeEffect()
 
 void SceneGame::throwWind(const Vec3& targetPos)
 {
+    m_windSound.playOneShot();
     const Vec3 boxCenter = Vec3{targetPos.x, WindBoxHeight / 2.0, targetPos.z};
     const Vec3 boxSize = Vec3{WindBoxWidth, WindBoxHeight, WindBoxDepth};
 

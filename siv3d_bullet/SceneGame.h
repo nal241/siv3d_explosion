@@ -105,6 +105,11 @@ protected:
 
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
+    s3d::Audio m_launchBombSound;
+    s3d::Audio m_gravitySound;
+    s3d::Audio m_freezeSound;
+    s3d::Audio m_windSound;
+    s3d::Audio m_bgm;
 
     // UI用フォント
     s3d::Font m_titleFont{40, s3d::Typeface::Bold};
