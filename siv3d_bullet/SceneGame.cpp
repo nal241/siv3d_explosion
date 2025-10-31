@@ -66,6 +66,13 @@ namespace
     constexpr double ExplosionBasePower = 10.0;
     constexpr double ExplosionMinDistance = 0.01;
 
+    // === 爆発ダメージ設定 ===
+    constexpr int ExplosionBaseDamage = 100; // 爆発の基本ダメージ
+
+    // === 敵の体力設定 ===
+    constexpr int NormalEnemyMaxHealth = 100;    // ノーマル敵の体力
+    constexpr int ExplosiveEnemyMaxHealth = 100; // 爆発敵の体力
+
     // === 画面揺れ設定 ===
     constexpr double ShakeSpeed = 10.0;
     constexpr double ExplosionShakeDuration = 0.5;
@@ -448,7 +455,7 @@ void SceneGame::spawnEnemy()
                                          EnemyExplosive::EnemyExplosiveParams{.position = Vec3{x, y, z},
                                                                               .radius = 0.5f,
                                                                               .mass = 2.0f,
-                                                                              .maxHealth = 50,
+                                                                              .maxHealth = ExplosiveEnemyMaxHealth,
                                                                               .color = HSV{0, 0.7, 0.9},
                                                                               .group = GROUP_ATTRACTABLE,
                                                                               .mask = MASK_ALL,
@@ -469,7 +476,7 @@ void SceneGame::spawnEnemyNormal()
                                       EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
                                                                      .radius = 1.0f,
                                                                      .mass = 1.0f,
-                                                                     .maxHealth = 50,
+                                                                     .maxHealth = NormalEnemyMaxHealth,
                                                                      .color = HSV{120, 0.7, 0.9},
                                                                      .group = GROUP_ATTRACTABLE,
                                                                      .mask = MASK_ALL},
@@ -551,10 +558,11 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         if (distanceSq <= minDistSq)
             continue;
 
-        // ここで一度だけ平方根を計算
+        // 方向ベクトルを正規化
         double distance = s3d::Math::Sqrt(distanceSq);
-        s3d::Vec3 normalizedDirection = direction / distance; // 手動で正規化
+        s3d::Vec3 normalizedDirection = direction / distance;
 
+        // 距離に応じた吹き飛ばし力を計算
         double falloff = 1.0 - (distance / radius);
         double explosionForce = ExplosionBasePower * falloff;
         s3d::Vec3 force = normalizedDirection * explosionForce;
@@ -565,21 +573,19 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         // エネミーにダメージを与える
         if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
         {
-            int damage = static_cast<int>(falloff * 100);
-            enemy->takeDamage(damage);
+            enemy->takeDamage(ExplosionBaseDamage);
             unfreezeObject(object);
-            Logger << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
+            Logger << U"  → Hit Enemy, damage: {}"_fmt(ExplosionBaseDamage);
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
-            int damage = static_cast<int>(falloff * 100);
-            enemyNormal->takeDamage(damage);
+            enemyNormal->takeDamage(ExplosionBaseDamage);
             unfreezeObject(object);
-            Logger << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
+            Logger << U"  → Hit EnemyNormal, damage: {}"_fmt(ExplosionBaseDamage);
         }
         else
         {
-            Logger << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
+            Logger << U"  → Hit object, force: {:.2f}"_fmt(explosionForce);
         }
     }
     s3d::Logger << U"   Hit {} objects"_fmt(hitCount);
