@@ -115,4 +115,14 @@ protected:
         double radius;
     };
     s3d::Optional<GravityField> m_gravityField;
+
+    // コンボシステム
+    int m_comboCount = 0;           // 現在のコンボ数
+    int m_maxCombo = 0;             // 最大コンボ数
+    double m_comboTimeWindow = 2.0; // コンボ継続判定時間（秒）
+    Stopwatch m_comboTimer{StartImmediately::No};
+    void updateCombo();             // コンボのタイムアウト処理
+    void incrementCombo();          // コンボをカウントアップ
+    void resetCombo();              // コンボをリセット
+    double getComboMultiplier() const; // コンボ倍率を取得
 };

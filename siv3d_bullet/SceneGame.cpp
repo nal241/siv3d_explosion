@@ -84,6 +84,7 @@ void SceneGame::update()
     updatePhysics();
     updateParticleSystem();
     updateSpawn();
+    updateCombo();
     removeObjects();
 }
 
@@ -224,8 +225,11 @@ void SceneGame::removeObjects()
 
             if (shouldRemove)
             {
-                // オブジェクト削除時にスコア加算
-                getData().score += 10;
+                // オブジェクト削除時にスコア加算（コンボ倍率適用）
+                const int baseScore = 10;
+                const double multiplier = getComboMultiplier();
+                const int finalScore = static_cast<int>(baseScore * multiplier);
+                getData().score += finalScore;
             }
 
             return shouldRemove;
@@ -396,6 +400,9 @@ void SceneGame::spawnEnemyNormal()
 
 void SceneGame::handleExplosion(const ExplosionRequest& request)
 {
+    // コンボをインクリメント
+    incrementCombo();
+
     // 爆発を実行（パーティクル + 物理的な力）
     createExplosionParticles(request.position, request.radius);
     applyExplosionForce(request);
@@ -603,4 +610,59 @@ void SceneGame::applyGravityFieldForce()
             }
         }
     }
+}
+
+// コンボシステム
+
+void SceneGame::updateCombo()
+{
+    // コンボタイマーが動いていて、タイムアウトしたらコンボリセット
+    if (m_comboTimer.isStarted() && m_comboTimer.sF() >= m_comboTimeWindow)
+    {
+        resetCombo();
+    }
+
+    // UIにコンボ情報を渡す
+    if (m_comboCount > 0)
+    {
+        const double remainingTime = m_comboTimeWindow - m_comboTimer.sF();
+        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime);
+    }
+    else
+    {
+        m_ui.setComboInfo(0, 1.0, 0.0);
+    }
+}
+
+void SceneGame::incrementCombo()
+{
+    m_comboCount++;
+    m_comboTimer.restart();
+
+    // 最大コンボを更新
+    if (m_comboCount > m_maxCombo)
+    {
+        m_maxCombo = m_comboCount;
+    }
+
+    Print << U"COMBO: {}"_fmt(m_comboCount);
+}
+
+void SceneGame::resetCombo()
+{
+    if (m_comboCount > 0)
+    {
+        Print << U"Combo ended: {}"_fmt(m_comboCount);
+    }
+    m_comboCount = 0;
+    m_comboTimer.reset();
+}
+
+double SceneGame::getComboMultiplier() const
+{
+    if (m_comboCount <= 1)
+    {
+        return 1.0;
+    }
+    return 1.0 + (m_comboCount - 1) * 0.5;
 }

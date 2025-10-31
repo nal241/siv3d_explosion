@@ -47,6 +47,7 @@ Rect UI::getButtonRect(int32 index) const
 
 void UI::draw() const
 {
+    // アイテムボタン描画
     for (int32 i = 0; i < static_cast<int32>(m_itemInfos.size()); ++i)
     {
         const Rect buttonRect = getButtonRect(i);
@@ -95,6 +96,27 @@ void UI::draw() const
             Cursor::RequestStyle(CursorStyle::Hand);
         }
     }
+
+    // コンボ表示（2コンボ以上の時のみ）
+    if (m_displayComboCount > 1)
+    {
+        const double alpha = Math::Min(1.0, m_displayRemainingTime / 0.5); // 最後の0.5秒でフェードアウト
+
+        // コンボ数を大きく表示
+        const Vec2 comboPos{Scene::Center().x, 120};
+        const ColorF comboColor = HSV{30, 0.8, 1.0, alpha}; // オレンジ色
+
+        const String comboText = U"COMBO × {}"_fmt(m_displayComboCount);
+
+        // 影を描画
+        m_comboFont(comboText).drawAt(comboPos.movedBy(2, 2), ColorF{0, 0, 0, alpha * 0.5});
+        // メインテキスト
+        m_comboFont(comboText).drawAt(comboPos, comboColor);
+
+        // 倍率表示
+        const String multiplierText = U"× {:.1f}"_fmt(m_displayMultiplier);
+        m_multiplierFont(multiplierText).drawAt(comboPos.movedBy(0, 50), ColorF{1.0, 1.0, 0.5, alpha});
+    }
 }
 
 bool UI::handleClick()
@@ -137,4 +159,11 @@ bool UI::canUseSelectedItem() const
     }
 
     return m_reloadTimers[index] <= 0.0;
+}
+
+void UI::setComboInfo(int comboCount, double multiplier, double remainingTime)
+{
+    m_displayComboCount = comboCount;
+    m_displayMultiplier = multiplier;
+    m_displayRemainingTime = remainingTime;
 }
