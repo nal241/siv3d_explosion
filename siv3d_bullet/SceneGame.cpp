@@ -42,13 +42,6 @@ namespace
     constexpr double ExplosionBasePower = 10.0;
     constexpr double ExplosionMinDistance = 0.01;
 
-    // === 爆発ダメージ設定 ===
-    constexpr int ExplosionBaseDamage = 100; // 爆発の基本ダメージ
-
-    // === 敵の体力設定 ===
-    constexpr int NormalEnemyMaxHealth = 100;    // ノーマル敵の体力
-    constexpr int ExplosiveEnemyMaxHealth = 100; // 爆発敵の体力
-
     // === 画面揺れ設定 ===
     constexpr double ShakeSpeed = 10.0;
     constexpr double ExplosionShakeDuration = 0.5;
@@ -83,21 +76,14 @@ SceneGame::SceneGame(const InitData& init)
 
 void SceneGame::update()
 {
+    updateCamera();
     updateInput();
     updateUI();
-    updateGameLogic();
-    updatePhysics();
-    updateParticleSystem();
-    updateAudio();
-    updateCamera();
-}
-
-void SceneGame::updateGameLogic()
-{
     updateItems();
     updateGameObjects();
+    updatePhysics();
+    updateParticleSystem();
     updateSpawn();
-    updateCombo();
     removeObjects();
 }
 
@@ -238,14 +224,8 @@ void SceneGame::removeObjects()
 
             if (shouldRemove)
             {
-                // オブジェクト削除時にスコア加算（コンボ倍率適用）
-                const int baseScore = 10;
-                const double multiplier = getComboMultiplier();
-                const int finalScore = static_cast<int>(baseScore * multiplier);
-                getData().score += finalScore;
-
-                // コンボ期間中の総スコアに加算
-                m_comboScore += finalScore;
+                // オブジェクト削除時にスコア加算
+                getData().score += 10;
             }
 
             return shouldRemove;
@@ -386,7 +366,7 @@ void SceneGame::spawnEnemy()
                                          ExplosiveEnemy::ExplosiveEnemyParams{.position = Vec3{x, y, z},
                                                                               .radius = 0.5f,
                                                                               .mass = 2.0f,
-                                                                              .maxHealth = ExplosiveEnemyMaxHealth,
+                                                                              .maxHealth = 50,
                                                                               .color = HSV{0, 0.7, 0.9},
                                                                               .group = GROUP_ATTRACTABLE,
                                                                               .mask = MASK_ALL,
@@ -407,7 +387,7 @@ void SceneGame::spawnEnemyNormal()
                                       EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
                                                                      .radius = 1.0f,
                                                                      .mass = 1.0f,
-                                                                     .maxHealth = NormalEnemyMaxHealth,
+                                                                     .maxHealth = 50,
                                                                      .color = HSV{120, 0.7, 0.9},
                                                                      .group = GROUP_ATTRACTABLE,
                                                                      .mask = MASK_ALL},
@@ -416,15 +396,12 @@ void SceneGame::spawnEnemyNormal()
 
 void SceneGame::handleExplosion(const ExplosionRequest& request)
 {
-    // コンボをインクリメント
-    incrementCombo();
-
     // 爆発を実行（パーティクル + 物理的な力）
     createExplosionParticles(request.position, request.radius);
     applyExplosionForce(request);
 
-    // 爆発回数をカウント（音は後で再生）
-    m_explosionCountInInterval++;
+    // サウンド再生
+    m_explosionSound.playOneShot();
 
     // 画面揺れを開始
     shake(ExplosionShakeDuration, ExplosionShakeMagnitude);
@@ -460,8 +437,11 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
     const double radius = request.radius;
     auto explosionSource = request.source.lock();
 
+    s3d::Print << U"   Applying force to objects...";
+
     // 範囲内のオブジェクトを取得して力を加える
     auto nearbyResult = m_world.overlapSphere(center, radius, MASK_ALL);
+    int32 hitCount = 0;
 
     for (auto weakObj : nearbyResult.hitObjects)
     {
@@ -486,27 +466,36 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         if (distanceSq <= minDistSq)
             continue;
 
-        // 方向ベクトルを正規化
+        // ここで一度だけ平方根を計算
         double distance = s3d::Math::Sqrt(distanceSq);
-        s3d::Vec3 normalizedDirection = direction / distance;
+        s3d::Vec3 normalizedDirection = direction / distance; // 手動で正規化
 
-        // 距離に応じた吹き飛ばし力を計算
         double falloff = 1.0 - (distance / radius);
         double explosionForce = ExplosionBasePower * falloff;
         s3d::Vec3 force = normalizedDirection * explosionForce;
 
         body->applyImpulse(force);
+        hitCount++;
 
         // エネミーにダメージを与える
         if (auto enemy = std::dynamic_pointer_cast<ExplosiveEnemy>(object))
         {
-            enemy->takeDamage(ExplosionBaseDamage);
+            int damage = static_cast<int>(falloff * 100);
+            enemy->takeDamage(damage);
+            Logger << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
-            enemyNormal->takeDamage(ExplosionBaseDamage);
+            int damage = static_cast<int>(falloff * 100);
+            enemyNormal->takeDamage(damage);
+            Logger << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
+        }
+        else
+        {
+            Logger << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
         }
     }
+    s3d::Print << U"   Hit {} objects"_fmt(hitCount);
 }
 
 void SceneGame::shake(double duration, double magnitude)
@@ -613,86 +602,5 @@ void SceneGame::applyGravityFieldForce()
                 body->applyForce(force);
             }
         }
-    }
-}
-
-// コンボシステム
-
-void SceneGame::updateCombo()
-{
-    // コンボタイマーが動いていて、タイムアウトしたらコンボリセット
-    if (m_comboTimer.isStarted() && m_comboTimer.sF() >= m_comboTimeWindow)
-    {
-        resetCombo();
-    }
-
-    // UIにコンボ情報を渡す
-    if (m_comboCount > 0)
-    {
-        const double remainingTime = m_comboTimeWindow - m_comboTimer.sF();
-        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime, m_comboScore);
-    }
-    else
-    {
-        m_ui.setComboInfo(0, 1.0, 0.0, 0);
-    }
-}
-
-void SceneGame::incrementCombo()
-{
-    m_comboCount++;
-    m_comboTimer.restart();
-
-    // 最大コンボを更新
-    if (m_comboCount > m_maxCombo)
-    {
-        m_maxCombo = m_comboCount;
-    }
-
-    Print << U"COMBO: {}"_fmt(m_comboCount);
-}
-
-void SceneGame::resetCombo()
-{
-    if (m_comboCount > 0)
-    {
-        Print << U"Combo ended: {}"_fmt(m_comboCount);
-    }
-    m_comboCount = 0;
-    m_comboScore = 0; // コンボスコアもリセット
-    m_comboTimer.reset();
-}
-
-double SceneGame::getComboMultiplier() const
-{
-    if (m_comboCount <= 1)
-    {
-        return 1.0;
-    }
-    return 1.0 + (m_comboCount - 1) * 0.5;
-}
-
-// 音響管理
-
-void SceneGame::updateAudio() { updateExplosionSound(); }
-
-void SceneGame::updateExplosionSound()
-{
-    // 時間経過をチェック
-    if (m_explosionSoundTimer.sF() >= m_explosionSoundInterval)
-    {
-        // 間隔内に爆発があれば音を再生
-        if (m_explosionCountInInterval > 0)
-        {
-            // 爆発回数に応じて音量を調整（上限は1.0）
-            const double volume = Math::Min(1.0, 0.3 + m_explosionCountInInterval * 0.2);
-            m_explosionSound.playOneShot(volume);
-
-            // カウンタをリセット
-            m_explosionCountInInterval = 0;
-        }
-
-        // タイマーをリセット
-        m_explosionSoundTimer.restart();
     }
 }
