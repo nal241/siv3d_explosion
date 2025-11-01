@@ -4,6 +4,8 @@
 class Bomb : public GameObject
 {
 public:
+    static constexpr float DefaultExplosionRadius = 5.0f;
+
     struct BombParams
     {
         Vec3 position;
@@ -15,7 +17,7 @@ public:
         float friction = 0.5f;
         CollisionGroup group = GROUP_DEFAULT;
         CollisionMask mask = MASK_ALL;
-        double explosionRadius = 5.0;
+        double explosionRadius = DefaultExplosionRadius;
     };
 
     Bomb(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, double duration,

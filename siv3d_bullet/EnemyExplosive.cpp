@@ -1,15 +1,15 @@
-#include "ExplosiveEnemy.h"
+#include "EnemyExplosive.h"
 #include "PhysicsWorld.h"
 #include "Renderers.h"
 
-ExplosiveEnemy::ExplosiveEnemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer,
+EnemyExplosive::EnemyExplosive(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer,
                                int maxHealth, double explosionRadius)
     : GameObject(std::move(physicsBody), std::move(renderer)), m_health(maxHealth), m_maxHealth(maxHealth),
       m_explosionRadius(explosionRadius)
 {
 }
 
-void ExplosiveEnemy::takeDamage(int damage)
+void EnemyExplosive::takeDamage(int damage)
 {
     if (m_state != State::Alive)
     {
@@ -25,7 +25,7 @@ void ExplosiveEnemy::takeDamage(int damage)
     }
 }
 
-std::shared_ptr<ExplosiveEnemy> ExplosiveEnemy::Create(PhysicsWorld& world, const ExplosiveEnemyParams& params,
+std::shared_ptr<EnemyExplosive> EnemyExplosive::Create(PhysicsWorld& world, const EnemyExplosiveParams& params,
                                                        const s3d::Model& model)
 {
     CollisionGroup group = params.group;
@@ -43,14 +43,14 @@ std::shared_ptr<ExplosiveEnemy> ExplosiveEnemy::Create(PhysicsWorld& world, cons
 
     auto renderer = std::make_unique<ModelRenderer>(model);
 
-    auto enemy = std::make_shared<ExplosiveEnemy>(std::move(body), std::move(renderer), params.maxHealth,
+    auto enemy = std::make_shared<EnemyExplosive>(std::move(body), std::move(renderer), params.maxHealth,
                                                   params.explosionRadius);
     enemy->getPhysicsBody()->setOwner(enemy->weak_from_this());
     enemy->m_initialX = params.position.x;
     return enemy;
 }
 
-void ExplosiveEnemy::applyPDControl()
+void EnemyExplosive::applyPDControl()
 {
     auto currentPosition = getPosition();
     auto currentVelocity = getPhysicsBody()->getLinearVelocity();
@@ -81,7 +81,7 @@ void ExplosiveEnemy::applyPDControl()
     getPhysicsBody()->applyForce({moveForceX, hoverForceY, moveForceZ});
 }
 
-void ExplosiveEnemy::update()
+void EnemyExplosive::update()
 {
     // タイマーの更新はStopwatchが自動的に行う
     if (isReadyToExplode())

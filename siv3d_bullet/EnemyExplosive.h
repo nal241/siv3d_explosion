@@ -2,10 +2,10 @@
 #include "GameObject.h"
 #include "ParticleSystem.h"
 
-class ExplosiveEnemy : public GameObject
+class EnemyExplosive : public GameObject
 {
 public:
-    struct ExplosiveEnemyParams
+    struct EnemyExplosiveParams
     {
         Vec3 position;
         float radius = 0.5f;
@@ -19,16 +19,17 @@ public:
         double explosionRadius = 3.0;
     };
 
-    ExplosiveEnemy(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
+    EnemyExplosive(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
                    double explosionRadius);
 
     void update() override;
     void takeDamage(int damage);
     bool shouldBeRemoved() const override { return m_state == State::Dead; }
+    bool isAlive() const { return m_state == State::Alive; }
     int getHealth() const { return m_health; }
     int getMaxHealth() const { return m_maxHealth; }
 
-    static std::shared_ptr<ExplosiveEnemy> Create(PhysicsWorld& world, const ExplosiveEnemyParams& params,
+    static std::shared_ptr<EnemyExplosive> Create(PhysicsWorld& world, const EnemyExplosiveParams& params,
                                                   const s3d::Model& model);
 
 private:

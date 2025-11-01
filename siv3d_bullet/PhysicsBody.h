@@ -76,11 +76,14 @@ public:
     void setRestitution(float restitution);
     void setFriction(float friction);
     void setDamping(float lin_damping, float ang_damping);
+    void setLinearVelocity(const s3d::Vec3& velocity);
+    void setAngularVelocity(const s3d::Vec3& velocity);
     void setPosition(const s3d::Vec3& pos);
     void setRotation(const s3d::Quaternion& rot);
     void setAngularFactor(const s3d::Vec3& ang);
     void setGravity(const s3d::Vec3& gravity);
     void setCollisionCallback(std::function<void()> callback);
+    void setKinematic(bool kinematic);
 
     float getMass() const;
 
