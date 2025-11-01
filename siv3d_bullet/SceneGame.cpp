@@ -39,7 +39,7 @@ namespace
 
     // Freezeアイテムの設定
     constexpr double FreezeRadius = 5.0;
-    constexpr double FreezeDuration = 3.0;
+    constexpr double FreezeDuration = 8.0;
 
     // 風の設定
     constexpr double WindBoxWidth = 8.0;
