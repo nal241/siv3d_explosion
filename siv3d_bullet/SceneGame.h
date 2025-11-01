@@ -61,6 +61,8 @@ protected:
 
     void createFreezeParticles(const Vec3& center);
 
+    void createWindParticles(const Vec3& center, const Vec3& boxSize);
+
 protected:
     // 画面揺れを開始する
     void shake(double duration, double magnitude);
@@ -167,7 +169,10 @@ protected:
     };
     s3d::Optional<WindField> m_windField;
 
+    Stopwatch m_windParticleTimer;
+
     // テクスチャ
     Texture m_frostTexture;
     Texture m_darknessTexture;
+    Texture m_windTexture;
 };

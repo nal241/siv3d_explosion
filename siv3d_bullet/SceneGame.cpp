@@ -28,7 +28,7 @@ namespace
     // === アイテムエフェクト色設定 ===
     const ColorF GravityEffectColor{0.3, 0.1, 0.5};
     const ColorF FreezeEffectColor{0.5, 0.8, 1.0};
-    const ColorF WindEffectColor{0.3, 1.0, 0.8};
+    const ColorF WindEffectColor{0.3, 1.0, 0.3};
     const ColorF BombIndicatorColor{1.0, 0.4, 0.2};
 
     // === アイテムインジケータ設定 ===
@@ -108,7 +108,8 @@ SceneGame::SceneGame(const InitData& init)
       m_windSound{U"LicensedAsset/wind.mp3"},
       m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes},
       m_frostTexture{U"LicensedAsset/Snow.jpg", TextureDesc::MippedSRGB},
-      m_darknessTexture{U"LicensedAsset/darkness.jpg", TextureDesc::MippedSRGB}
+      m_darknessTexture{U"LicensedAsset/darkness.jpg", TextureDesc::MippedSRGB},
+      m_windTexture{U"LicensedAsset/wind.jpg", TextureDesc::MippedSRGB}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
@@ -353,11 +354,15 @@ void SceneGame::draw() const
         }
 
         // wind範囲の可視化
-        if (m_windField)
-        {
-            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            m_windField->area.draw(WindEffectColor.withA(0.3));
-        }
+        // 良いテクスチャが見つからなかったため、コメントアウト
+        // if (m_windField)
+        // {
+        //     const Vec3 center = m_windField->area.center;
+        //     const Vec3 size = m_windField->area.size;
+        //     const Vec3 floorPos = Vec3{center.x, FrostWaveOffsetY, center.z};
+        //     const Vec3 floorSize = Vec3{size.x, FrostWaveHeight, size.z};
+        //     Box{floorPos, floorSize}.draw(m_windTexture, ColorF{1.0, 1.0});
+        // }
 
         // アイテムの着地点と範囲の可視化
         if (m_raycastResult.hasHit)
@@ -679,6 +684,30 @@ void SceneGame::createFreezeParticles(const Vec3& center)
     }
 }
 
+void SceneGame::createWindParticles(const Vec3& center, const Vec3& boxSize)
+{
+    const int count = Random(5, 10);
+    for (int i = 0; i < count; ++i)
+    {
+        const double x = Random(-boxSize.x / 2.0, boxSize.x / 2.0);
+        const double y = Random(0.0, boxSize.y);
+        const double z = -boxSize.z / 2.0;
+        const Vec3 startPos = center + Vec3{x, y, z};
+
+        const Vec3 velocity = Vec3{0, 0, Random(8.0, 12.0)};
+
+        m_particleSystem.add(Particle3D{
+            .position = startPos,
+            .velocity = velocity,
+            .acceleration = Vec3{0, 0, 0},
+            .color = WindEffectColor,
+            .size = Random(0.05, 0.15),
+            .life = Random(2.0, 3.0),
+            .active = true
+        });
+    }
+}
+
 void SceneGame::shake(double duration, double magnitude)
 {
     m_shakeDuration = duration;
@@ -884,12 +913,16 @@ void SceneGame::throwWind(const Vec3& targetPos)
         .force = Vec3{0, 0, WindForce},
         .remainingTime = WindDuration,
     };
+    m_windParticleTimer.restart();
 }
 
 void SceneGame::updateWindField()
 {
     if (!m_windField)
+    {
+        m_windParticleTimer.reset();
         return;
+    }
 
     m_windField->remainingTime -= Scene::DeltaTime();
 
@@ -900,6 +933,13 @@ void SceneGame::updateWindField()
     }
 
     applyWindEffect();
+
+    // パーティクルの定期生成
+    if (m_windParticleTimer.sF() >= 0.05)
+    {
+        createWindParticles(m_windField->area.center, m_windField->area.size);
+        m_windParticleTimer.restart();
+    }
 }
 
 void SceneGame::applyWindEffect()
