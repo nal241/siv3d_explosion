@@ -24,9 +24,12 @@ public:
          double explosionRadius);
 
     void update() override;
+    void draw() const override;
     bool shouldBeRemoved() const override;
 
     void notifyCollision();
+
+    double getBlinkIntensity() const;
 
     static std::shared_ptr<Bomb> Create(PhysicsWorld& world, const BombParams& params);
 

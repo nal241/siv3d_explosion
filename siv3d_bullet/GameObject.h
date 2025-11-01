@@ -51,6 +51,8 @@ public:
     PhysicsBody* getPhysicsBody() { return m_physicsBody.get(); }
     const PhysicsBody* getPhysicsBody() const { return m_physicsBody.get(); }
 
+    void setRenderer(std::unique_ptr<IRenderer> renderer) { m_renderer = std::move(renderer); }
+
     // --- Static Factory Methods ---
     // パラメータ構造体
     struct BoxParams

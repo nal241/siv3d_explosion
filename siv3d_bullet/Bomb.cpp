@@ -22,9 +22,41 @@ void Bomb::update()
     }
 }
 
+void Bomb::draw() const
+{
+    // 通常描画（PhysicsShapeRendererで球体描画）
+    GameObject::draw();
+
+    // 点滅時は発光球を追加
+    const double intensity = getBlinkIntensity();
+    if (intensity > 0.01)
+    {
+        const ScopedRenderStates3D blend{BlendState::Additive};
+        PhongMaterial phong;
+        phong.ambientColor = ColorF{0.0};
+        phong.diffuseColor = ColorF{0.0};
+        phong.emissionColor = ColorF{1.0, 0.3, 0.1}.removeSRGBCurve() * intensity * 2.0;
+
+        Sphere{getPosition(), 0.5}.draw(phong);
+    }
+}
+
 bool Bomb::shouldBeRemoved() const { return m_isExploded; }
 
 void Bomb::notifyCollision() { m_hasCollided = true; }
+
+double Bomb::getBlinkIntensity() const
+{
+    const double elapsed = m_timer.sF();
+    const double progress = elapsed / m_duration;
+
+    // 爆発が近づくほど点滅速度を上げる
+    const double frequency = Math::Lerp(1.0, 5.0, progress);
+    const double cycle = Math::Fmod(elapsed * frequency, 1.0);
+
+    // 周期の30%は光る、70%は消灯
+    return (cycle < 0.3) ? 1.0 : 0.0;
+}
 
 std::shared_ptr<Bomb> Bomb::Create(PhysicsWorld& world, const BombParams& params)
 {
