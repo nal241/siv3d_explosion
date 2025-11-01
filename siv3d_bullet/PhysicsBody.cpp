@@ -197,6 +197,15 @@ s3d::Vec3 PhysicsBody::getLinearVelocity() const
     return ToSiv3DVec3(m_body->getLinearVelocity());
 }
 
+s3d::Vec3 PhysicsBody::getAngularVelocity() const
+{
+    if (!m_body)
+    {
+        return s3d::Vec3{0, 0, 0};
+    }
+    return ToSiv3DVec3(m_body->getAngularVelocity());
+}
+
 s3d::Quaternion PhysicsBody::getRotation() const
 {
     if (!m_body)

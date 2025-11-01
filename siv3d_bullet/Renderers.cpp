@@ -2,14 +2,24 @@
 #include "BulletSiv3DUtils.h"
 
 // --- ModelRenderer ---
-ModelRenderer::ModelRenderer(const Model& model, const ColorF& color) : m_model(model), m_color(color) {}
+ModelRenderer::ModelRenderer(const Model& model, const ColorF& color, double scale)
+    : m_model(model), m_color(color), m_scale(scale)
+{
+}
 
-void ModelRenderer::draw(const Vec3& position, const Quaternion& rotation) const { m_model.draw(position, rotation); }
+void ModelRenderer::draw(const Vec3& position, const Quaternion& rotation) const
+{
+    // スケール、回転、位置を組み合わせた変換行列を作成
+    const Mat4x4 mat = Mat4x4::Scale(m_scale) * Mat4x4::Rotate(rotation) * Mat4x4::Translate(position);
+    m_model.draw(mat);
+}
 
 void ModelRenderer::drawWireframe(const Vec3& position, const Quaternion& rotation) const
 {
     const ScopedRenderStates3D states{RasterizerState::WireframeCullNone};
-    m_model.draw(position, rotation);
+    // スケール、回転、位置を組み合わせた変換行列を作成
+    const Mat4x4 mat = Mat4x4::Scale(m_scale) * Mat4x4::Rotate(rotation) * Mat4x4::Translate(position);
+    m_model.draw(mat);
 }
 
 // --- PhysicsShapeRenderer ---
