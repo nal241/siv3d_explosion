@@ -192,9 +192,10 @@ protected:
     Stopwatch m_bombSmokeTimer;
 
     // テクスチャ
-    Texture m_frostTexture;
-    Texture m_darknessTexture;
-    Texture m_windTexture;
+    Texture m_frostTexture{U"LicensedAsset/snow.jpg"};
+    Texture m_darknessTexture{U"LicensedAsset/darkness.jpg"};
+    Texture m_windTexture{U"LicensedAsset/wind.jpg"};
+
     // コンボシステム
     int m_comboCount = 0;           // 現在のコンボ数
     int m_maxCombo = 0;             // 最大コンボ数

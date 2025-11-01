@@ -37,7 +37,7 @@ double EnemyExplosive::getBlinkIntensity() const
     const double progress = elapsed / duration;
 
     // 爆発が近づくほど点滅速度を上げる
-    const double frequency = Math::Lerp(1.0, 5.0, progress);
+    const double frequency = Math::Lerp(1.0, 2.0, progress);
     const double cycle = Math::Fmod(elapsed * frequency, 1.0);
 
     // 周期の30%は光る、70%は消灯

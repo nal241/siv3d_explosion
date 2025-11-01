@@ -101,7 +101,7 @@ namespace
     // === 画面揺れ設定 ===
     constexpr double ShakeSpeed = 10.0;
     constexpr double ExplosionShakeDuration = 0.5;
-    constexpr double ExplosionShakeMagnitude = 0.5;
+    constexpr double ExplosionShakeMagnitude = 1.5;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -110,11 +110,6 @@ SceneGame::SceneGame(const InitData& init)
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
-
-    // テクスチャの読み込み
-    m_frostTexture = Texture{U"LicensedAsset/frost.png"};
-    m_darknessTexture = Texture{U"LicensedAsset/darkness.png"};
-    m_windTexture = Texture{U"LicensedAsset/wind.png"};
 
     // stage作成
     createStage();
@@ -153,7 +148,6 @@ void SceneGame::updateGameLogic()
     updateGameObjects();
     updateSpawn();
     updateCombo();
-    updateBombSmoke();
     removeObjects();
 }
 
@@ -229,6 +223,9 @@ void SceneGame::updateItems()
 
     // Windアイテム更新
     updateWindField();
+
+    // Bomb煙エフェクト更新
+    updateBombSmoke();
 
     // アイテム投擲
     if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
@@ -990,7 +987,7 @@ void SceneGame::updateBombSmoke()
     m_smokingBombs.remove_if([](const std::weak_ptr<Bomb>& weakBomb) { return weakBomb.expired(); });
 }
 
-// コンボシステム
+// === コンボシステム ===
 
 void SceneGame::updateCombo()
 {
@@ -1046,7 +1043,7 @@ double SceneGame::getComboMultiplier() const
     return 1.0 + (m_comboCount - 1) * 0.5;
 }
 
-// 音響管理
+// === 音響管理 ===
 
 void SceneGame::updateAudio() { updateExplosionSound(); }
 
@@ -1071,7 +1068,7 @@ void SceneGame::updateExplosionSound()
     }
 }
 
-// パーティクル生成関数
+// === パーティクル生成 ===
 
 void SceneGame::createGravityParticles(const Vec3& center, double radius)
 {
