@@ -11,7 +11,6 @@ namespace
     constexpr double WallThickness = 1.0;
 
     // Camera settings
-
     constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{0, 10, -5};
     constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 40};
@@ -81,10 +80,7 @@ namespace
 
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera), m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
-      m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"}, m_launchBombSound{U"LicensedAsset/launchBomb.mp3"},
-      m_gravitySound{U"LicensedAsset/gravity.mp3"}, m_freezeSound{U"LicensedAsset/freeze.mp3"},
-      m_windSound{U"LicensedAsset/wind.mp3"}, m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes}
+      m_player(&m_camera)
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
@@ -157,9 +153,6 @@ void SceneGame::updateCamera()
 
 void SceneGame::updateInput()
 {
-    Logger << U"Object num:{}"_fmt(m_gameObjects.size());
-    Logger << Profiler::FPS();
-
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
@@ -293,9 +286,6 @@ void SceneGame::draw() const
     {
         const ScopedRenderTarget3D target{m_renderTexture.clear(m_backgroundColor)};
 
-        // for debug
-        // Plane{64}.draw(uvChecker);
-
         for (const auto& object : m_gameObjects)
         {
             object->draw();
@@ -303,7 +293,6 @@ void SceneGame::draw() const
 
         m_particleSystem.draw();
 
-        // --- デバッグ描画 ---
         // 吸引範囲の可視化
         if (m_gravityField)
         {
@@ -365,6 +354,7 @@ void SceneGame::draw() const
             }
             }
         }
+
         // 10x10のグリッド、1マス1.0単位 （デバッグ）
         for (int i = -15; i <= 15; ++i)
         {
@@ -386,13 +376,6 @@ void SceneGame::draw() const
 
         // Transfer renderTexture to the current 2D scene (default scene)
         Shader::LinearToScreen(m_renderTexture);
-
-        // UI を描画
-        {
-            m_instructionFont(U"D：デバッグ描画 [{}]"_fmt(m_debugDrawEnabled ? U"ON" : U"OFF"))
-                .draw(30, 85, ColorF{1.0, 1.0, 1.0});
-            m_instructionFont(U"T：タイトルへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
-        }
 
         // UIを描画
         m_ui.draw();
