@@ -96,6 +96,7 @@ public:
     btRigidBody* getBody() const { return m_body.get(); }
     s3d::Vec3 getPosition() const;
     s3d::Vec3 getLinearVelocity() const;
+    s3d::Vec3 getAngularVelocity() const;
     s3d::Quaternion getRotation() const;
     ShapeType getShapeType() const { return m_shapeType; }
     btCollisionShape* getShape() const { return m_shape.get(); }

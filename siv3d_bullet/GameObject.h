@@ -49,6 +49,7 @@ public:
     Quaternion getRotation() const;
 
     PhysicsBody* getPhysicsBody() { return m_physicsBody.get(); }
+    const PhysicsBody* getPhysicsBody() const { return m_physicsBody.get(); }
 
     // --- Static Factory Methods ---
     // パラメータ構造体
