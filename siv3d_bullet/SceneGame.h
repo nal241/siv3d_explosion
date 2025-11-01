@@ -152,6 +152,17 @@ protected:
     s3d::Optional<FreezeField> m_freezeField;
     s3d::Array<std::weak_ptr<GameObject>> m_frozenObjects;
 
+    // 氷柱エフェクト
+    struct IceSpike
+    {
+        Vec3 position;
+        Vec3 direction;
+        double targetHeight;
+        double radius;
+        Stopwatch timer;
+    };
+    Array<IceSpike> m_iceSpikes;
+
     // Windアイテム用
     struct WindField
     {
