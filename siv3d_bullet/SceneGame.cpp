@@ -70,9 +70,11 @@ namespace
     constexpr double SpikeGrowDuration = 0.5;
     constexpr double SpikeDirectionRandomness = 0.5;
     constexpr double SpikeAlpha = 0.6;
+    constexpr double FrostWaveHeight = 0.01;
+    constexpr double FrostWaveOffsetY = 0.01;
 
-    // === Windスキルの設定 ===
-    constexpr double WindBoxWidth = 6.0;
+    // 風の設定
+    constexpr double WindBoxWidth = 8.0;
     constexpr double WindBoxHeight = 2.0;
     constexpr double WindBoxDepth = 20.0;
     constexpr double WindForce = 10.0;
@@ -115,7 +117,11 @@ namespace
 
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera)
+      m_player(&m_camera, m_model), m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
+      m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"}, m_launchBombSound{U"LicensedAsset/launchBomb.mp3"},
+      m_gravitySound{U"LicensedAsset/gravity.mp3"}, m_freezeSound{U"LicensedAsset/freeze.mp3"},
+      m_windSound{U"LicensedAsset/wind.mp3"}, m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes},
+      m_frostTexture{U"LicensedAsset/Snow.jpg", TextureDesc::MippedSRGB}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
@@ -329,7 +335,8 @@ void SceneGame::draw() const
 
         m_particleSystem.draw();
 
-        // 氷柱の描画
+        // Freezeエフェクト
+        // 氷柱
         if (!m_iceSpikes.isEmpty())
         {
             const ScopedRenderStates3D blend{BlendState::Additive};
@@ -344,19 +351,18 @@ void SceneGame::draw() const
                 Cone{from, to, spike.radius}.draw(FreezeEffectColor.withA(SpikeAlpha));
             }
         }
+        // 範囲
+        if (m_freezeField)
+        {
+            const Vec3 pos = m_freezeField->position + Vec3{0, FrostWaveOffsetY, 0};
+            Cylinder{pos, FreezeRadius, FrostWaveHeight}.draw(m_frostTexture, ColorF{1.0, 1.0});
+        }
 
         // 吸引範囲の可視化
         if (m_gravityField)
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
             Sphere{m_gravityField->position, m_gravityField->radius}.draw(GravityEffectColor.withA(0.3));
-        }
-
-        // freeze範囲の可視化
-        if (m_freezeField)
-        {
-            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_freezeField->position, m_freezeField->radius}.draw(FreezeEffectColor.withA(0.3));
         }
 
         // wind範囲の可視化

@@ -126,7 +126,6 @@ protected:
     int m_explosionCountInInterval = 0;     // 間隔内の爆発回数
     double m_explosionSoundInterval = 0.05; // 音再生の最小間隔（秒）
 
-
     // デバッグ描画の有効/無効
     bool m_debugDrawEnabled = true;
 
@@ -171,6 +170,9 @@ protected:
         double remainingTime;
     };
     s3d::Optional<WindField> m_windField;
+
+    // テクスチャ
+    Texture m_frostTexture;
 
     // コンボシステム
     int m_comboCount = 0;           // 現在のコンボ数
