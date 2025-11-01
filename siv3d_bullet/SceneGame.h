@@ -64,6 +64,9 @@ protected:
     void updateWindField();
     void applyWindEffect();
 
+    // Bomb煙エフェクト
+    void updateBombSmoke();
+
     // 爆発処理
     void createExplosionParticles(const s3d::Vec3& center, double radius);
     void applyExplosionForce(const ExplosionRequest& request);
@@ -73,6 +76,8 @@ protected:
     void createFreezeParticles(const Vec3& center);
 
     void createWindParticles(const Vec3& center, const Vec3& boxSize);
+
+    void createBombSmokeParticles(const Vec3& position);
 
 protected:
     // 画面揺れを開始する
@@ -180,6 +185,10 @@ protected:
     s3d::Optional<WindField> m_windField;
 
     Stopwatch m_windParticleTimer;
+
+    // Bomb煙エフェクト用
+    Array<std::weak_ptr<class Bomb>> m_smokingBombs;
+    Stopwatch m_bombSmokeTimer;
 
     // テクスチャ
     Texture m_frostTexture;

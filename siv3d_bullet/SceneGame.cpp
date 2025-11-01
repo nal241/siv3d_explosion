@@ -166,6 +166,7 @@ void SceneGame::update()
     updateUI();
     updateGameLogic();
     updatePhysics();
+    updateBombSmoke();
     updateParticleSystem();
     updateAudio();
     updateCamera();
@@ -699,15 +700,34 @@ void SceneGame::createWindParticles(const Vec3& center, const Vec3& boxSize)
 
         const Vec3 velocity = Vec3{0, 0, Random(8.0, 12.0)};
 
-        m_particleSystem.add(Particle3D{
-            .position = startPos,
-            .velocity = velocity,
-            .acceleration = Vec3{0, 0, 0},
-            .color = WindEffectColor,
-            .size = Random(0.05, 0.15),
-            .life = Random(2.0, 3.0),
-            .active = true
-        });
+        m_particleSystem.add(Particle3D{.position = startPos,
+                                        .velocity = velocity,
+                                        .acceleration = Vec3{0, 0, 0},
+                                        .color = WindEffectColor,
+                                        .size = Random(0.05, 0.15),
+                                        .life = Random(2.0, 3.0),
+                                        .active = true});
+    }
+}
+
+void SceneGame::createBombSmokeParticles(const Vec3& position)
+{
+    const int count = Random(1, 2);
+    for (int i = 0; i < count; ++i)
+    {
+        const double offsetX = Random(-0.1, 0.1);
+        const double offsetZ = Random(-0.1, 0.1);
+        const Vec3 startPos = position + Vec3{offsetX, 0.5, offsetZ};
+
+        const Vec3 velocity = Vec3{Random(-0.2, 0.2), Random(0.5, 1.5), Random(-0.2, 0.2)};
+
+        m_particleSystem.add(Particle3D{.position = startPos,
+                                        .velocity = velocity,
+                                        .acceleration = Vec3{0, -0.5, 0},
+                                        .color = ColorF{0.3, 0.3, 0.3},
+                                        .size = Random(0.08, 0.15),
+                                        .life = Random(0.8, 1.2),
+                                        .active = true});
     }
 }
 
@@ -736,7 +756,7 @@ void SceneGame::throwBomb(const Vec3& targetPos)
             .radius = radius,
             .mass = mass,
             .duration = 3.0,
-            .color = ColorF{1.0, 0.5, 0.2},
+            .color = Palette::Black,
             .restitution = 0.4f,
             .friction = 0.8f,
             .explosionRadius = 5.0f,
@@ -746,6 +766,8 @@ void SceneGame::throwBomb(const Vec3& targetPos)
         {
             const Vec3 impulse = *launchVelocity * mass;
             newBomb->getPhysicsBody()->applyImpulse(impulse);
+            m_smokingBombs.push_back(newBomb);
+            m_bombSmokeTimer.restart();
             addGameObject(std::move(newBomb));
         }
     }
@@ -1123,4 +1145,129 @@ void SceneGame::updateExplosionSound()
         // タイマーをリセット
         m_explosionSoundTimer.restart();
     }
+}
+
+// コンボシステム
+
+void SceneGame::updateCombo()
+{
+    // コンボタイマーが動いていて、タイムアウトしたらコンボリセット
+    if (m_comboTimer.isStarted() && m_comboTimer.sF() >= m_comboTimeWindow)
+    {
+        resetCombo();
+    }
+
+    // UIにコンボ情報を渡す
+    if (m_comboCount > 0)
+    {
+        const double remainingTime = m_comboTimeWindow - m_comboTimer.sF();
+        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime, m_comboScore);
+    }
+    else
+    {
+        m_ui.setComboInfo(0, 1.0, 0.0, 0);
+    }
+}
+
+void SceneGame::incrementCombo()
+{
+    m_comboCount++;
+    m_comboTimer.restart();
+
+    // 最大コンボを更新
+    if (m_comboCount > m_maxCombo)
+    {
+        m_maxCombo = m_comboCount;
+    }
+
+    Print << U"COMBO: {}"_fmt(m_comboCount);
+}
+
+void SceneGame::resetCombo()
+{
+    if (m_comboCount > 0)
+    {
+        Print << U"Combo ended: {}"_fmt(m_comboCount);
+    }
+    m_comboCount = 0;
+    m_comboScore = 0; // コンボスコアもリセット
+    m_comboTimer.reset();
+}
+
+double SceneGame::getComboMultiplier() const
+{
+    if (m_comboCount <= 1)
+    {
+        return 1.0;
+    }
+    return 1.0 + (m_comboCount - 1) * 0.5;
+}
+
+// 音響管理
+
+void SceneGame::updateAudio() { updateExplosionSound(); }
+
+void SceneGame::updateExplosionSound()
+{
+    // 時間経過をチェック
+    if (m_explosionSoundTimer.sF() >= m_explosionSoundInterval)
+    {
+        // 間隔内に爆発があれば音を再生
+        if (m_explosionCountInInterval > 0)
+        {
+            // 爆発回数に応じて音量を調整（上限は1.0）
+            const double volume = Math::Min(1.0, 0.3 + m_explosionCountInInterval * 0.2);
+            m_explosionSound.playOneShot(volume);
+
+            // カウンタをリセット
+            m_explosionCountInInterval = 0;
+        }
+
+        // タイマーをリセット
+        m_explosionSoundTimer.restart();
+    }
+}
+
+void SceneGame::updateBombSmoke()
+{
+    if (m_smokingBombs.isEmpty())
+        return;
+
+    // パーティクルの定期生成
+    if (m_bombSmokeTimer.sF() >= 0.05)
+    {
+        for (auto& weakBomb : m_smokingBombs)
+        {
+            if (auto bomb = weakBomb.lock())
+            {
+                createBombSmokeParticles(bomb->getPosition());
+            }
+        }
+        m_bombSmokeTimer.restart();
+    }
+
+    // 無効になったBombを削除
+    m_smokingBombs.remove_if([](const std::weak_ptr<Bomb>& weakBomb) { return weakBomb.expired(); });
+}
+
+void SceneGame::updateBombSmoke()
+{
+    if (m_smokingBombs.isEmpty())
+        return;
+
+    // パーティクルの定期生成
+    if (m_bombSmokeTimer.sF() >= 0.05)
+    {
+        for (auto& weakBomb : m_smokingBombs)
+        {
+            if (auto bomb = weakBomb.lock())
+            {
+                createBombSmokeParticles(bomb->getPosition());
+            }
+        }
+        m_bombSmokeTimer.restart();
+    }
+
+    // 無効になったBombを削除
+    m_smokingBombs.remove_if([](const std::weak_ptr<Bomb>& weakBomb) { return weakBomb.expired(); });
 }
