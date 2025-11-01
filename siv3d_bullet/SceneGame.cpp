@@ -81,7 +81,7 @@ namespace
 
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera, m_model), m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
+      m_player(&m_camera), m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
       m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"}, m_launchBombSound{U"LicensedAsset/launchBomb.mp3"},
       m_gravitySound{U"LicensedAsset/gravity.mp3"}, m_freezeSound{U"LicensedAsset/freeze.mp3"},
       m_windSound{U"LicensedAsset/wind.mp3"}, m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes}

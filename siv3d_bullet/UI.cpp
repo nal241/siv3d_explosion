@@ -6,11 +6,9 @@ namespace
     constexpr double BombReloadTime = 5.0;
     constexpr double DefaultReloadTime = 3.0;
     constexpr double FreezeReloadTime = 8.0;
-}
+} // namespace
 
-UI::UI()
-    : m_selectedItem(ItemType::Bomb),
-      m_font(FontMethod::MSDF, 24, Typeface::Bold)
+UI::UI() : m_selectedItem(ItemType::Bomb), m_font(FontMethod::MSDF, 24, Typeface::Bold)
 {
     m_itemInfos.push_back({U"Bomb", Texture{U"💣"_emoji}, BombReloadTime});
     m_itemInfos.push_back({U"Gravity", Texture{U"🌀"_emoji}, DefaultReloadTime});
@@ -81,13 +79,15 @@ void UI::draw() const
         info.emoji.scaled(UI::IconScale).drawAt(buttonRect.center().x, buttonRect.y + UI::IconOffsetY);
 
         // アイテム名
-        m_font(info.name).drawAt(UI::NameFontSize, buttonRect.center().x, buttonRect.y + UI::ButtonHeight - UI::NameOffsetY, Palette::White);
+        m_font(info.name).drawAt(UI::NameFontSize, buttonRect.center().x,
+                                 buttonRect.y + UI::ButtonHeight - UI::NameOffsetY, Palette::White);
 
         // リロードバー
         if (!isReady)
         {
             const double progress = 1.0 - (reloadTimer / info.reloadTime);
-            const RectF reloadBar{buttonRect.x + UI::ReloadBarHPadding, buttonRect.y + UI::ReloadBarVOffsetY, (UI::ButtonWidth - UI::ReloadBarHPadding * 2) * progress, UI::ReloadBarHeight};
+            const RectF reloadBar{buttonRect.x + UI::ReloadBarHPadding, buttonRect.y + UI::ReloadBarVOffsetY,
+                                  (UI::ButtonWidth - UI::ReloadBarHPadding * 2) * progress, UI::ReloadBarHeight};
             reloadBar.draw(ColorF{0.9, 0.8, 0.3});
         }
 

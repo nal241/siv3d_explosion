@@ -101,7 +101,7 @@ protected:
     s3d::Vec3 m_noiseSeeds;
 
     Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
-    Model m_model{U"model/coin.obj"};
+
     s3d::Model m_enemyNormalModel;
     s3d::Model m_enemyExplosiveModel;
 
