@@ -23,10 +23,13 @@ public:
                    double explosionRadius);
 
     void update() override;
+    void draw() const override;
     void takeDamage(int damage);
     bool shouldBeRemoved() const override { return m_state == State::Dead; }
     int getHealth() const { return m_health; }
     int getMaxHealth() const { return m_maxHealth; }
+
+    double getBlinkIntensity() const;
 
     static std::shared_ptr<EnemyExplosive> Create(PhysicsWorld& world, const EnemyExplosiveParams& params,
                                                   const s3d::Model& model);

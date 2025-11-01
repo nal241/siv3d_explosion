@@ -25,6 +25,25 @@ void EnemyExplosive::takeDamage(int damage)
     }
 }
 
+double EnemyExplosive::getBlinkIntensity() const
+{
+    if (m_state != State::Dying)
+    {
+        return 0.0;
+    }
+
+    const double elapsed = m_deathTimer.sF();
+    const double duration = 1.0;
+    const double progress = elapsed / duration;
+
+    // 爆発が近づくほど点滅速度を上げる
+    const double frequency = Math::Lerp(1.0, 5.0, progress);
+    const double cycle = Math::Fmod(elapsed * frequency, 1.0);
+
+    // 周期の30%は光る、70%は消灯
+    return (cycle < 0.3) ? 1.0 : 0.0;
+}
+
 std::shared_ptr<EnemyExplosive> EnemyExplosive::Create(PhysicsWorld& world, const EnemyExplosiveParams& params,
                                                        const s3d::Model& model)
 {
@@ -41,10 +60,9 @@ std::shared_ptr<EnemyExplosive> EnemyExplosive::Create(PhysicsWorld& world, cons
 
     // body->setDamping(0.2f, 0.1f);
 
-    auto renderer = std::make_unique<ModelRenderer>(model);
+    auto renderer = std::make_unique<ModelRenderer>(model, params.color);
 
-    auto enemy = std::make_shared<EnemyExplosive>(std::move(body), std::move(renderer), params.maxHealth,
-                                                  params.explosionRadius);
+    auto enemy = std::make_shared<EnemyExplosive>(std::move(body), std::move(renderer), params.maxHealth, params.explosionRadius);
     enemy->getPhysicsBody()->setOwner(enemy->weak_from_this());
     enemy->m_initialX = params.position.x;
     return enemy;
@@ -94,4 +112,23 @@ void EnemyExplosive::update()
 
     // 位置制御
     applyPDControl();
+}
+
+void EnemyExplosive::draw() const
+{
+    // 通常描画（ModelRendererでモデル描画）
+    GameObject::draw();
+
+    // 点滅時は発光球を追加
+    const double intensity = getBlinkIntensity();
+    if (intensity > 0.01)
+    {
+        const ScopedRenderStates3D blend{BlendState::Additive};
+        PhongMaterial phong;
+        phong.ambientColor = ColorF{0.0};
+        phong.diffuseColor = ColorF{0.0};
+        phong.emissionColor = ColorF{1.0, 0.1, 0.1}.removeSRGBCurve() * intensity * 3.0;
+
+        Sphere{getPosition(), 0.7}.draw(phong);
+    }
 }
