@@ -276,6 +276,9 @@ void SceneGame::removeObjects()
                 const double multiplier = getComboMultiplier();
                 const int finalScore = static_cast<int>(baseScore * multiplier);
                 getData().score += finalScore;
+
+                // コンボ期間中の総スコアに加算
+                m_comboScore += finalScore;
             }
 
             return shouldRemove;
@@ -898,11 +901,11 @@ void SceneGame::updateCombo()
     if (m_comboCount > 0)
     {
         const double remainingTime = m_comboTimeWindow - m_comboTimer.sF();
-        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime);
+        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime, m_comboScore);
     }
     else
     {
-        m_ui.setComboInfo(0, 1.0, 0.0);
+        m_ui.setComboInfo(0, 1.0, 0.0, 0);
     }
 }
 
@@ -927,6 +930,7 @@ void SceneGame::resetCombo()
         Print << U"Combo ended: {}"_fmt(m_comboCount);
     }
     m_comboCount = 0;
+    m_comboScore = 0; // コンボスコアもリセット
     m_comboTimer.reset();
 }
 

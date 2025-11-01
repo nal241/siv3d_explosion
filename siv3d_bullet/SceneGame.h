@@ -170,6 +170,7 @@ protected:
     // コンボシステム
     int m_comboCount = 0;           // 現在のコンボ数
     int m_maxCombo = 0;             // 最大コンボ数
+    int m_comboScore = 0;           // コンボ期間中の総スコア
     double m_comboTimeWindow = 2.0; // コンボ継続判定時間（秒）
     Stopwatch m_comboTimer{StartImmediately::No};
     void incrementCombo();             // コンボをカウントアップ
