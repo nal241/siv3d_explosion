@@ -48,4 +48,9 @@ private:
 
     // 回転制限フラグ
     bool m_rotationLocked = true; // 初期状態ではy軸回転を禁止
+
+    // 姿勢安定判定用
+    bool isStable() const;                                           // 姿勢が安定しているか判定（角度+角速度）
+    static constexpr double STABLE_ANGLE_THRESHOLD = 10.0;           // 安定とみなす角度閾値（度）
+    static constexpr double STABLE_ANGULAR_VELOCITY_THRESHOLD = 0.1; // 安定とみなす角速度閾値（rad/s）
 };
