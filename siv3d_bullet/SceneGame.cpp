@@ -1,6 +1,6 @@
 #include "SceneGame.h"
 #include "Renderers.h"
-#include "ExplosiveEnemy.h"
+#include "EnemyExplosive.h"
 #include "Bomb.h"
 #include "EnemyNormal.h"
 #include "Stage.h"
@@ -75,7 +75,7 @@ SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
       m_player(&m_camera, m_model),
       m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
-      m_explosiveEnemyModel{U"LicensedAsset/explosiveEnemy.obj"},
+      m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"},
       m_launchBombSound{U"LicensedAsset/launchBomb.mp3"},
       m_gravitySound{U"LicensedAsset/gravity.mp3"},
       m_freezeSound{U"LicensedAsset/freeze.mp3"},
@@ -83,7 +83,7 @@ SceneGame::SceneGame(const InitData& init)
       m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
-    Model::RegisterDiffuseTextures(m_explosiveEnemyModel, TextureDesc::MippedSRGB);
+    Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
 
     // stage作成
     createStage();
@@ -244,10 +244,10 @@ void SceneGame::updateSpawn()
     }
 
     // Explosive Enemy
-    if (m_explosiveEnemySpawnTimer.sF() >= m_explosiveSpawnInterval)
+    if (m_enemyExplosiveSpawnTimer.sF() >= m_explosiveSpawnInterval)
     {
         spawnEnemy();
-        m_explosiveEnemySpawnTimer.restart();
+        m_enemyExplosiveSpawnTimer.restart();
     }
 }
 
@@ -442,8 +442,8 @@ void SceneGame::spawnEnemy()
     const double z = Random(38.0, 42.0);
     const double y = 2.0;
 
-    addGameObject(ExplosiveEnemy::Create(m_world,
-                                         ExplosiveEnemy::ExplosiveEnemyParams{.position = Vec3{x, y, z},
+    addGameObject(EnemyExplosive::Create(m_world,
+                                         EnemyExplosive::EnemyExplosiveParams{.position = Vec3{x, y, z},
                                                                               .radius = 0.5f,
                                                                               .mass = 2.0f,
                                                                               .maxHealth = 50,
@@ -451,7 +451,7 @@ void SceneGame::spawnEnemy()
                                                                               .group = GROUP_ATTRACTABLE,
                                                                               .mask = MASK_ALL,
                                                                               .explosionRadius = 3.0},
-                                         m_explosiveEnemyModel));
+                                         m_enemyExplosiveModel));
 }
 
 void SceneGame::spawnEnemyNormal()
@@ -558,7 +558,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         hitCount++;
 
         // エネミーにダメージを与える
-        if (auto enemy = std::dynamic_pointer_cast<ExplosiveEnemy>(object))
+        if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
         {
             int damage = static_cast<int>(falloff * 100);
             enemy->takeDamage(damage);

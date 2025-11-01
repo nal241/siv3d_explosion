@@ -2,7 +2,6 @@
 #include "PhysicsWorld.h"
 #include "Renderers.h"
 
-aaa
 EnemyExplosive::EnemyExplosive(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer,
                                int maxHealth, double explosionRadius)
     : GameObject(std::move(physicsBody), std::move(renderer)), m_health(maxHealth), m_maxHealth(maxHealth),
