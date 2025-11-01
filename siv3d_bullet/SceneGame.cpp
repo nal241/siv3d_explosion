@@ -51,6 +51,9 @@ namespace
     constexpr double SpikeGrowDuration = 0.5;
     constexpr double SpikeDirectionRandomness = 0.5;
     constexpr double SpikeAlpha = 0.6;
+    constexpr double FrostWaveHeight = 0.01;
+    constexpr double FrostWaveOffsetY = 0.01;
+
 
 
     // 風の設定
@@ -92,7 +95,8 @@ SceneGame::SceneGame(const InitData& init)
       m_gravitySound{U"LicensedAsset/gravity.mp3"},
       m_freezeSound{U"LicensedAsset/freeze.mp3"},
       m_windSound{U"LicensedAsset/wind.mp3"},
-      m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes}
+      m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes},
+      m_frostTexture{U"LicensedAsset/Snow.jpg", TextureDesc::MippedSRGB}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
@@ -298,7 +302,8 @@ void SceneGame::draw() const
 
         m_particleSystem.draw();
 
-        // 氷柱の描画
+        // Freezeエフェクト
+        // 氷柱
         if (!m_iceSpikes.isEmpty())
         {
             const ScopedRenderStates3D blend{BlendState::Additive};
@@ -314,6 +319,12 @@ void SceneGame::draw() const
                     .draw(FreezeEffectColor.withA(SpikeAlpha));
             }
         }
+        // 範囲
+        if (m_freezeField)
+        {
+            const Vec3 pos = m_freezeField->position + Vec3{0, FrostWaveOffsetY, 0};
+            Cylinder{pos, FreezeRadius, FrostWaveHeight}.draw(m_frostTexture, ColorF{1.0, 1.0});
+        }
 
         // --- デバッグ描画 ---
         // 吸引範囲の可視化
@@ -321,13 +332,6 @@ void SceneGame::draw() const
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
             Sphere{m_gravityField->position, m_gravityField->radius}.draw(GravityEffectColor.withA(0.3));
-        }
-
-        // freeze範囲の可視化
-        if (m_freezeField)
-        {
-            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_freezeField->position, m_freezeField->radius}.draw(FreezeEffectColor.withA(0.3));
         }
 
         // wind範囲の可視化

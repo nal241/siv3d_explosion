@@ -160,4 +160,7 @@ protected:
         double remainingTime;
     };
     s3d::Optional<WindField> m_windField;
+
+    // テクスチャ
+    Texture m_frostTexture;
 };
