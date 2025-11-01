@@ -26,7 +26,7 @@ namespace
     constexpr double GravityFieldDuration = 3.0; // 重力場の持続時間
 
     // === アイテムエフェクト色設定 ===
-    const ColorF GravityEffectColor{0.8, 0.4, 1.0};
+    const ColorF GravityEffectColor{0.3, 0.1, 0.5};
     const ColorF FreezeEffectColor{0.5, 0.8, 1.0};
     const ColorF WindEffectColor{0.3, 1.0, 0.8};
     const ColorF BombIndicatorColor{1.0, 0.4, 0.2};
@@ -337,12 +337,15 @@ void SceneGame::draw() const
             Cylinder{pos, FreezeRadius, FrostWaveHeight}.draw(m_frostTexture, ColorF{1.0, 1.0});
         }
 
-        // --- デバッグ描画 ---
         // 吸引範囲の可視化
         if (m_gravityField)
         {
-            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_gravityField->position, m_gravityField->radius}.draw(GravityEffectColor.withA(0.3));
+            const ScopedRenderStates3D blend{BlendState::Additive};
+
+            // 重力の中心
+            const double pulseSize = Periodic::Sine0_1(1.5s) * 0.3 + 0.5;
+            const Vec3 pos = m_gravityField->position + Vec3{0, 1.0, 0};
+            Sphere{pos, pulseSize}.draw(GravityEffectColor.withA(0.8));
         }
 
         // wind範囲の可視化
