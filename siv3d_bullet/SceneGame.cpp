@@ -107,7 +107,8 @@ SceneGame::SceneGame(const InitData& init)
       m_freezeSound{U"LicensedAsset/freeze.mp3"},
       m_windSound{U"LicensedAsset/wind.mp3"},
       m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes},
-      m_frostTexture{U"LicensedAsset/Snow.jpg", TextureDesc::MippedSRGB}
+      m_frostTexture{U"LicensedAsset/Snow.jpg", TextureDesc::MippedSRGB},
+      m_darknessTexture{U"LicensedAsset/darkness.jpg", TextureDesc::MippedSRGB}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
@@ -344,8 +345,11 @@ void SceneGame::draw() const
 
             // 重力の中心
             const double pulseSize = Periodic::Sine0_1(1.5s) * 0.3 + 0.5;
-            const Vec3 pos = m_gravityField->position + Vec3{0, 1.0, 0};
-            Sphere{pos, pulseSize}.draw(GravityEffectColor.withA(0.8));
+            const Vec3 centerPos = m_gravityField->position + Vec3{0, 1.0, 0};
+            Sphere{centerPos, pulseSize}.draw(GravityEffectColor.withA(0.8));
+
+            const Vec3 pos = m_gravityField->position + Vec3{0, FrostWaveOffsetY, 0};
+            Cylinder{pos, m_gravityField->radius, FrostWaveHeight}.draw(m_darknessTexture, ColorF{1.0, 1.0});
         }
 
         // wind範囲の可視化
@@ -624,6 +628,34 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
     s3d::Logger << U"   Hit {} objects"_fmt(hitCount);
 }
 
+void SceneGame::createGravityParticles(const Vec3& center, double radius)
+{
+    // 3～5個のパーティクルを生成
+    const int count = Random(3, 5);
+    for (int i = 0; i < count; ++i)
+    {
+        // 円周上のランダムな点（水平方向のみ）
+        const double angle = Random(0.0, Math::TwoPi);
+        const Vec3 startPos = center + Vec3{
+            Math::Cos(angle) * radius,
+            Random(-0.3, 0.3), // わずかな高さのばらつき
+            Math::Sin(angle) * radius
+        };
+
+        // 中心に向かう速度（主に水平方向）
+        const Vec3 velocity = (center - startPos).normalized() * 2.5;
+
+        m_particleSystem.add(Particle3D{
+            .position = startPos,
+            .velocity = velocity,
+            .color = ColorF{0.8, 0.4, 1.0}, // 紫色
+            .size = Random(0.15, 0.25),
+            .life = Random(1.0, 1.5),
+            .active = true
+        });
+    }
+}
+
 void SceneGame::createFreezeParticles(const Vec3& center)
 {
     for (int i = 0; i < FreezeParticleCount; ++i)
@@ -694,6 +726,7 @@ void SceneGame::throwGravity(const Vec3& targetPos)
         .remainingTime = GravityFieldDuration,
         .radius = AttractionRadius,
     };
+    m_gravityParticleTimer.restart(); // タイマーを開始
 }
 
 void SceneGame::throwItem(ItemType itemType, const Vec3& targetPos)
@@ -718,7 +751,10 @@ void SceneGame::throwItem(ItemType itemType, const Vec3& targetPos)
 void SceneGame::updateGravityField()
 {
     if (!m_gravityField)
+    {
+        m_gravityParticleTimer.reset(); // タイマーをリセット
         return;
+    }
 
     m_gravityField->remainingTime -= Scene::DeltaTime();
 
@@ -729,6 +765,15 @@ void SceneGame::updateGravityField()
     }
 
     applyGravityFieldForce();
+
+    // パーティクルの定期生成
+    if (m_gravityParticleTimer.sF() >= 0.05) // 0.05秒ごと
+    {
+        const Vec3 centerPos = m_gravityField->position + Vec3{0, 1.0, 0};
+
+        createGravityParticles(centerPos, m_gravityField->radius);
+        m_gravityParticleTimer.restart();
+    }
 }
 
 void SceneGame::applyGravityFieldForce()
