@@ -42,7 +42,7 @@ public:
 
     void reportErrorWarning(const char* warningString) override
     {
-        s3d::Print << U"Bullet Warning: " << s3d::Unicode::FromUTF8(warningString);
+        s3d::Logger << U"Bullet Warning: " << s3d::Unicode::FromUTF8(warningString);
     }
 
     void draw3dText(const btVector3& /*location*/, const char* /*textString*/) override

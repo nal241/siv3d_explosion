@@ -13,7 +13,7 @@ namespace
     // Camera settings
 
     constexpr double CameraSpeed = 20.0;
-    constexpr s3d::Vec3 CameraInitialPosition{0, 5, -5};
+    constexpr s3d::Vec3 CameraInitialPosition{0, 10, -5};
     constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 40};
     constexpr double CameraFov = 30_deg;
 
@@ -146,9 +146,8 @@ void SceneGame::updateCamera()
 
 void SceneGame::updateInput()
 {
-    ClearPrint();
-    Print << U"Object num:{}"_fmt(m_gameObjects.size());
-    Print << Profiler::FPS();
+    Logger << U"Object num:{}"_fmt(m_gameObjects.size());
+    Logger << Profiler::FPS();
 
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
@@ -489,7 +488,7 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
 
 void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
 {
-    s3d::Print << U"   Creating {} particles"_fmt(ParticleCount);
+    s3d::Logger << U"   Creating {} particles"_fmt(ParticleCount);
 
     for (int32 i = 0; i < ParticleCount; ++i)
     {
@@ -517,7 +516,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
     const double radius = request.radius;
     auto explosionSource = request.source.lock();
 
-    s3d::Print << U"   Applying force to objects...";
+    s3d::Logger << U"   Applying force to objects...";
 
     // 範囲内のオブジェクトを取得して力を加える
     auto nearbyResult = m_world.overlapSphere(center, radius, MASK_ALL);
@@ -575,7 +574,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
             Logger << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
         }
     }
-    s3d::Print << U"   Hit {} objects"_fmt(hitCount);
+    s3d::Logger << U"   Hit {} objects"_fmt(hitCount);
 }
 
 void SceneGame::shake(double duration, double magnitude)
@@ -618,7 +617,7 @@ void SceneGame::throwBomb(const Vec3& targetPos)
     }
     else
     {
-        Print << U"目標地点に到達できません";
+        Logger << U"目標地点に到達できません";
     }
 }
 
