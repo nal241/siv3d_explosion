@@ -142,6 +142,7 @@ void SceneGame::update()
     updateItems();
     updateGameObjects();
     updatePhysics();
+    updateBombSmoke();
     updateParticleSystem();
     updateSpawn();
     removeObjects();
@@ -708,6 +709,29 @@ void SceneGame::createWindParticles(const Vec3& center, const Vec3& boxSize)
     }
 }
 
+void SceneGame::createBombSmokeParticles(const Vec3& position)
+{
+    const int count = Random(1, 2);
+    for (int i = 0; i < count; ++i)
+    {
+        const double offsetX = Random(-0.1, 0.1);
+        const double offsetZ = Random(-0.1, 0.1);
+        const Vec3 startPos = position + Vec3{offsetX, 0.5, offsetZ};
+
+        const Vec3 velocity = Vec3{Random(-0.2, 0.2), Random(0.5, 1.5), Random(-0.2, 0.2)};
+
+        m_particleSystem.add(Particle3D{
+            .position = startPos,
+            .velocity = velocity,
+            .acceleration = Vec3{0, -0.5, 0},
+            .color = ColorF{0.3, 0.3, 0.3},
+            .size = Random(0.08, 0.15),
+            .life = Random(0.8, 1.2),
+            .active = true
+        });
+    }
+}
+
 void SceneGame::shake(double duration, double magnitude)
 {
     m_shakeDuration = duration;
@@ -733,7 +757,7 @@ void SceneGame::throwBomb(const Vec3& targetPos)
             .radius = radius,
             .mass = mass,
             .duration = 3.0,
-            .color = ColorF{1.0, 0.5, 0.2},
+            .color = Palette::Black,
             .restitution = 0.4f,
             .friction = 0.8f,
             .explosionRadius = 5.0f,
@@ -743,6 +767,8 @@ void SceneGame::throwBomb(const Vec3& targetPos)
         {
             const Vec3 impulse = *launchVelocity * mass;
             newBomb->getPhysicsBody()->applyImpulse(impulse);
+            m_smokingBombs.push_back(newBomb);
+            m_bombSmokeTimer.restart();
             addGameObject(std::move(newBomb));
         }
     }
@@ -957,4 +983,26 @@ void SceneGame::applyWindEffect()
             }
         }
     }
+}
+
+void SceneGame::updateBombSmoke()
+{
+    if (m_smokingBombs.isEmpty())
+        return;
+
+    // パーティクルの定期生成
+    if (m_bombSmokeTimer.sF() >= 0.05)
+    {
+        for (auto& weakBomb : m_smokingBombs)
+        {
+            if (auto bomb = weakBomb.lock())
+            {
+                createBombSmokeParticles(bomb->getPosition());
+            }
+        }
+        m_bombSmokeTimer.restart();
+    }
+
+    // 無効になったBombを削除
+    m_smokingBombs.remove_if([](const std::weak_ptr<Bomb>& weakBomb) { return weakBomb.expired(); });
 }
