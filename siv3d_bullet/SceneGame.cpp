@@ -40,9 +40,9 @@ namespace
     constexpr float StaticBoxRestitution = 1.0f;
 
     // === アイテムエフェクト色設定 ===
-    const ColorF GravityEffectColor{0.8, 0.4, 1.0};
+    const ColorF GravityEffectColor{0.3, 0.1, 0.5};
     const ColorF FreezeEffectColor{0.5, 0.8, 1.0};
-    const ColorF WindEffectColor{0.3, 1.0, 0.8};
+    const ColorF WindEffectColor{0.3, 1.0, 0.3};
     const ColorF BombIndicatorColor{1.0, 0.4, 0.2};
 
     // === アイテムインジケータ設定 ===
@@ -60,8 +60,21 @@ namespace
     constexpr double FreezeRadius = 5.0;
     constexpr double FreezeDuration = 8.0;
 
-    // === Windスキルの設定 ===
-    constexpr double WindBoxWidth = 6.0;
+    // === 氷柱エフェクト設定 ===
+    constexpr int32 MinSpikeCount = 8;
+    constexpr int32 MaxSpikeCount = 12;
+    constexpr double MinSpikeHeight = 1.5;
+    constexpr double MaxSpikeHeight = 2.5;
+    constexpr double MinSpikeRadius = 0.2;
+    constexpr double MaxSpikeRadius = 0.4;
+    constexpr double SpikeGrowDuration = 0.5;
+    constexpr double SpikeDirectionRandomness = 0.5;
+    constexpr double SpikeAlpha = 0.6;
+    constexpr double FrostWaveHeight = 0.01;
+    constexpr double FrostWaveOffsetY = 0.01;
+
+    // 風の設定
+    constexpr double WindBoxWidth = 8.0;
     constexpr double WindBoxHeight = 2.0;
     constexpr double WindBoxDepth = 20.0;
     constexpr double WindForce = 10.0;
@@ -80,6 +93,17 @@ namespace
     constexpr double MaxParticleHue = 60.0;
     constexpr double MinParticleSaturation = 0.7;
     constexpr double MaxParticleSaturation = 1.0;
+
+    // === 氷結晶パーティクル設定 ===
+    constexpr int32 FreezeParticleCount = 50;
+    constexpr double FreezeParticleMinSpeedY = 1.0;
+    constexpr double FreezeParticleMaxSpeedY = 5.0;
+    constexpr double FreezeParticleHorizontalRadius = 5.0;
+    const ColorF FreezeParticleColor{0.7, 0.9, 1.0};
+    constexpr double FreezeParticleMinSize = 0.01;
+    constexpr double FreezeParticleMaxSize = 0.05;
+    constexpr double FreezeParticleMinLife = 1.0;
+    constexpr double FreezeParticleMaxLife = 1.5;
 
     // === 爆発の物理パラメータ ===
     constexpr double ExplosionBasePower = 30.0;
@@ -136,6 +160,7 @@ void SceneGame::update()
     updateUI();
     updateGameLogic();
     updatePhysics();
+    updateBombSmoke();
     updateParticleSystem();
     updateAudio();
     updateCamera();
@@ -318,26 +343,53 @@ void SceneGame::draw() const
 
         m_particleSystem.draw();
 
+        // Freezeエフェクト
+        // 氷柱
+        if (!m_iceSpikes.isEmpty())
+        {
+            const ScopedRenderStates3D blend{BlendState::Additive};
+            for (const auto& spike : m_iceSpikes)
+            {
+                const double t = Min(spike.timer.sF() / SpikeGrowDuration, 1.0);
+                const double h = EaseOutBack(t) * spike.targetHeight;
+
+                const Vec3 from = spike.position;
+                const Vec3 to = spike.position + spike.direction * h;
+
+                Cone{from, to, spike.radius}.draw(FreezeEffectColor.withA(SpikeAlpha));
+            }
+        }
+        // 範囲
+        if (m_freezeField)
+        {
+            const Vec3 pos = m_freezeField->position + Vec3{0, FrostWaveOffsetY, 0};
+            Cylinder{pos, FreezeRadius, FrostWaveHeight}.draw(m_frostTexture, ColorF{1.0, 1.0});
+        }
+
         // 吸引範囲の可視化
         if (m_gravityField)
         {
-            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_gravityField->position, m_gravityField->radius}.draw(GravityEffectColor.withA(0.3));
-        }
+            const ScopedRenderStates3D blend{BlendState::Additive};
 
-        // freeze範囲の可視化
-        if (m_freezeField)
-        {
-            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_freezeField->position, m_freezeField->radius}.draw(FreezeEffectColor.withA(0.3));
+            // 重力の中心
+            const double pulseSize = Periodic::Sine0_1(1.5s) * 0.3 + 0.5;
+            const Vec3 centerPos = m_gravityField->position + Vec3{0, 1.0, 0};
+            Sphere{centerPos, pulseSize}.draw(GravityEffectColor.withA(0.8));
+
+            const Vec3 pos = m_gravityField->position + Vec3{0, FrostWaveOffsetY, 0};
+            Cylinder{pos, m_gravityField->radius, FrostWaveHeight}.draw(m_darknessTexture, ColorF{1.0, 1.0});
         }
 
         // wind範囲の可視化
-        if (m_windField)
-        {
-            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            m_windField->area.draw(WindEffectColor.withA(0.3));
-        }
+        // 良いテクスチャが見つからなかったため、コメントアウト
+        // if (m_windField)
+        // {
+        //     const Vec3 center = m_windField->area.center;
+        //     const Vec3 size = m_windField->area.size;
+        //     const Vec3 floorPos = Vec3{center.x, FrostWaveOffsetY, center.z};
+        //     const Vec3 floorSize = Vec3{size.x, FrostWaveHeight, size.z};
+        //     Box{floorPos, floorSize}.draw(m_windTexture, ColorF{1.0, 1.0});
+        // }
 
         // アイテムの着地点と範囲の可視化
         if (m_raycastResult.hasHit)
@@ -520,6 +572,7 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused
 
         Particle3D particle{.position = center,
                             .velocity = direction * speed,
+                            .acceleration = Vec3{0, -5.0, 0},
                             .color = s3d::HSV{s3d::Random(MinParticleHue, MaxParticleHue),
                                               s3d::Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
                             .size = s3d::Random(MinParticleSize, MaxParticleSize),
@@ -586,6 +639,92 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
     }
 }
 
+void SceneGame::createGravityParticles(const Vec3& center, double radius)
+{
+    // 3～5個のパーティクルを生成
+    const int count = Random(3, 5);
+    for (int i = 0; i < count; ++i)
+    {
+        // 円周上のランダムな点（水平方向のみ）
+        const double angle = Random(0.0, Math::TwoPi);
+        const Vec3 startPos = center + Vec3{Math::Cos(angle) * radius, Random(-0.3, 0.3), // わずかな高さのばらつき
+                                            Math::Sin(angle) * radius};
+
+        // 中心に向かう速度（主に水平方向）
+        const Vec3 velocity = (center - startPos).normalized() * 2.5;
+        const Vec3 acceleration = (center - startPos).normalized() * 5.0;
+
+        m_particleSystem.add(Particle3D{.position = startPos,
+                                        .velocity = velocity,
+                                        .acceleration = acceleration,
+                                        .color = ColorF{0.8, 0.4, 1.0}, // 紫色
+                                        .size = Random(0.15, 0.25),
+                                        .life = Random(1.0, 1.5),
+                                        .active = true,
+                                        .killZone = Sphere{center, 0.2}});
+    }
+}
+
+void SceneGame::createFreezeParticles(const Vec3& center)
+{
+    for (int i = 0; i < FreezeParticleCount; ++i)
+    {
+        const Vec2 horizontal = RandomVec2(Circle{FreezeParticleHorizontalRadius}); // 横方向のランダム
+        const Vec3 velocity{horizontal.x, Random(FreezeParticleMinSpeedY, FreezeParticleMaxSpeedY), horizontal.y};
+
+        m_particleSystem.add(Particle3D{.position = center,
+                                        .velocity = velocity,
+                                        .acceleration = Vec3{0, -5.0, 0},
+                                        .color = FreezeParticleColor,
+                                        .size = Random(FreezeParticleMinSize, FreezeParticleMaxSize),
+                                        .life = Random(FreezeParticleMinLife, FreezeParticleMaxLife),
+                                        .active = true});
+    }
+}
+
+void SceneGame::createWindParticles(const Vec3& center, const Vec3& boxSize)
+{
+    const int count = Random(5, 10);
+    for (int i = 0; i < count; ++i)
+    {
+        const double x = Random(-boxSize.x / 2.0, boxSize.x / 2.0);
+        const double y = Random(0.0, boxSize.y);
+        const double z = -boxSize.z / 2.0;
+        const Vec3 startPos = center + Vec3{x, y, z};
+
+        const Vec3 velocity = Vec3{0, 0, Random(8.0, 12.0)};
+
+        m_particleSystem.add(Particle3D{.position = startPos,
+                                        .velocity = velocity,
+                                        .acceleration = Vec3{0, 0, 0},
+                                        .color = WindEffectColor,
+                                        .size = Random(0.05, 0.15),
+                                        .life = Random(2.0, 3.0),
+                                        .active = true});
+    }
+}
+
+void SceneGame::createBombSmokeParticles(const Vec3& position)
+{
+    const int count = Random(1, 2);
+    for (int i = 0; i < count; ++i)
+    {
+        const double offsetX = Random(-0.1, 0.1);
+        const double offsetZ = Random(-0.1, 0.1);
+        const Vec3 startPos = position + Vec3{offsetX, 0.5, offsetZ};
+
+        const Vec3 velocity = Vec3{Random(-0.2, 0.2), Random(0.5, 1.5), Random(-0.2, 0.2)};
+
+        m_particleSystem.add(Particle3D{.position = startPos,
+                                        .velocity = velocity,
+                                        .acceleration = Vec3{0, -0.5, 0},
+                                        .color = ColorF{0.3, 0.3, 0.3},
+                                        .size = Random(0.08, 0.15),
+                                        .life = Random(0.8, 1.2),
+                                        .active = true});
+    }
+}
+
 void SceneGame::shake(double duration, double magnitude)
 {
     m_shakeDuration = duration;
@@ -611,7 +750,7 @@ void SceneGame::throwBomb(const Vec3& targetPos)
             .radius = radius,
             .mass = mass,
             .duration = 3.0,
-            .color = ColorF{1.0, 0.5, 0.2},
+            .color = Palette::Black,
             .restitution = 0.4f,
             .friction = 0.8f,
             .explosionRadius = 5.0f,
@@ -621,6 +760,8 @@ void SceneGame::throwBomb(const Vec3& targetPos)
         {
             const Vec3 impulse = *launchVelocity * mass;
             newBomb->getPhysicsBody()->applyImpulse(impulse);
+            m_smokingBombs.push_back(newBomb);
+            m_bombSmokeTimer.restart();
             addGameObject(std::move(newBomb));
         }
     }
@@ -638,6 +779,7 @@ void SceneGame::throwGravity(const Vec3& targetPos)
         .remainingTime = GravityFieldDuration,
         .radius = AttractionRadius,
     };
+    m_gravityParticleTimer.restart(); // タイマーを開始
 }
 
 void SceneGame::throwItem(ItemType itemType, const Vec3& targetPos)
@@ -662,7 +804,10 @@ void SceneGame::throwItem(ItemType itemType, const Vec3& targetPos)
 void SceneGame::updateGravityField()
 {
     if (!m_gravityField)
+    {
+        m_gravityParticleTimer.reset(); // タイマーをリセット
         return;
+    }
 
     m_gravityField->remainingTime -= Scene::DeltaTime();
 
@@ -673,6 +818,15 @@ void SceneGame::updateGravityField()
     }
 
     applyGravityFieldForce();
+
+    // パーティクルの定期生成
+    if (m_gravityParticleTimer.sF() >= 0.05) // 0.05秒ごと
+    {
+        const Vec3 centerPos = m_gravityField->position + Vec3{0, 1.0, 0};
+
+        createGravityParticles(centerPos, m_gravityField->radius);
+        m_gravityParticleTimer.restart();
+    }
 }
 
 void SceneGame::applyGravityFieldForce()
@@ -713,30 +867,52 @@ void SceneGame::applyGravityFieldForce()
 void SceneGame::throwFreeze(const Vec3& targetPos)
 {
     m_freezeSound.playOneShot();
+    createFreezeParticles(targetPos);
+
     m_freezeField = FreezeField{
         .position = targetPos,
         .remainingTime = FreezeDuration,
         .radius = FreezeRadius,
     };
+
+    // 氷柱をランダム生成
+    const int spikeCount = Random(MinSpikeCount, MaxSpikeCount);
+    for (int i = 0; i < spikeCount; ++i)
+    {
+        // 範囲内のランダム位置
+        const Vec2 offset = RandomVec2(Circle(FreezeRadius * 0.8));
+        const Vec3 direction = Vec3{Random(-SpikeDirectionRandomness, SpikeDirectionRandomness), 1.0,
+                                    Random(-SpikeDirectionRandomness, SpikeDirectionRandomness)}
+                                   .normalized();
+
+        m_iceSpikes.push_back(IceSpike{.position = targetPos + Vec3{offset.x, 0, offset.y},
+                                       .direction = direction,
+                                       .targetHeight = Random(MinSpikeHeight, MaxSpikeHeight),
+                                       .radius = Random(MinSpikeRadius, MaxSpikeRadius),
+                                       .timer = Stopwatch{StartImmediately::Yes}});
+    }
 }
 
 void SceneGame::updateFreezeField()
 {
     if (!m_freezeField)
     {
-        // 凍結解除
-        for (auto weakObj : m_frozenObjects)
+        m_iceSpikes.clear(); // Freeze終了時に氷柱をクリア
         {
-            if (auto obj = weakObj.lock())
+            // 凍結解除
+            for (auto weakObj : m_frozenObjects)
             {
-                if (auto body = obj->getPhysicsBody())
+                if (auto obj = weakObj.lock())
                 {
-                    body->setKinematic(false);
+                    if (auto body = obj->getPhysicsBody())
+                    {
+                        body->setKinematic(false);
+                    }
                 }
             }
+            m_frozenObjects.clear();
+            return;
         }
-        m_frozenObjects.clear();
-        return;
     }
 
     m_freezeField->remainingTime -= Scene::DeltaTime();
@@ -819,12 +995,16 @@ void SceneGame::throwWind(const Vec3& targetPos)
         .force = Vec3{0, 0, WindForce},
         .remainingTime = WindDuration,
     };
+    m_windParticleTimer.restart();
 }
 
 void SceneGame::updateWindField()
 {
     if (!m_windField)
+    {
+        m_windParticleTimer.reset();
         return;
+    }
 
     m_windField->remainingTime -= Scene::DeltaTime();
 
@@ -835,6 +1015,13 @@ void SceneGame::updateWindField()
     }
 
     applyWindEffect();
+
+    // パーティクルの定期生成
+    if (m_windParticleTimer.sF() >= 0.05)
+    {
+        createWindParticles(m_windField->area.center, m_windField->area.size);
+        m_windParticleTimer.restart();
+    }
 }
 
 void SceneGame::applyWindEffect()
@@ -952,4 +1139,26 @@ void SceneGame::updateExplosionSound()
         // タイマーをリセット
         m_explosionSoundTimer.restart();
     }
+}
+
+void SceneGame::updateBombSmoke()
+{
+    if (m_smokingBombs.isEmpty())
+        return;
+
+    // パーティクルの定期生成
+    if (m_bombSmokeTimer.sF() >= 0.05)
+    {
+        for (auto& weakBomb : m_smokingBombs)
+        {
+            if (auto bomb = weakBomb.lock())
+            {
+                createBombSmokeParticles(bomb->getPosition());
+            }
+        }
+        m_bombSmokeTimer.restart();
+    }
+
+    // 無効になったBombを削除
+    m_smokingBombs.remove_if([](const std::weak_ptr<Bomb>& weakBomb) { return weakBomb.expired(); });
 }

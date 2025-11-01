@@ -64,9 +64,20 @@ protected:
     void updateWindField();
     void applyWindEffect();
 
+    // Bomb煙エフェクト
+    void updateBombSmoke();
+
     // 爆発処理
     void createExplosionParticles(const s3d::Vec3& center, double radius);
     void applyExplosionForce(const ExplosionRequest& request);
+
+    void createGravityParticles(const Vec3& center, double radius);
+
+    void createFreezeParticles(const Vec3& center);
+
+    void createWindParticles(const Vec3& center, const Vec3& boxSize);
+
+    void createBombSmokeParticles(const Vec3& position);
 
 protected:
     // 画面揺れを開始する
@@ -126,7 +137,6 @@ protected:
     int m_explosionCountInInterval = 0;     // 間隔内の爆発回数
     double m_explosionSoundInterval = 0.05; // 音再生の最小間隔（秒）
 
-
     // デバッグ描画の有効/無効
     bool m_debugDrawEnabled = true;
 
@@ -142,6 +152,8 @@ protected:
     };
     s3d::Optional<GravityField> m_gravityField;
 
+    Stopwatch m_gravityParticleTimer;
+
     // Freezeアイテム
     struct FreezeField
     {
@@ -152,6 +164,17 @@ protected:
     s3d::Optional<FreezeField> m_freezeField;
     s3d::Array<std::weak_ptr<GameObject>> m_frozenObjects;
 
+    // 氷柱エフェクト
+    struct IceSpike
+    {
+        Vec3 position;
+        Vec3 direction;
+        double targetHeight;
+        double radius;
+        Stopwatch timer;
+    };
+    Array<IceSpike> m_iceSpikes;
+
     // Windアイテム用
     struct WindField
     {
@@ -160,6 +183,17 @@ protected:
         double remainingTime;
     };
     s3d::Optional<WindField> m_windField;
+
+    Stopwatch m_windParticleTimer;
+
+    // Bomb煙エフェクト用
+    Array<std::weak_ptr<class Bomb>> m_smokingBombs;
+    Stopwatch m_bombSmokeTimer;
+
+    // テクスチャ
+    Texture m_frostTexture;
+    Texture m_darknessTexture;
+    Texture m_windTexture;
 
     // コンボシステム
     int m_comboCount = 0;           // 現在のコンボ数
