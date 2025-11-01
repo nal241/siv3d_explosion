@@ -58,7 +58,9 @@ std::shared_ptr<EnemyExplosive> EnemyExplosive::Create(PhysicsWorld& world, cons
     // 浮遊している
     body->setGravity({0., 0., 0.});
 
-    auto renderer = std::make_unique<ModelRenderer>(model);
+    // 半径に応じてモデルのスケールを調整
+    const double scale = params.radius / 0.5;
+    auto renderer = std::make_unique<ModelRenderer>(model, Palette::White, scale);
 
     auto enemy = std::make_shared<EnemyExplosive>(std::move(body), std::move(renderer), params.maxHealth,
                                                   params.explosionRadius);
@@ -78,7 +80,7 @@ void EnemyExplosive::applyPDControl()
 
     auto verticalVelocity = currentVelocity.y;
 
-    float hoverForceY = (error * hoverKpY) - (verticalVelocity * hoverKdY);
+    double hoverForceY = (error * hoverKpY) - (verticalVelocity * hoverKdY);
 
     // 左右
     auto currentX = currentPosition.x;
@@ -86,13 +88,13 @@ void EnemyExplosive::applyPDControl()
 
     auto horizontalVelocity = currentVelocity.x;
 
-    float moveForceX = (errorX * moveKpX) - (horizontalVelocity * moveKdX);
+    double moveForceX = (errorX * moveKpX) - (horizontalVelocity * moveKdX);
 
     // 進行速度
     auto currentSpeed = currentVelocity.z;
     auto errorSpeed = targetSpeed - currentSpeed;
 
-    float moveForceZ = (errorSpeed * moveKpZ);
+    double moveForceZ = (errorSpeed * moveKpZ);
 
     getPhysicsBody()->applyForce({moveForceX, hoverForceY, moveForceZ});
 }

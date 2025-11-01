@@ -15,13 +15,14 @@ public:
 class ModelRenderer : public IRenderer
 {
 public:
-    ModelRenderer(const Model& model, const ColorF& color = Palette::White);
+    ModelRenderer(const Model& model, const ColorF& color = Palette::White, double scale = 1.0);
     void draw(const Vec3& position, const Quaternion& rotation) const override;
     void drawWireframe(const Vec3& position, const Quaternion& rotation) const override;
 
 private:
     Model m_model;
     ColorF m_color;
+    double m_scale;
 };
 
 // --- 物理形状の描画 ---

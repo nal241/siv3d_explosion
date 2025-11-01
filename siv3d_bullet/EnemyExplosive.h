@@ -7,16 +7,17 @@ class EnemyExplosive : public GameObject
 public:
     struct EnemyExplosiveParams
     {
+        static constexpr float radius = 0.8f;
+        static constexpr float mass = 1.0f;
+        static constexpr int maxHealth = 50;
+        static constexpr float restitution = 0.3f;
+        static constexpr float friction = 0.5f;
+
         Vec3 position;
-        float radius = 0.5f;
-        float mass = 2.0f;
-        int maxHealth = 50;
+        double explosionRadius = 3.0;
         ColorF color = HSV{0, 0.7, 0.9};
-        float restitution = 0.3f;
-        float friction = 0.5f;
         CollisionGroup group = GROUP_DEFAULT;
         CollisionMask mask = MASK_ALL;
-        double explosionRadius = 3.0;
     };
 
     EnemyExplosive(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer, int maxHealth,
@@ -51,17 +52,16 @@ private:
     Stopwatch m_deathTimer;
 
     // 位置の制御
-    const double targetAltitude = 1.5;
-    const double targetSpeed = -2.0;
+    static constexpr double targetAltitude = 1.5;
+    static constexpr double targetSpeed = -2.0;
     double m_initialX = 0.0;
 
-    const double hoverKpY = 10.0;
-    const double hoverKdY = 0.3;
-
-    const double moveKpX = 1.0;
-    const double moveKdX = 0.1;
-
-    const double moveKpZ = 2.0;
+    // PD制御ゲイン（質量1.0あたりの基準値 × 質量5.0）
+    static constexpr double hoverKpY = 5.0 * EnemyExplosiveParams::mass;
+    static constexpr double hoverKdY = 0.15 * EnemyExplosiveParams::mass;
+    static constexpr double moveKpX = 0.5 * EnemyExplosiveParams::mass;
+    static constexpr double moveKdX = 0.05 * EnemyExplosiveParams::mass;
+    static constexpr double moveKpZ = 1.0 * EnemyExplosiveParams::mass;
 
     void applyPDControl();
 };

@@ -7,22 +7,37 @@
 
 namespace
 {
-    // World settings
-    constexpr double WallThickness = 1.0;
-
-    // Camera settings
+    // === カメラ設定 ===
     constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{0, 10, -5};
     constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 40};
     constexpr double CameraFov = 30_deg;
 
-    // ステージオブジェクトのプリセット
-    constexpr float StaticBoxRestitution = 1.0f;
+    // === ステージ設定 ===
+    constexpr double StageRoadWidth = 25.0;
+    constexpr double StageGrassWidth = 100.0;
+    constexpr double StageDepth = 500.0;
+    constexpr float StageRestitution = 0.2f;
+    constexpr float StageFriction = 1.2f;
 
-    // 吸引機能の設定
-    constexpr double AttractionForce = 10.0;     // 吸引力の強さ（一定）
-    constexpr double AttractionRadius = 5.0;     // 吸引力の有効半径
-    constexpr double GravityFieldDuration = 3.0; // 重力場の持続時間
+    // === 木の配置設定 ===
+    constexpr double TreeMinDistance = 15.0; // 木同士の最小距離
+    constexpr double TreeAreaOffset = -15.0; // 領域の端から内側へのオフセット
+    constexpr double TreeMinScale = 2.5;     // 木のスケール最小値
+    constexpr double TreeMaxScale = 2.8;     // 木のスケール最大値
+
+    // === 敵のスポーン設定 ===
+    constexpr double EnemySpawnOffsetFromEdge = 1.0;     // ステージ端からのオフセット
+    constexpr double EnemySpawnZMin = 48.0;              // Z座標の最小値
+    constexpr double EnemySpawnZMax = 52.0;              // Z座標の最大値
+    constexpr double EnemySpawnHeight = 3.0;             // スポーン時のY座標
+    constexpr double ExplosiveEnemyRadius = 4.0;         // 爆発敵の爆発半径
+    const ColorF ExplosiveEnemyColor = HSV{0, 0.7, 0.9}; // 爆発敵の色
+    const ColorF NormalEnemyColor = HSV{120, 0.7, 0.9};  // 通常敵の色
+
+    // === ワールド設定 ===
+    constexpr double WallThickness = 1.0;
+    constexpr float StaticBoxRestitution = 1.0f;
 
     // === アイテムエフェクト色設定 ===
     const ColorF GravityEffectColor{0.3, 0.1, 0.5};
@@ -36,7 +51,12 @@ namespace
     constexpr double IndicatorPulseMaxAlpha = 0.8;
     constexpr double IndicatorPulseMinAlpha = 0.4;
 
-    // Freezeアイテムの設定
+    // === Gravityスキルの設定 ===
+    constexpr double AttractionForce = 5.0;
+    constexpr double AttractionRadius = 5.0;
+    constexpr double GravityFieldDuration = 3.0;
+
+    // === Freezeスキルの設定 ===
     constexpr double FreezeRadius = 5.0;
     constexpr double FreezeDuration = 8.0;
 
@@ -53,14 +73,12 @@ namespace
     constexpr double FrostWaveHeight = 0.01;
     constexpr double FrostWaveOffsetY = 0.01;
 
-
-
-    // 風の設定
-    constexpr double WindBoxWidth = 8.0;
+    // === Windスキルの設定 ===
+    constexpr double WindBoxWidth = 6.0;
     constexpr double WindBoxHeight = 2.0;
-    constexpr double WindBoxDepth = 30.0;
-    constexpr double WindForce = 15.0;
-    constexpr double WindDuration = 3.0;
+    constexpr double WindBoxDepth = 20.0;
+    constexpr double WindForce = 10.0;
+    constexpr double WindDuration = 2.0;
     constexpr double airResistance = 0.2;
 
     // === 爆発パーティクル設定 ===
@@ -88,20 +106,24 @@ namespace
     constexpr double FreezeParticleMaxLife = 1.5;
 
     // === 爆発の物理パラメータ ===
-    constexpr double ExplosionBasePower = 10.0;
+    constexpr double ExplosionBasePower = 30.0;
     constexpr double ExplosionMinDistance = 0.01;
 
     // === 爆発ダメージ設定 ===
-    constexpr int ExplosionBaseDamage = 100; // 爆発の基本ダメージ
+    constexpr int ExplosionBaseDamage = 100;
 
     // === 敵の体力設定 ===
-    constexpr int NormalEnemyMaxHealth = 100;    // ノーマル敵の体力
-    constexpr int ExplosiveEnemyMaxHealth = 100; // 爆発敵の体力
+    constexpr int NormalEnemyMaxHealth = 100;
+    constexpr int ExplosiveEnemyMaxHealth = 100;
 
     // === 画面揺れ設定 ===
     constexpr double ShakeSpeed = 10.0;
     constexpr double ExplosionShakeDuration = 0.5;
     constexpr double ExplosionShakeMagnitude = 1.5;
+
+    // === 初期化用ノイズ範囲 ===
+    constexpr double NoiseMinValue = 100.0;
+    constexpr double NoiseMaxValue = 999.0;
 } // namespace
 
 SceneGame::SceneGame(const InitData& init)
@@ -122,7 +144,8 @@ SceneGame::SceneGame(const InitData& init)
     m_camera.setView(m_cameraPosition, m_cameraLookAt);
 
     // 揺れノイズの初期化
-    m_noiseSeeds = s3d::Vec3{s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0), s3d::Random(100.0, 999.0)};
+    m_noiseSeeds = s3d::Vec3{s3d::Random(NoiseMinValue, NoiseMaxValue), s3d::Random(NoiseMinValue, NoiseMaxValue),
+                             s3d::Random(NoiseMinValue, NoiseMaxValue)};
 
     // デバッグ描画の設定
     m_world.setDebugDrawMode(btIDebugDraw::DBG_DrawWireframe);
@@ -335,8 +358,7 @@ void SceneGame::draw() const
                 const Vec3 from = spike.position;
                 const Vec3 to = spike.position + spike.direction * h;
 
-                Cone{from, to, spike.radius}
-                    .draw(FreezeEffectColor.withA(SpikeAlpha));
+                Cone{from, to, spike.radius}.draw(FreezeEffectColor.withA(SpikeAlpha));
             }
         }
         // 範囲
@@ -444,31 +466,28 @@ void SceneGame::addGameObject(std::shared_ptr<GameObject> obj) { m_gameObjects.p
 void SceneGame::createStage()
 {
     // Stageオブジェクトを作成
-    const auto stageParams = Stage::StageParams{.roadWidth = 25.0,
-                                                .grassWidth = 100.0,
-                                                .depth = 500.0,
+    const auto stageParams = Stage::StageParams{.roadWidth = StageRoadWidth,
+                                                .grassWidth = StageGrassWidth,
+                                                .depth = StageDepth,
                                                 .position = Vec3{0, 0, 0},
-                                                .restitution = 0.8f,
-                                                .friction = 0.8f};
+                                                .restitution = StageRestitution,
+                                                .friction = StageFriction};
 
     auto stage = Stage::Create(m_world, stageParams);
     m_roadWidth = stageParams.roadWidth;
 
     // 木を配置 (Poisson Disk Sampling)
-    const double minDistance = 15.0; // 木同士の最小距離 (密度を調整)
-    const double offset = -15.0;     // 領域の端から内側へのオフセット
-
     // 左側の草原
     {
         const RectF leftGrassArea{-stageParams.roadWidth / 2 - stageParams.grassWidth, 0, stageParams.grassWidth,
                                   stageParams.depth};
-        const RectF samplingArea = leftGrassArea.stretched(offset);
-        s3d::PoissonDisk2D sampler(samplingArea.size.asPoint(), minDistance);
+        const RectF samplingArea = leftGrassArea.stretched(TreeAreaOffset);
+        s3d::PoissonDisk2D sampler(samplingArea.size.asPoint(), TreeMinDistance);
         const Array<Vec2> points = sampler.getPoints();
         for (const auto& p : points)
         {
             const Vec2 translatedPos = p + samplingArea.pos;
-            const double scale = Random(2.5, 2.8);
+            const double scale = Random(TreeMinScale, TreeMaxScale);
             const double rot = Random(0.0, Math::TwoPi);
             stage->addTree(Vec3{translatedPos.x, 0, translatedPos.y}, scale, rot);
         }
@@ -477,13 +496,13 @@ void SceneGame::createStage()
     // 右側の草原
     {
         const RectF rightGrassArea{stageParams.roadWidth / 2, 0, stageParams.grassWidth, stageParams.depth};
-        const RectF samplingArea = rightGrassArea.stretched(offset);
-        s3d::PoissonDisk2D sampler(samplingArea.size.asPoint(), minDistance);
+        const RectF samplingArea = rightGrassArea.stretched(TreeAreaOffset);
+        s3d::PoissonDisk2D sampler(samplingArea.size.asPoint(), TreeMinDistance);
         const Array<Vec2> points = sampler.getPoints();
         for (const auto& p : points)
         {
             const Vec2 translatedPos = p + samplingArea.pos;
-            const double scale = Random(2.5, 2.8);
+            const double scale = Random(TreeMinScale, TreeMaxScale);
             const double rot = Random(0.0, Math::TwoPi);
             stage->addTree(Vec3{translatedPos.x, 0, translatedPos.y}, scale, rot);
         }
@@ -495,41 +514,33 @@ void SceneGame::createStage()
 void SceneGame::spawnEnemy()
 {
     // ステージ内のランダムな位置にスポーン
-    const double offset = 1.0;
-    const double x = Random(-m_roadWidth / 2.0 + offset, m_roadWidth / 2.0 - offset);
-    const double z = Random(38.0, 42.0);
-    const double y = 2.0;
+    const double x =
+        Random(-m_roadWidth / 2.0 + EnemySpawnOffsetFromEdge, m_roadWidth / 2.0 - EnemySpawnOffsetFromEdge);
+    const double z = Random(EnemySpawnZMin, EnemySpawnZMax);
+    const double y = EnemySpawnHeight;
 
     addGameObject(EnemyExplosive::Create(m_world,
                                          EnemyExplosive::EnemyExplosiveParams{.position = Vec3{x, y, z},
-                                                                              .radius = 0.5f,
-                                                                              .mass = 2.0f,
-                                                                              .maxHealth = ExplosiveEnemyMaxHealth,
-                                                                              .color = HSV{0, 0.7, 0.9},
+                                                                              .explosionRadius = ExplosiveEnemyRadius,
+                                                                              .color = ExplosiveEnemyColor,
                                                                               .group = GROUP_ATTRACTABLE,
-                                                                              .mask = MASK_ALL,
-                                                                              .explosionRadius = 3.0},
+                                                                              .mask = MASK_ALL},
                                          m_enemyExplosiveModel));
 }
 
 void SceneGame::spawnEnemyNormal()
 {
-
     // ステージ内のランダムな位置にスポーン
-    const double offset = 1.0;
-    const double x = Random(-m_roadWidth / 2.0 + offset, m_roadWidth / 2.0 - offset);
-    const double z = Random(38.0, 42.0);
-    const double y = 2.0;
+    const double x =
+        Random(-m_roadWidth / 2.0 + EnemySpawnOffsetFromEdge, m_roadWidth / 2.0 - EnemySpawnOffsetFromEdge);
+    const double z = Random(EnemySpawnZMin, EnemySpawnZMax);
+    const double y = EnemySpawnHeight;
 
-    addGameObject(EnemyNormal::Create(m_world,
-                                      EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
-                                                                     .radius = 1.0f,
-                                                                     .mass = 1.0f,
-                                                                     .maxHealth = NormalEnemyMaxHealth,
-                                                                     .color = HSV{120, 0.7, 0.9},
-                                                                     .group = GROUP_ATTRACTABLE,
-                                                                     .mask = MASK_ALL},
-                                      m_enemyNormalModel, U"LicensedAsset/normalEnemy.obj"));
+    addGameObject(EnemyNormal::Create(
+        m_world,
+        EnemyNormal::EnemyNormalParams{
+            .position = Vec3{x, y, z}, .color = NormalEnemyColor, .group = GROUP_ATTRACTABLE, .mask = MASK_ALL},
+        m_enemyNormalModel));
 }
 
 void SceneGame::handleExplosion(const ExplosionRequest& request)
@@ -548,7 +559,7 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
     shake(ExplosionShakeDuration, ExplosionShakeMagnitude);
 }
 
-void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
+void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused]] double radius)
 {
     s3d::Logger << U"   Creating {} particles"_fmt(ParticleCount);
 
@@ -786,17 +797,15 @@ void SceneGame::throwFreeze(const Vec3& targetPos)
     {
         // 範囲内のランダム位置
         const Vec2 offset = RandomVec2(Circle(FreezeRadius * 0.8));
-        const Vec3 direction = Vec3{Random(-SpikeDirectionRandomness, SpikeDirectionRandomness),
-                                    1.0,
-                                    Random(-SpikeDirectionRandomness, SpikeDirectionRandomness)}.normalized();
+        const Vec3 direction = Vec3{Random(-SpikeDirectionRandomness, SpikeDirectionRandomness), 1.0,
+                                    Random(-SpikeDirectionRandomness, SpikeDirectionRandomness)}
+                                   .normalized();
 
-        m_iceSpikes.push_back(IceSpike{
-            .position = targetPos + Vec3{offset.x, 0, offset.y},
-            .direction = direction,
-            .targetHeight = Random(MinSpikeHeight, MaxSpikeHeight),
-            .radius = Random(MinSpikeRadius, MaxSpikeRadius),
-            .timer = Stopwatch{StartImmediately::Yes}
-        });
+        m_iceSpikes.push_back(IceSpike{.position = targetPos + Vec3{offset.x, 0, offset.y},
+                                       .direction = direction,
+                                       .targetHeight = Random(MinSpikeHeight, MaxSpikeHeight),
+                                       .radius = Random(MinSpikeRadius, MaxSpikeRadius),
+                                       .timer = Stopwatch{StartImmediately::Yes}});
     }
 }
 
@@ -1080,15 +1089,13 @@ void SceneGame::createGravityParticles(const Vec3& center, double radius)
         const Vec3 direction = (center - particlePos).normalized();
         const double speed = Random(2.0, 4.0);
 
-        Particle3D particle{
-            .position = particlePos,
-            .velocity = direction * speed,
-            .acceleration = Vec3{0, 0, 0},
-            .color = GravityEffectColor,
-            .size = Random(0.05, 0.1),
-            .life = Random(0.5, 1.0),
-            .active = true
-        };
+        Particle3D particle{.position = particlePos,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, 0, 0},
+                            .color = GravityEffectColor,
+                            .size = Random(0.05, 0.1),
+                            .life = Random(0.5, 1.0),
+                            .active = true};
         m_particleSystem.add(particle);
     }
 }
@@ -1101,15 +1108,13 @@ void SceneGame::createFreezeParticles(const Vec3& center)
         const Vec3 particlePos = center + Vec3{offset.x, 0, offset.y};
         const double speedY = Random(FreezeParticleMinSpeedY, FreezeParticleMaxSpeedY);
 
-        Particle3D particle{
-            .position = particlePos,
-            .velocity = Vec3{0, speedY, 0},
-            .acceleration = Vec3{0, 0, 0},
-            .color = FreezeParticleColor,
-            .size = Random(FreezeParticleMinSize, FreezeParticleMaxSize),
-            .life = Random(FreezeParticleMinLife, FreezeParticleMaxLife),
-            .active = true
-        };
+        Particle3D particle{.position = particlePos,
+                            .velocity = Vec3{0, speedY, 0},
+                            .acceleration = Vec3{0, 0, 0},
+                            .color = FreezeParticleColor,
+                            .size = Random(FreezeParticleMinSize, FreezeParticleMaxSize),
+                            .life = Random(FreezeParticleMinLife, FreezeParticleMaxLife),
+                            .active = true};
         m_particleSystem.add(particle);
     }
 }
@@ -1119,22 +1124,16 @@ void SceneGame::createWindParticles(const Vec3& center, const Vec3& boxSize)
     constexpr int32 ParticleCount = 20;
     for (int32 i = 0; i < ParticleCount; ++i)
     {
-        const Vec3 randomOffset{
-            Random(-boxSize.x / 2, boxSize.x / 2),
-            Random(0.0, boxSize.y),
-            -boxSize.z / 2
-        };
+        const Vec3 randomOffset{Random(-boxSize.x / 2, boxSize.x / 2), Random(0.0, boxSize.y), -boxSize.z / 2};
         const Vec3 particlePos = center + randomOffset;
 
-        Particle3D particle{
-            .position = particlePos,
-            .velocity = Vec3{0, 0, Random(10.0, 15.0)},
-            .acceleration = Vec3{0, 0, 0},
-            .color = WindEffectColor,
-            .size = Random(0.05, 0.15),
-            .life = Random(1.0, 2.0),
-            .active = true
-        };
+        Particle3D particle{.position = particlePos,
+                            .velocity = Vec3{0, 0, Random(10.0, 15.0)},
+                            .acceleration = Vec3{0, 0, 0},
+                            .color = WindEffectColor,
+                            .size = Random(0.05, 0.15),
+                            .life = Random(1.0, 2.0),
+                            .active = true};
         m_particleSystem.add(particle);
     }
 }
@@ -1144,21 +1143,15 @@ void SceneGame::createBombSmokeParticles(const Vec3& position)
     constexpr int32 ParticleCount = 5;
     for (int32 i = 0; i < ParticleCount; ++i)
     {
-        const Vec3 randomVelocity{
-            Random(-0.5, 0.5),
-            Random(1.0, 2.0),
-            Random(-0.5, 0.5)
-        };
+        const Vec3 randomVelocity{Random(-0.5, 0.5), Random(1.0, 2.0), Random(-0.5, 0.5)};
 
-        Particle3D particle{
-            .position = position,
-            .velocity = randomVelocity,
-            .acceleration = Vec3{0, 0, 0},
-            .color = ColorF{0.3, 0.3, 0.3, 0.5},
-            .size = Random(0.1, 0.2),
-            .life = Random(0.5, 1.0),
-            .active = true
-        };
+        Particle3D particle{.position = position,
+                            .velocity = randomVelocity,
+                            .acceleration = Vec3{0, 0, 0},
+                            .color = ColorF{0.3, 0.3, 0.3, 0.5},
+                            .size = Random(0.1, 0.2),
+                            .life = Random(0.5, 1.0),
+                            .active = true};
         m_particleSystem.add(particle);
     }
 }
