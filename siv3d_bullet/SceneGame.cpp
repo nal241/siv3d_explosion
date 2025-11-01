@@ -47,6 +47,7 @@ namespace
     constexpr double WindBoxDepth = 30.0;
     constexpr double WindForce = 15.0;
     constexpr double WindDuration = 3.0;
+    constexpr double airResistance = 0.2;
 
     // === 爆発パーティクル設定 ===
     constexpr int32 ParticleCount = 50;
@@ -774,7 +775,13 @@ void SceneGame::applyWindEffect()
         {
             if (m_windField->area.contains(object->getPosition()))
             {
-                body->applyForce(windForce);
+                const Vec3 currentVelocity = body->getLinearVelocity();
+                const double vz = currentVelocity.z;
+
+                // 空気抵抗
+                const Vec3 dragForce = Vec3(0, 0, -airResistance * Abs(vz));
+
+                body->applyForce(windForce + dragForce);
             }
         }
     }
