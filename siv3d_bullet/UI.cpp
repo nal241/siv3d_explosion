@@ -5,6 +5,7 @@ namespace
     // リロード時間
     constexpr double BombReloadTime = 5.0;
     constexpr double DefaultReloadTime = 3.0;
+    constexpr double FreezeReloadTime = 8.0;
 }
 
 UI::UI()
@@ -13,7 +14,7 @@ UI::UI()
 {
     m_itemInfos.push_back({U"Bomb", Texture{U"💣"_emoji}, BombReloadTime});
     m_itemInfos.push_back({U"Gravity", Texture{U"🌀"_emoji}, DefaultReloadTime});
-    m_itemInfos.push_back({U"Freeze", Texture{U"❄️"_emoji}, DefaultReloadTime});
+    m_itemInfos.push_back({U"Freeze", Texture{U"❄️"_emoji}, FreezeReloadTime});
     m_itemInfos.push_back({U"Wind", Texture{U"💨"_emoji}, DefaultReloadTime});
 
     m_reloadTimers.resize(m_itemInfos.size(), 0.0);

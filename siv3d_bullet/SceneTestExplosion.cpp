@@ -1,7 +1,7 @@
 #include "SceneTestExplosion.h"
 #include "SceneCommon.h"
 #include "Renderers.h"
-#include "ExplosiveEnemy.h"
+#include "EnemyExplosive.h"
 #include "Bomb.h"
 
 namespace
@@ -22,7 +22,7 @@ namespace
 
 SceneTestExplosion::SceneTestExplosion(const InitData& init) : SceneGame(init)
 {
-    s3d::Print << U"Explosion Scene Initialized";
+    s3d::Logger << U"Explosion Scene Initialized";
 
     // --- オブジェクト生成 ---
 
@@ -48,7 +48,7 @@ void SceneTestExplosion::updateSceneSpecific()
     m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
 
     // このシーン固有の表示
-    // s3d::Print << U"Particles: {} "_fmt(m_particleSystem.m_particles.size());
+    // s3d::Logger << U"Particles: {} "_fmt(m_particleSystem.m_particles.size());
 
     // Tキーでゲームシーンへ戻る
     if (KeyT.down())
@@ -102,7 +102,7 @@ void SceneTestExplosion::updateSceneSpecific()
             else
             {
                 // 到達不可能な位置への投擲を試みた場合
-                Print << U"目標地点に到達できません";
+                Logger << U"目標地点に到達できません";
             }
         }
     }

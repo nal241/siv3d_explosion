@@ -36,11 +36,23 @@ protected:
     // アイテム投擲
     void throwBomb(const Vec3& targetPos);
     void throwGravity(const Vec3& targetPos);
+
+    void throwFreeze(const Vec3& targetPos);
+    void throwWind(const Vec3& targetPos);
     void throwItem(ItemType itemType, const Vec3& targetPos);
 
-    // 重力場更新
+    // 重力アイテム
     void updateGravityField();
     void applyGravityFieldForce();
+
+    // Freezeアイテム
+    void updateFreezeField();
+    void applyFreezeEffect();
+    void unfreezeObject(std::shared_ptr<GameObject> obj);
+
+    // Windアイテム用
+    void updateWindField();
+    void applyWindEffect();
 
     // 爆発処理
     void createExplosionParticles(const s3d::Vec3& center, double radius);
@@ -81,14 +93,14 @@ protected:
     Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
     Model m_model{U"model/coin.obj"};
     s3d::Model m_enemyNormalModel;
-    s3d::Model m_explosiveEnemyModel;
+    s3d::Model m_enemyExplosiveModel;
 
     Player m_player;
 
     // エネミースポーン用
     Stopwatch m_enemyNormalSpawnTimer{StartImmediately::Yes};
     double m_normalSpawnInterval = 0.5; // normalEnemyは高頻度
-    Stopwatch m_explosiveEnemySpawnTimer{StartImmediately::Yes};
+    Stopwatch m_enemyExplosiveSpawnTimer{StartImmediately::Yes};
     double m_explosiveSpawnInterval = 1.0; // Enemyは低頻度
 
     double m_spawnInterval = 3.0;
@@ -96,6 +108,11 @@ protected:
 
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
+    s3d::Audio m_launchBombSound;
+    s3d::Audio m_gravitySound;
+    s3d::Audio m_freezeSound;
+    s3d::Audio m_windSound;
+    s3d::Audio m_bgm;
 
     // UI用フォント
     s3d::Font m_titleFont{40, s3d::Typeface::Bold};
@@ -107,7 +124,7 @@ protected:
     // UI
     UI m_ui;
 
-    // 重力場
+    // Gravityアイテム
     struct GravityField
     {
         Vec3 position;
@@ -115,4 +132,23 @@ protected:
         double radius;
     };
     s3d::Optional<GravityField> m_gravityField;
+
+    // Freezeアイテム
+    struct FreezeField
+    {
+        Vec3 position;
+        double remainingTime;
+        double radius;
+    };
+    s3d::Optional<FreezeField> m_freezeField;
+    s3d::Array<std::weak_ptr<GameObject>> m_frozenObjects;
+
+    // Windアイテム用
+    struct WindField
+    {
+        s3d::Box area;
+        Vec3 force;
+        double remainingTime;
+    };
+    s3d::Optional<WindField> m_windField;
 };

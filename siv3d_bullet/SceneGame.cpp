@@ -1,6 +1,6 @@
 #include "SceneGame.h"
 #include "Renderers.h"
-#include "ExplosiveEnemy.h"
+#include "EnemyExplosive.h"
 #include "Bomb.h"
 #include "EnemyNormal.h"
 #include "Stage.h"
@@ -13,7 +13,7 @@ namespace
     // Camera settings
 
     constexpr double CameraSpeed = 20.0;
-    constexpr s3d::Vec3 CameraInitialPosition{0, 5, -5};
+    constexpr s3d::Vec3 CameraInitialPosition{0, 10, -5};
     constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 40};
     constexpr double CameraFov = 30_deg;
 
@@ -24,6 +24,30 @@ namespace
     constexpr double AttractionForce = 10.0;     // 吸引力の強さ（一定）
     constexpr double AttractionRadius = 5.0;     // 吸引力の有効半径
     constexpr double GravityFieldDuration = 3.0; // 重力場の持続時間
+
+    // === アイテムエフェクト色設定 ===
+    const ColorF GravityEffectColor{0.8, 0.4, 1.0};
+    const ColorF FreezeEffectColor{0.5, 0.8, 1.0};
+    const ColorF WindEffectColor{0.3, 1.0, 0.8};
+    const ColorF BombIndicatorColor{1.0, 0.4, 0.2};
+
+    // === アイテムインジケータ設定 ===
+    constexpr double IndicatorHeight = 0.05;
+    constexpr Duration IndicatorPulseDuration = 1.0s;
+    constexpr double IndicatorPulseMaxAlpha = 0.8;
+    constexpr double IndicatorPulseMinAlpha = 0.4;
+
+    // Freezeアイテムの設定
+    constexpr double FreezeRadius = 5.0;
+    constexpr double FreezeDuration = 8.0;
+
+    // 風の設定
+    constexpr double WindBoxWidth = 8.0;
+    constexpr double WindBoxHeight = 2.0;
+    constexpr double WindBoxDepth = 30.0;
+    constexpr double WindForce = 15.0;
+    constexpr double WindDuration = 3.0;
+    constexpr double airResistance = 0.2;
 
     // === 爆発パーティクル設定 ===
     constexpr int32 ParticleCount = 50;
@@ -50,11 +74,17 @@ namespace
 
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera, m_model), m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
-      m_explosiveEnemyModel{U"LicensedAsset/explosiveEnemy.obj"}
+      m_player(&m_camera, m_model),
+      m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
+      m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"},
+      m_launchBombSound{U"LicensedAsset/launchBomb.mp3"},
+      m_gravitySound{U"LicensedAsset/gravity.mp3"},
+      m_freezeSound{U"LicensedAsset/freeze.mp3"},
+      m_windSound{U"LicensedAsset/wind.mp3"},
+      m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes}
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
-    Model::RegisterDiffuseTextures(m_explosiveEnemyModel, TextureDesc::MippedSRGB);
+    Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
 
     // stage作成
     createStage();
@@ -72,6 +102,8 @@ SceneGame::SceneGame(const InitData& init)
     // デバッグ描画の設定
     m_world.setDebugDrawMode(btIDebugDraw::DBG_DrawWireframe);
     m_world.setDebugDrawEnabled(true); // デフォルトで有効化
+
+    m_bgm.play();
 }
 
 void SceneGame::update()
@@ -115,9 +147,8 @@ void SceneGame::updateCamera()
 
 void SceneGame::updateInput()
 {
-    ClearPrint();
-    Print << U"Object num:{}"_fmt(m_gameObjects.size());
-    Print << Profiler::FPS();
+    Logger << U"Object num:{}"_fmt(m_gameObjects.size());
+    Logger << Profiler::FPS();
 
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
@@ -155,8 +186,14 @@ void SceneGame::updateItems()
     const Ray ray = m_camera.screenToRay(Cursor::Pos());
     m_raycastResult = m_world.raycast(ray, MASK_STATIC_ONLY);
 
-    // 重力場更新
+    // Gravityアイテム更新
     updateGravityField();
+
+    // Freezeアイテム更新
+    updateFreezeField();
+
+    // Windアイテム更新
+    updateWindField();
 
     // アイテム投擲
     if (!uiClicked && MouseL.down() && m_raycastResult.hasHit && m_ui.canUseSelectedItem())
@@ -207,10 +244,10 @@ void SceneGame::updateSpawn()
     }
 
     // Explosive Enemy
-    if (m_explosiveEnemySpawnTimer.sF() >= m_explosiveSpawnInterval)
+    if (m_enemyExplosiveSpawnTimer.sF() >= m_explosiveSpawnInterval)
     {
         spawnEnemy();
-        m_explosiveEnemySpawnTimer.restart();
+        m_enemyExplosiveSpawnTimer.restart();
     }
 }
 
@@ -255,17 +292,60 @@ void SceneGame::draw() const
         if (m_gravityField)
         {
             const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
-            Sphere{m_gravityField->position, m_gravityField->radius}.draw(ColorF{0.5, 0.0, 1.0, 0.3});
+            Sphere{m_gravityField->position, m_gravityField->radius}.draw(GravityEffectColor.withA(0.3));
         }
 
-        // 狙っている場所を可視化
+        // freeze範囲の可視化
+        if (m_freezeField)
+        {
+            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
+            Sphere{m_freezeField->position, m_freezeField->radius}.draw(FreezeEffectColor.withA(0.3));
+        }
+
+        // wind範囲の可視化
+        if (m_windField)
+        {
+            const ScopedRenderStates3D blend{BlendState::OpaqueAlphaToCoverage};
+            m_windField->area.draw(WindEffectColor.withA(0.3));
+        }
+
+        // アイテムの着地点と範囲の可視化
         if (m_raycastResult.hasHit)
         {
-            // ヒットした座標に小さな球を描画
-            Sphere{m_raycastResult.hitPoint, 0.1}.draw(Palette::Red);
+            const ItemType selectedItem = m_ui.getSelectedItem();
+            const Vec3& targetPos = m_raycastResult.hitPoint;
 
-            // 地面にターゲットマーカーを描画
-            Cylinder{m_raycastResult.hitPoint, 0.5, 0.05}.draw(ColorF{1.0, 0.5, 0.0, 0.5});
+            // インジケータのアルファ値を時間で変化させる
+            const double alpha = Periodic::Sine0_1(IndicatorPulseDuration) * (IndicatorPulseMaxAlpha - IndicatorPulseMinAlpha) + IndicatorPulseMinAlpha;
+
+            // 中心のマーカー
+            Sphere{targetPos, 0.1}.draw(Palette::Red);
+
+            const ScopedRenderStates3D blend{ BlendState::Additive };
+
+            switch (selectedItem)
+            {
+                case ItemType::Bomb:
+                {
+                    Cylinder{targetPos, 5.0f, IndicatorHeight}.draw(BombIndicatorColor.withA(alpha));
+                    break;
+                }
+                case ItemType::Gravity:
+                {
+                    Cylinder{targetPos, AttractionRadius, IndicatorHeight}.draw(GravityEffectColor.withA(alpha));
+                    break;
+                }
+                case ItemType::Freeze:
+                {
+                    Cylinder{targetPos, FreezeRadius, IndicatorHeight}.draw(FreezeEffectColor.withA(alpha));
+                    break;
+                }
+                case ItemType::Wind:
+                {
+                    Box{targetPos, Vec3{WindBoxWidth, IndicatorHeight, WindBoxDepth}}.draw(WindEffectColor.withA(alpha));
+                    break;
+                }
+            }
         }
         // 10x10のグリッド、1マス1.0単位 （デバッグ）
         for (int i = -15; i <= 15; ++i)
@@ -362,8 +442,8 @@ void SceneGame::spawnEnemy()
     const double z = Random(38.0, 42.0);
     const double y = 2.0;
 
-    addGameObject(ExplosiveEnemy::Create(m_world,
-                                         ExplosiveEnemy::ExplosiveEnemyParams{.position = Vec3{x, y, z},
+    addGameObject(EnemyExplosive::Create(m_world,
+                                         EnemyExplosive::EnemyExplosiveParams{.position = Vec3{x, y, z},
                                                                               .radius = 0.5f,
                                                                               .mass = 2.0f,
                                                                               .maxHealth = 50,
@@ -371,7 +451,7 @@ void SceneGame::spawnEnemy()
                                                                               .group = GROUP_ATTRACTABLE,
                                                                               .mask = MASK_ALL,
                                                                               .explosionRadius = 3.0},
-                                         m_explosiveEnemyModel));
+                                         m_enemyExplosiveModel));
 }
 
 void SceneGame::spawnEnemyNormal()
@@ -409,7 +489,7 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
 
 void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
 {
-    s3d::Print << U"   Creating {} particles"_fmt(ParticleCount);
+    s3d::Logger << U"   Creating {} particles"_fmt(ParticleCount);
 
     for (int32 i = 0; i < ParticleCount; ++i)
     {
@@ -437,7 +517,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
     const double radius = request.radius;
     auto explosionSource = request.source.lock();
 
-    s3d::Print << U"   Applying force to objects...";
+    s3d::Logger << U"   Applying force to objects...";
 
     // 範囲内のオブジェクトを取得して力を加える
     auto nearbyResult = m_world.overlapSphere(center, radius, MASK_ALL);
@@ -478,16 +558,18 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         hitCount++;
 
         // エネミーにダメージを与える
-        if (auto enemy = std::dynamic_pointer_cast<ExplosiveEnemy>(object))
+        if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
         {
             int damage = static_cast<int>(falloff * 100);
             enemy->takeDamage(damage);
+            unfreezeObject(object);
             Logger << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
             int damage = static_cast<int>(falloff * 100);
             enemyNormal->takeDamage(damage);
+            unfreezeObject(object);
             Logger << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else
@@ -495,7 +577,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
             Logger << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
         }
     }
-    s3d::Print << U"   Hit {} objects"_fmt(hitCount);
+    s3d::Logger << U"   Hit {} objects"_fmt(hitCount);
 }
 
 void SceneGame::shake(double duration, double magnitude)
@@ -507,6 +589,8 @@ void SceneGame::shake(double duration, double magnitude)
 
 void SceneGame::throwBomb(const Vec3& targetPos)
 {
+    m_launchBombSound.playOneShot();
+
     const Vec3 startPos = m_camera.getEyePosition();
     constexpr double launchAngle = 10.0;
     const Vec3 gravity = m_world.getGravity();
@@ -524,7 +608,7 @@ void SceneGame::throwBomb(const Vec3& targetPos)
             .color = ColorF{1.0, 0.5, 0.2},
             .restitution = 0.4f,
             .friction = 0.8f,
-            .explosionRadius = 5.0,
+            .explosionRadius = 5.0f,
         };
 
         if (auto newBomb = Bomb::Create(m_world, params))
@@ -536,12 +620,13 @@ void SceneGame::throwBomb(const Vec3& targetPos)
     }
     else
     {
-        Print << U"目標地点に到達できません";
+        Logger << U"目標地点に到達できません";
     }
 }
 
 void SceneGame::throwGravity(const Vec3& targetPos)
 {
+    m_gravitySound.playOneShot();
     m_gravityField = GravityField{
         .position = targetPos,
         .remainingTime = GravityFieldDuration,
@@ -560,10 +645,10 @@ void SceneGame::throwItem(ItemType itemType, const Vec3& targetPos)
         throwGravity(targetPos);
         break;
     case ItemType::Freeze:
-        // 未実装
+        throwFreeze(targetPos);
         break;
     case ItemType::Wind:
-        // 未実装
+        throwWind(targetPos);
         break;
     }
 }
@@ -592,6 +677,20 @@ void SceneGame::applyGravityFieldForce()
     {
         if (auto body = object->getPhysicsBody(); body && body->getGroup() == GROUP_ATTRACTABLE)
         {
+            // Aliveの敵のみ吸引
+            bool isEnemyAlive = true;
+            if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+            {
+                isEnemyAlive = enemy->isAlive();
+            }
+            else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+            {
+                isEnemyAlive = enemyNormal->isAlive();
+            }
+
+            if (!isEnemyAlive)
+                continue;
+
             const Vec3 objPos = object->getPosition();
             const Vec3 direction = (hitPoint - objPos);
             const double distanceSq = direction.lengthSq();
@@ -600,6 +699,173 @@ void SceneGame::applyGravityFieldForce()
             {
                 const Vec3 force = direction.normalized() * AttractionForce;
                 body->applyForce(force);
+            }
+        }
+    }
+}
+
+void SceneGame::throwFreeze(const Vec3& targetPos)
+{
+    m_freezeSound.playOneShot();
+    m_freezeField = FreezeField{
+        .position = targetPos,
+        .remainingTime = FreezeDuration,
+        .radius = FreezeRadius,
+    };
+}
+
+void SceneGame::updateFreezeField()
+{
+    if (!m_freezeField)
+    {
+        // 凍結解除
+        for (auto weakObj : m_frozenObjects)
+        {
+            if (auto obj = weakObj.lock())
+            {
+                if (auto body = obj->getPhysicsBody())
+                {
+                    body->setKinematic(false);
+                }
+            }
+        }
+        m_frozenObjects.clear();
+        return;
+    }
+
+    m_freezeField->remainingTime -= Scene::DeltaTime();
+
+    if (m_freezeField->remainingTime <= 0.0)
+    {
+        m_freezeField.reset();
+        return;
+    }
+
+    applyFreezeEffect();
+}
+
+void SceneGame::applyFreezeEffect()
+{
+    const Vec3& centerPos = m_freezeField->position;
+
+    for (const auto& object : m_gameObjects)
+    {
+        // 既に凍結済みか確認
+        bool alreadyFrozen = std::any_of(m_frozenObjects.begin(), m_frozenObjects.end(),
+            [&object](const std::weak_ptr<GameObject>& weakObj) {
+                return weakObj.lock() == object;
+            });
+
+        if (alreadyFrozen)
+            continue;
+
+        auto body = object->getPhysicsBody();
+        if (!body || body->getGroup() != GROUP_ATTRACTABLE)
+            continue;
+
+        // Aliveの敵のみ凍結
+        bool isEnemyAlive = true;
+        if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+        {
+            isEnemyAlive = enemy->isAlive();
+        }
+        else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+        {
+            isEnemyAlive = enemyNormal->isAlive();
+        }
+
+        if (!isEnemyAlive)
+            continue;
+
+        const Vec3 objPos = object->getPosition();
+        const double distanceSq = (centerPos - objPos).lengthSq();
+
+        if (distanceSq < (m_freezeField->radius * m_freezeField->radius))
+        {
+            body->setKinematic(true);
+            m_frozenObjects.push_back(object);
+        }
+    }
+}
+
+void SceneGame::unfreezeObject(std::shared_ptr<GameObject> obj)
+{
+    auto it = std::find_if(m_frozenObjects.begin(), m_frozenObjects.end(),
+        [&obj](const std::weak_ptr<GameObject>& weakObj) {
+            return weakObj.lock() == obj;
+        });
+
+    if (it != m_frozenObjects.end())
+    {
+        if (auto body = obj->getPhysicsBody())
+        {
+            body->setKinematic(false);
+        }
+        m_frozenObjects.erase(it);
+    }
+}
+
+void SceneGame::throwWind(const Vec3& targetPos)
+{
+    m_windSound.playOneShot();
+    const Vec3 boxCenter = Vec3{targetPos.x, WindBoxHeight / 2.0, targetPos.z};
+    const Vec3 boxSize = Vec3{WindBoxWidth, WindBoxHeight, WindBoxDepth};
+
+    m_windField = WindField{
+        .area = Box{boxCenter, boxSize},
+        .force = Vec3{0, 0, WindForce},
+        .remainingTime = WindDuration,
+    };
+}
+
+void SceneGame::updateWindField()
+{
+    if (!m_windField)
+        return;
+
+    m_windField->remainingTime -= Scene::DeltaTime();
+
+    if (m_windField->remainingTime <= 0.0)
+    {
+        m_windField.reset();
+        return;
+    }
+
+    applyWindEffect();
+}
+
+void SceneGame::applyWindEffect()
+{
+    const Vec3 windForce = m_windField->force;
+
+    for (const auto& object : m_gameObjects)
+    {
+        if (auto body = object->getPhysicsBody();
+            body && body->getGroup() == GROUP_ATTRACTABLE)
+        {
+            // Aliveの敵のみ風の影響を受ける
+            bool isEnemyAlive = true;
+            if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+            {
+                isEnemyAlive = enemy->isAlive();
+            }
+            else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+            {
+                isEnemyAlive = enemyNormal->isAlive();
+            }
+
+            if (!isEnemyAlive)
+                continue;
+
+            if (m_windField->area.contains(object->getPosition()))
+            {
+                const Vec3 currentVelocity = body->getLinearVelocity();
+                const double vz = currentVelocity.z;
+
+                // 空気抵抗
+                const Vec3 dragForce = Vec3(0, 0, -airResistance * Abs(vz));
+
+                body->applyForce(windForce + dragForce);
             }
         }
     }
