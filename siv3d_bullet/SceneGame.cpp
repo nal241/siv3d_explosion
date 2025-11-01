@@ -562,12 +562,14 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         {
             int damage = static_cast<int>(falloff * 100);
             enemy->takeDamage(damage);
+            unfreezeObject(object);
             Logger << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
             int damage = static_cast<int>(falloff * 100);
             enemyNormal->takeDamage(damage);
+            unfreezeObject(object);
             Logger << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
         }
         else
@@ -675,6 +677,20 @@ void SceneGame::applyGravityFieldForce()
     {
         if (auto body = object->getPhysicsBody(); body && body->getGroup() == GROUP_ATTRACTABLE)
         {
+            // Aliveの敵のみ吸引
+            bool isEnemyAlive = true;
+            if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+            {
+                isEnemyAlive = enemy->isAlive();
+            }
+            else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+            {
+                isEnemyAlive = enemyNormal->isAlive();
+            }
+
+            if (!isEnemyAlive)
+                continue;
+
             const Vec3 objPos = object->getPosition();
             const Vec3 direction = (hitPoint - objPos);
             const double distanceSq = direction.lengthSq();
@@ -701,7 +717,21 @@ void SceneGame::throwFreeze(const Vec3& targetPos)
 void SceneGame::updateFreezeField()
 {
     if (!m_freezeField)
+    {
+        // 凍結解除
+        for (auto weakObj : m_frozenObjects)
+        {
+            if (auto obj = weakObj.lock())
+            {
+                if (auto body = obj->getPhysicsBody())
+                {
+                    body->setKinematic(false);
+                }
+            }
+        }
+        m_frozenObjects.clear();
         return;
+    }
 
     m_freezeField->remainingTime -= Scene::DeltaTime();
 
@@ -720,18 +750,58 @@ void SceneGame::applyFreezeEffect()
 
     for (const auto& object : m_gameObjects)
     {
-        if (auto body = object->getPhysicsBody();
-            body && body->getGroup() == GROUP_ATTRACTABLE)
-        {
-            const Vec3 objPos = object->getPosition();
-            const double distanceSq = (centerPos - objPos).lengthSq();
+        // 既に凍結済みか確認
+        bool alreadyFrozen = std::any_of(m_frozenObjects.begin(), m_frozenObjects.end(),
+            [&object](const std::weak_ptr<GameObject>& weakObj) {
+                return weakObj.lock() == object;
+            });
 
-            if (distanceSq < (m_freezeField->radius * m_freezeField->radius))
-            {
-                body->setLinearVelocity(Vec3::Zero());
-                body->setAngularVelocity(Vec3::Zero());
-            }
+        if (alreadyFrozen)
+            continue;
+
+        auto body = object->getPhysicsBody();
+        if (!body || body->getGroup() != GROUP_ATTRACTABLE)
+            continue;
+
+        // Aliveの敵のみ凍結
+        bool isEnemyAlive = true;
+        if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+        {
+            isEnemyAlive = enemy->isAlive();
         }
+        else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+        {
+            isEnemyAlive = enemyNormal->isAlive();
+        }
+
+        if (!isEnemyAlive)
+            continue;
+
+        const Vec3 objPos = object->getPosition();
+        const double distanceSq = (centerPos - objPos).lengthSq();
+
+        if (distanceSq < (m_freezeField->radius * m_freezeField->radius))
+        {
+            body->setKinematic(true);
+            m_frozenObjects.push_back(object);
+        }
+    }
+}
+
+void SceneGame::unfreezeObject(std::shared_ptr<GameObject> obj)
+{
+    auto it = std::find_if(m_frozenObjects.begin(), m_frozenObjects.end(),
+        [&obj](const std::weak_ptr<GameObject>& weakObj) {
+            return weakObj.lock() == obj;
+        });
+
+    if (it != m_frozenObjects.end())
+    {
+        if (auto body = obj->getPhysicsBody())
+        {
+            body->setKinematic(false);
+        }
+        m_frozenObjects.erase(it);
     }
 }
 
@@ -773,6 +843,20 @@ void SceneGame::applyWindEffect()
         if (auto body = object->getPhysicsBody();
             body && body->getGroup() == GROUP_ATTRACTABLE)
         {
+            // Aliveの敵のみ風の影響を受ける
+            bool isEnemyAlive = true;
+            if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+            {
+                isEnemyAlive = enemy->isAlive();
+            }
+            else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+            {
+                isEnemyAlive = enemyNormal->isAlive();
+            }
+
+            if (!isEnemyAlive)
+                continue;
+
             if (m_windField->area.contains(object->getPosition()))
             {
                 const Vec3 currentVelocity = body->getLinearVelocity();

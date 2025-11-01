@@ -48,6 +48,7 @@ protected:
     // Freezeアイテム
     void updateFreezeField();
     void applyFreezeEffect();
+    void unfreezeObject(std::shared_ptr<GameObject> obj);
 
     // Windアイテム用
     void updateWindField();
@@ -140,6 +141,7 @@ protected:
         double radius;
     };
     s3d::Optional<FreezeField> m_freezeField;
+    s3d::Array<std::weak_ptr<GameObject>> m_frozenObjects;
 
     // Windアイテム用
     struct WindField

@@ -25,6 +25,7 @@ public:
     void update() override;
     void takeDamage(int damage);
     bool shouldBeRemoved() const override { return m_state == State::Dead; }
+    bool isAlive() const { return m_state == State::Alive; }
     int getHealth() const { return m_health; }
     int getMaxHealth() const { return m_maxHealth; }
 
