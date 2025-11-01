@@ -43,11 +43,11 @@ namespace
     constexpr double ExplosionMinDistance = 0.01;
 
     // === 爆発ダメージ設定 ===
-    constexpr int ExplosionBaseDamage = 100;  // 爆発の基本ダメージ
+    constexpr int ExplosionBaseDamage = 100; // 爆発の基本ダメージ
 
     // === 敵の体力設定 ===
     constexpr int NormalEnemyMaxHealth = 100;    // ノーマル敵の体力
-    constexpr int ExplosiveEnemyMaxHealth = 100;  // 爆発敵の体力
+    constexpr int ExplosiveEnemyMaxHealth = 100; // 爆発敵の体力
 
     // === 画面揺れ設定 ===
     constexpr double ShakeSpeed = 10.0;
@@ -83,13 +83,19 @@ SceneGame::SceneGame(const InitData& init)
 
 void SceneGame::update()
 {
-    updateCamera();
     updateInput();
     updateUI();
-    updateItems();
-    updateGameObjects();
+    updateGameLogic();
     updatePhysics();
     updateParticleSystem();
+    updateAudio();
+    updateCamera();
+}
+
+void SceneGame::updateGameLogic()
+{
+    updateItems();
+    updateGameObjects();
     updateSpawn();
     updateCombo();
     removeObjects();
@@ -414,8 +420,8 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
     createExplosionParticles(request.position, request.radius);
     applyExplosionForce(request);
 
-    // サウンド再生
-    m_explosionSound.playOneShot();
+    // 爆発回数をカウント（音は後で再生）
+    m_explosionCountInInterval++;
 
     // 画面揺れを開始
     shake(ExplosionShakeDuration, ExplosionShakeMagnitude);
@@ -671,4 +677,29 @@ double SceneGame::getComboMultiplier() const
         return 1.0;
     }
     return 1.0 + (m_comboCount - 1) * 0.5;
+}
+
+// 音響管理
+
+void SceneGame::updateAudio() { updateExplosionSound(); }
+
+void SceneGame::updateExplosionSound()
+{
+    // 時間経過をチェック
+    if (m_explosionSoundTimer.sF() >= m_explosionSoundInterval)
+    {
+        // 間隔内に爆発があれば音を再生
+        if (m_explosionCountInInterval > 0)
+        {
+            // 爆発回数に応じて音量を調整（上限は1.0）
+            const double volume = Math::Min(1.0, 0.3 + m_explosionCountInInterval * 0.2);
+            m_explosionSound.playOneShot(volume);
+
+            // カウンタをリセット
+            m_explosionCountInInterval = 0;
+        }
+
+        // タイマーをリセット
+        m_explosionSoundTimer.restart();
+    }
 }

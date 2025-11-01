@@ -17,14 +17,24 @@ public:
 
 protected:
     // 更新処理を機能ごとに分割
-    virtual void updateCamera();
     virtual void updateInput();
-    virtual void updatePhysics();
-    virtual void updateGameObjects();
-    virtual void updateParticleSystem();
-    virtual void updateSpawn();
     virtual void updateUI();
-    virtual void updateItems();
+    virtual void updateGameLogic();
+    virtual void updatePhysics();
+    virtual void updateAudio();
+    virtual void updateCamera();
+
+    // updateGameLogic内で呼ばれる内部メソッド
+    void updateItems();
+    void updateGameObjects();
+    void updateSpawn();
+    void updateCombo();
+
+    // updateAudio内で呼ばれる内部メソッド
+    void updateExplosionSound();
+
+    // その他の更新メソッド
+    void updateParticleSystem();
     // ヘルパーメソッド
     void removeObjects();
     void createStage();
@@ -97,6 +107,11 @@ protected:
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
 
+    // 爆発音の管理（うねり防止）
+    Stopwatch m_explosionSoundTimer{StartImmediately::Yes};
+    int m_explosionCountInInterval = 0;     // 間隔内の爆発回数
+    double m_explosionSoundInterval = 0.05; // 音再生の最小間隔（秒）
+
     // UI用フォント
     s3d::Font m_titleFont{40, s3d::Typeface::Bold};
     s3d::Font m_instructionFont{24};
@@ -121,8 +136,7 @@ protected:
     int m_maxCombo = 0;             // 最大コンボ数
     double m_comboTimeWindow = 2.0; // コンボ継続判定時間（秒）
     Stopwatch m_comboTimer{StartImmediately::No};
-    void updateCombo();             // コンボのタイムアウト処理
-    void incrementCombo();          // コンボをカウントアップ
-    void resetCombo();              // コンボをリセット
+    void incrementCombo();             // コンボをカウントアップ
+    void resetCombo();                 // コンボをリセット
     double getComboMultiplier() const; // コンボ倍率を取得
 };
