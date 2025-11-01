@@ -9,7 +9,7 @@ void ParticleSystem::update(double deltaTime)
             continue;
         }
 
-        p.velocity += Gravity * deltaTime;
+        p.velocity += p.acceleration * deltaTime;
         p.position += p.velocity * deltaTime;
         p.life -= deltaTime;
 

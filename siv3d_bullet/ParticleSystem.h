@@ -6,6 +6,7 @@ struct Particle3D
 {
     s3d::Vec3 position;
     s3d::Vec3 velocity;
+    s3d::Vec3 acceleration;
     s3d::ColorF color;
     double size;
     double life; // 残り寿命
@@ -24,5 +25,4 @@ public:
 
 private:
     s3d::Array<Particle3D> m_particles;
-    static constexpr s3d::Vec3 Gravity{0, -5.0, 0};
 };
