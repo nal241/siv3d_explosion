@@ -41,6 +41,18 @@ namespace
     constexpr double FreezeRadius = 5.0;
     constexpr double FreezeDuration = 8.0;
 
+    // === 氷柱エフェクト設定 ===
+    constexpr int32 MinSpikeCount = 8;
+    constexpr int32 MaxSpikeCount = 12;
+    constexpr double MinSpikeHeight = 1.5;
+    constexpr double MaxSpikeHeight = 2.5;
+    constexpr double MinSpikeRadius = 0.2;
+    constexpr double MaxSpikeRadius = 0.4;
+    constexpr double SpikeGrowDuration = 0.5;
+    constexpr double SpikeDirectionRandomness = 0.5;
+    constexpr double SpikeAlpha = 0.6;
+
+
     // 風の設定
     constexpr double WindBoxWidth = 8.0;
     constexpr double WindBoxHeight = 2.0;
@@ -285,6 +297,23 @@ void SceneGame::draw() const
         }
 
         m_particleSystem.draw();
+
+        // 氷柱の描画
+        if (!m_iceSpikes.isEmpty())
+        {
+            const ScopedRenderStates3D blend{BlendState::Additive};
+            for (const auto& spike : m_iceSpikes)
+            {
+                const double t = Min(spike.timer.sF() / SpikeGrowDuration, 1.0);
+                const double h = EaseOutBack(t) * spike.targetHeight;
+
+                const Vec3 from = spike.position;
+                const Vec3 to = spike.position + spike.direction * h;
+
+                Cone{from, to, spike.radius}
+                    .draw(FreezeEffectColor.withA(SpikeAlpha));
+            }
+        }
 
         // --- デバッグ描画 ---
         // 吸引範囲の可視化
@@ -695,12 +724,34 @@ void SceneGame::throwFreeze(const Vec3& targetPos)
         .remainingTime = FreezeDuration,
         .radius = FreezeRadius,
     };
+
+    // 氷柱をランダム生成
+    const int spikeCount = Random(MinSpikeCount, MaxSpikeCount);
+    for (int i = 0; i < spikeCount; ++i)
+    {
+        // 範囲内のランダム位置
+        const Vec2 offset = RandomVec2(Circle(FreezeRadius * 0.8));
+        const Vec3 direction = Vec3{Random(-SpikeDirectionRandomness, SpikeDirectionRandomness),
+                                    1.0,
+                                    Random(-SpikeDirectionRandomness, SpikeDirectionRandomness)}.normalized();
+
+        m_iceSpikes.push_back(IceSpike{
+            .position = targetPos + Vec3{offset.x, 0, offset.y},
+            .direction = direction,
+            .targetHeight = Random(MinSpikeHeight, MaxSpikeHeight),
+            .radius = Random(MinSpikeRadius, MaxSpikeRadius),
+            .timer = Stopwatch{StartImmediately::Yes}
+        });
+    }
 }
 
 void SceneGame::updateFreezeField()
 {
     if (!m_freezeField)
+    {
+        m_iceSpikes.clear(); // Freeze終了時に氷柱をクリア
         return;
+    }
 
     m_freezeField->remainingTime -= Scene::DeltaTime();
 
