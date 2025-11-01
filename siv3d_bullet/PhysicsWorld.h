@@ -125,8 +125,7 @@ public:
                                       s3d::Quaternion localRot = s3d::Quaternion::Identity());
 
     /// @brief コンパウンドシェイプをビルドしてPhysicsBodyを生成
-    std::unique_ptr<PhysicsBody> build(s3d::Vec3 position, float mass,
-                                       CollisionGroup group, CollisionMask mask);
+    std::unique_ptr<PhysicsBody> build(s3d::Vec3 position, float mass, CollisionGroup group, CollisionMask mask);
 
 private:
     struct ChildShapeData
