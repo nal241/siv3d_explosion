@@ -68,6 +68,8 @@ protected:
     void createExplosionParticles(const s3d::Vec3& center, double radius);
     void applyExplosionForce(const ExplosionRequest& request);
 
+    void createGravityParticles(const Vec3& center, double radius);
+
     void createFreezeParticles(const Vec3& center);
 
 protected:
@@ -143,6 +145,8 @@ protected:
     };
     s3d::Optional<GravityField> m_gravityField;
 
+    Stopwatch m_gravityParticleTimer;
+
     // Freezeアイテム
     struct FreezeField
     {
@@ -175,6 +179,7 @@ protected:
 
     // テクスチャ
     Texture m_frostTexture;
+    Texture m_darknessTexture;
 
     // コンボシステム
     int m_comboCount = 0;           // 現在のコンボ数
