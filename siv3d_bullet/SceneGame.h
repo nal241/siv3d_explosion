@@ -68,6 +68,8 @@ protected:
     void createExplosionParticles(const s3d::Vec3& center, double radius);
     void applyExplosionForce(const ExplosionRequest& request);
 
+    void createFreezeParticles(const Vec3& center);
+
 protected:
     // 画面揺れを開始する
     void shake(double duration, double magnitude);
