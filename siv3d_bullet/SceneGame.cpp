@@ -76,6 +76,17 @@ namespace
     constexpr double MinParticleSaturation = 0.7;
     constexpr double MaxParticleSaturation = 1.0;
 
+    // === 氷結晶パーティクル設定 ===
+    constexpr int32 FreezeParticleCount = 50;
+    constexpr double FreezeParticleMinSpeedY = 1.0;
+    constexpr double FreezeParticleMaxSpeedY = 5.0;
+    constexpr double FreezeParticleHorizontalRadius = 5.0;
+    const ColorF FreezeParticleColor{0.7, 0.9, 1.0};
+    constexpr double FreezeParticleMinSize = 0.01;
+    constexpr double FreezeParticleMaxSize = 0.05;
+    constexpr double FreezeParticleMinLife = 1.0;
+    constexpr double FreezeParticleMaxLife = 1.5;
+
     // === 爆発の物理パラメータ ===
     constexpr double ExplosionBasePower = 10.0;
     constexpr double ExplosionMinDistance = 0.01;
@@ -610,6 +621,24 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
     s3d::Logger << U"   Hit {} objects"_fmt(hitCount);
 }
 
+void SceneGame::createFreezeParticles(const Vec3& center)
+{
+    for (int i = 0; i < FreezeParticleCount; ++i)
+    {
+        const Vec2 horizontal = RandomVec2(Circle{FreezeParticleHorizontalRadius}); // 横方向のランダム
+        const Vec3 velocity{horizontal.x, Random(FreezeParticleMinSpeedY, FreezeParticleMaxSpeedY), horizontal.y};
+
+        m_particleSystem.add(Particle3D{
+            .position = center,
+            .velocity = velocity,
+            .color = FreezeParticleColor,
+            .size = Random(FreezeParticleMinSize, FreezeParticleMaxSize),
+            .life = Random(FreezeParticleMinLife, FreezeParticleMaxLife),
+            .active = true
+        });
+    }
+}
+
 void SceneGame::shake(double duration, double magnitude)
 {
     m_shakeDuration = duration;
@@ -723,6 +752,8 @@ void SceneGame::applyGravityFieldForce()
 void SceneGame::throwFreeze(const Vec3& targetPos)
 {
     m_freezeSound.playOneShot();
+    createFreezeParticles(targetPos);
+
     m_freezeField = FreezeField{
         .position = targetPos,
         .remainingTime = FreezeDuration,
