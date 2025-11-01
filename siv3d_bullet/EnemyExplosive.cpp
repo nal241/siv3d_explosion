@@ -60,7 +60,7 @@ std::shared_ptr<EnemyExplosive> EnemyExplosive::Create(PhysicsWorld& world, cons
 
     // 半径に応じてモデルのスケールを調整
     const double scale = params.radius / 0.5;
-    auto renderer = std::make_unique<ModelRenderer>(model, Palette::White, scale, params.color);
+    auto renderer = std::make_unique<ModelRenderer>(model, params.color, scale);
 
     auto enemy = std::make_shared<EnemyExplosive>(std::move(body), std::move(renderer), params.maxHealth,
                                                   params.explosionRadius);

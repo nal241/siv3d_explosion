@@ -128,13 +128,7 @@ namespace
 
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera, m_model), m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
-      m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"}, m_launchBombSound{U"LicensedAsset/launchBomb.mp3"},
-      m_gravitySound{U"LicensedAsset/gravity.mp3"}, m_freezeSound{U"LicensedAsset/freeze.mp3"},
-      m_windSound{U"LicensedAsset/wind.mp3"}, m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes},
-      m_frostTexture{U"LicensedAsset/Snow.jpg", TextureDesc::MippedSRGB},
-      m_darknessTexture{U"LicensedAsset/darkness.jpg", TextureDesc::MippedSRGB},
-      m_windTexture{U"LicensedAsset/wind.jpg", TextureDesc::MippedSRGB}
+      m_player(&m_camera)
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
@@ -639,7 +633,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
-            enemyNormal->takeDamage(damage);
+            enemyNormal->takeDamage(ExplosionBaseDamage);
             unfreezeObject(object);
         }
     }
@@ -1145,109 +1139,6 @@ void SceneGame::updateExplosionSound()
         // タイマーをリセット
         m_explosionSoundTimer.restart();
     }
-}
-
-// コンボシステム
-
-void SceneGame::updateCombo()
-{
-    // コンボタイマーが動いていて、タイムアウトしたらコンボリセット
-    if (m_comboTimer.isStarted() && m_comboTimer.sF() >= m_comboTimeWindow)
-    {
-        resetCombo();
-    }
-
-    // UIにコンボ情報を渡す
-    if (m_comboCount > 0)
-    {
-        const double remainingTime = m_comboTimeWindow - m_comboTimer.sF();
-        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime, m_comboScore);
-    }
-    else
-    {
-        m_ui.setComboInfo(0, 1.0, 0.0, 0);
-    }
-}
-
-void SceneGame::incrementCombo()
-{
-    m_comboCount++;
-    m_comboTimer.restart();
-
-    // 最大コンボを更新
-    if (m_comboCount > m_maxCombo)
-    {
-        m_maxCombo = m_comboCount;
-    }
-
-    Print << U"COMBO: {}"_fmt(m_comboCount);
-}
-
-void SceneGame::resetCombo()
-{
-    if (m_comboCount > 0)
-    {
-        Print << U"Combo ended: {}"_fmt(m_comboCount);
-    }
-    m_comboCount = 0;
-    m_comboScore = 0; // コンボスコアもリセット
-    m_comboTimer.reset();
-}
-
-double SceneGame::getComboMultiplier() const
-{
-    if (m_comboCount <= 1)
-    {
-        return 1.0;
-    }
-    return 1.0 + (m_comboCount - 1) * 0.5;
-}
-
-// 音響管理
-
-void SceneGame::updateAudio() { updateExplosionSound(); }
-
-void SceneGame::updateExplosionSound()
-{
-    // 時間経過をチェック
-    if (m_explosionSoundTimer.sF() >= m_explosionSoundInterval)
-    {
-        // 間隔内に爆発があれば音を再生
-        if (m_explosionCountInInterval > 0)
-        {
-            // 爆発回数に応じて音量を調整（上限は1.0）
-            const double volume = Math::Min(1.0, 0.3 + m_explosionCountInInterval * 0.2);
-            m_explosionSound.playOneShot(volume);
-
-            // カウンタをリセット
-            m_explosionCountInInterval = 0;
-        }
-
-        // タイマーをリセット
-        m_explosionSoundTimer.restart();
-    }
-}
-
-void SceneGame::updateBombSmoke()
-{
-    if (m_smokingBombs.isEmpty())
-        return;
-
-    // パーティクルの定期生成
-    if (m_bombSmokeTimer.sF() >= 0.05)
-    {
-        for (auto& weakBomb : m_smokingBombs)
-        {
-            if (auto bomb = weakBomb.lock())
-            {
-                createBombSmokeParticles(bomb->getPosition());
-            }
-        }
-        m_bombSmokeTimer.restart();
-    }
-
-    // 無効になったBombを削除
-    m_smokingBombs.remove_if([](const std::weak_ptr<Bomb>& weakBomb) { return weakBomb.expired(); });
 }
 
 void SceneGame::updateBombSmoke()
