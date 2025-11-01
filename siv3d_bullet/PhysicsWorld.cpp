@@ -127,33 +127,15 @@ OverlapResult PhysicsWorld::overlapSphere(s3d::Vec3 center, double radius, Colli
         btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0, int partId0, int index0,
                                  const btCollisionObjectWrapper* colObj1, int partId1, int index1) override
         {
-            // colObj1側をチェック
-            const btCollisionObject* collisionObj1 = colObj1->getCollisionObject();
-            const btRigidBody* body1 = btRigidBody::upcast(collisionObj1);
-
-            if (body1 && body1->getUserPointer())
+            const btRigidBody* body = btRigidBody::upcast(colObj1->getCollisionObject());
+            if (body && body->getUserPointer())
             {
-                PhysicsBody* physicsBody = static_cast<PhysicsBody*>(body1->getUserPointer());
+                PhysicsBody* physicsBody = static_cast<PhysicsBody*>(body->getUserPointer());
 
+                // マスクフィルタリング
                 if ((physicsBody->getGroup() & filterMask) != 0)
                 {
                     results.push_back(physicsBody->getOwner());
-                }
-            }
-            else
-            {
-                // colObj0側もチェック（コンパウンドシェイプの場合）
-                const btCollisionObject* collisionObj0 = colObj0->getCollisionObject();
-                const btRigidBody* body0 = btRigidBody::upcast(collisionObj0);
-
-                if (body0 && body0->getUserPointer())
-                {
-                    PhysicsBody* physicsBody = static_cast<PhysicsBody*>(body0->getUserPointer());
-
-                    if ((physicsBody->getGroup() & filterMask) != 0)
-                    {
-                        results.push_back(physicsBody->getOwner());
-                    }
                 }
             }
             return 0;
@@ -163,33 +145,7 @@ OverlapResult PhysicsWorld::overlapSphere(s3d::Vec3 center, double radius, Colli
     OverlapCallback callback(mask);
     m_dynamicsWorld->contactTest(&testObject, callback);
 
-    // 重複を除去（コンパウンドシェイプの複数の子シェイプが検出された場合）
-    s3d::Array<std::weak_ptr<GameObject>> uniqueResults;
-    for (const auto& weakObj : callback.results)
-    {
-        auto obj = weakObj.lock();
-        if (!obj)
-            continue;
-
-        // 既に追加済みかチェック
-        bool alreadyAdded = false;
-        for (const auto& existingWeakObj : uniqueResults)
-        {
-            auto existingObj = existingWeakObj.lock();
-            if (existingObj && existingObj == obj)
-            {
-                alreadyAdded = true;
-                break;
-            }
-        }
-
-        if (!alreadyAdded)
-        {
-            uniqueResults.push_back(weakObj);
-        }
-    }
-
-    return OverlapResult{std::move(uniqueResults)};
+    return OverlapResult{std::move(callback.results)};
 }
 
 // 箱を作成する
