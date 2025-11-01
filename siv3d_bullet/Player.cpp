@@ -73,7 +73,5 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world, s3d::Array<std::
     {
         newGameObject->getPhysicsBody()->applyImpulse(camForward * LaunchImpulse);
         objects.push_back(std::move(newGameObject));
-        // 発射音を再生
-        m_shootSound.playOneShot();
     }
 }

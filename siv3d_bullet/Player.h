@@ -27,8 +27,6 @@ private:
 
     void launchObject(ObjectType type, PhysicsWorld& world, s3d::Array<std::shared_ptr<GameObject>>& objects);
 
-    // 効果音ラボから音源は取得
-    Audio m_shootSound{U"example/sounds/shoot.mp3"};
     BasicCamera3D* m_camera = nullptr;
 
     Inputs m_inputs;
