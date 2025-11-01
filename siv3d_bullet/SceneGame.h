@@ -100,10 +100,8 @@ protected:
     double m_shakeNoiseTime = 0.0;
     s3d::Vec3 m_noiseSeeds;
 
-    Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
-
-    s3d::Model m_enemyNormalModel;
-    s3d::Model m_enemyExplosiveModel;
+    s3d::Model m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"};
+    s3d::Model m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"};
 
     Player m_player;
 
@@ -113,25 +111,21 @@ protected:
     Stopwatch m_enemyExplosiveSpawnTimer{StartImmediately::Yes};
     double m_explosiveSpawnInterval = 1.0; // Enemyは低頻度
 
-    double m_spawnInterval = 3.0;
     double m_roadWidth = 0.0;
 
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
-    s3d::Audio m_launchBombSound;
-    s3d::Audio m_gravitySound;
-    s3d::Audio m_freezeSound;
-    s3d::Audio m_windSound;
-    s3d::Audio m_bgm;
+    s3d::Audio m_launchBombSound{U"LicensedAsset/launchBomb.mp3"};
+    s3d::Audio m_gravitySound{U"LicensedAsset/gravity.mp3"};
+    s3d::Audio m_freezeSound{U"LicensedAsset/freeze.mp3"};
+    s3d::Audio m_windSound{U"LicensedAsset/wind.mp3"};
+    s3d::Audio m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes};
 
     // 爆発音の管理（うねり防止）
     Stopwatch m_explosionSoundTimer{StartImmediately::Yes};
     int m_explosionCountInInterval = 0;     // 間隔内の爆発回数
     double m_explosionSoundInterval = 0.05; // 音再生の最小間隔（秒）
 
-    // UI用フォント
-    s3d::Font m_titleFont{40, s3d::Typeface::Bold};
-    s3d::Font m_instructionFont{24};
 
     // デバッグ描画の有効/無効
     bool m_debugDrawEnabled = true;
