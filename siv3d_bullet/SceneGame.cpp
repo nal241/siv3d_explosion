@@ -660,7 +660,8 @@ void SceneGame::createGravityParticles(const Vec3& center, double radius)
                                         .color = ColorF{0.8, 0.4, 1.0}, // 紫色
                                         .size = Random(0.15, 0.25),
                                         .life = Random(1.0, 1.5),
-                                        .active = true});
+                                        .active = true,
+                                        .killZone = Sphere{center, 0.2}});
     }
 }
 

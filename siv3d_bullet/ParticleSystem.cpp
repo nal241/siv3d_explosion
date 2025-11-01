@@ -13,6 +13,11 @@ void ParticleSystem::update(double deltaTime)
         p.position += p.velocity * deltaTime;
         p.life -= deltaTime;
 
+        if (p.killZone && p.killZone->contains(p.position))
+        {
+            p.active = false;
+        }
+
         if (p.life <= 0.0)
         {
             p.active = false;

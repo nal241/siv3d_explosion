@@ -11,6 +11,7 @@ struct Particle3D
     double size;
     double life; // 残り寿命
     bool active;
+    s3d::Optional<s3d::Sphere> killZone;
 };
 
 class ParticleSystem
