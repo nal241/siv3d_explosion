@@ -538,11 +538,8 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
     const double radius = request.radius;
     auto explosionSource = request.source.lock();
 
-    s3d::Logger << U"   Applying force to objects...";
-
     // 範囲内のオブジェクトを取得して力を加える
     auto nearbyResult = m_world.overlapSphere(center, radius, MASK_ALL);
-    int32 hitCount = 0;
 
     for (auto weakObj : nearbyResult.hitObjects)
     {
@@ -577,27 +574,19 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         s3d::Vec3 force = normalizedDirection * explosionForce;
 
         body->applyImpulse(force);
-        hitCount++;
 
         // エネミーにダメージを与える
         if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
         {
             enemy->takeDamage(ExplosionBaseDamage);
             unfreezeObject(object);
-            Logger << U"  → Hit Enemy, damage: {}"_fmt(ExplosionBaseDamage);
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
             enemyNormal->takeDamage(ExplosionBaseDamage);
             unfreezeObject(object);
-            Logger << U"  → Hit EnemyNormal, damage: {}"_fmt(ExplosionBaseDamage);
-        }
-        else
-        {
-            Logger << U"  → Hit object, force: {:.2f}"_fmt(explosionForce);
         }
     }
-    s3d::Logger << U"   Hit {} objects"_fmt(hitCount);
 }
 
 void SceneGame::shake(double duration, double magnitude)
