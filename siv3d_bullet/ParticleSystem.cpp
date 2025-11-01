@@ -17,7 +17,6 @@ void ParticleSystem::update(double deltaTime)
         {
             p.active = false;
         }
-
         if (p.life <= 0.0)
         {
             p.active = false;

@@ -6,11 +6,10 @@ namespace
     constexpr double BombReloadTime = 5.0;
     constexpr double DefaultReloadTime = 3.0;
     constexpr double FreezeReloadTime = 8.0;
-}
+} // namespace
 
-UI::UI()
-    : m_selectedItem(ItemType::Bomb),
-      m_font(FontMethod::MSDF, 24, Typeface::Bold)
+UI::UI() : m_selectedItem(ItemType::Bomb), m_font(FontMethod::MSDF, 24, Typeface::Bold)
+
 {
     m_itemInfos.push_back({U"Bomb", Texture{U"💣"_emoji}, BombReloadTime});
     m_itemInfos.push_back({U"Gravity", Texture{U"🌀"_emoji}, DefaultReloadTime});
@@ -48,6 +47,7 @@ Rect UI::getButtonRect(int32 index) const
 
 void UI::draw() const
 {
+    // アイテムボタン描画
     for (int32 i = 0; i < static_cast<int32>(m_itemInfos.size()); ++i)
     {
         const Rect buttonRect = getButtonRect(i);
@@ -80,13 +80,15 @@ void UI::draw() const
         info.emoji.scaled(UI::IconScale).drawAt(buttonRect.center().x, buttonRect.y + UI::IconOffsetY);
 
         // アイテム名
-        m_font(info.name).drawAt(UI::NameFontSize, buttonRect.center().x, buttonRect.y + UI::ButtonHeight - UI::NameOffsetY, Palette::White);
+        m_font(info.name).drawAt(UI::NameFontSize, buttonRect.center().x,
+                                 buttonRect.y + UI::ButtonHeight - UI::NameOffsetY, Palette::White);
 
         // リロードバー
         if (!isReady)
         {
             const double progress = 1.0 - (reloadTimer / info.reloadTime);
-            const RectF reloadBar{buttonRect.x + UI::ReloadBarHPadding, buttonRect.y + UI::ReloadBarVOffsetY, (UI::ButtonWidth - UI::ReloadBarHPadding * 2) * progress, UI::ReloadBarHeight};
+            const RectF reloadBar{buttonRect.x + UI::ReloadBarHPadding, buttonRect.y + UI::ReloadBarVOffsetY,
+                                  (UI::ButtonWidth - UI::ReloadBarHPadding * 2) * progress, UI::ReloadBarHeight};
             reloadBar.draw(ColorF{0.9, 0.8, 0.3});
         }
 
@@ -95,6 +97,32 @@ void UI::draw() const
         {
             Cursor::RequestStyle(CursorStyle::Hand);
         }
+    }
+
+    // コンボ表示（2コンボ以上の時のみ）
+    if (m_displayComboCount > 1)
+    {
+        const double alpha = Math::Min(1.0, m_displayRemainingTime / 0.5); // 最後の0.5秒でフェードアウト
+
+        // コンボ数を大きく表示
+        const Vec2 comboPos{Scene::Center().x, 120};
+        const ColorF comboColor = HSV{30, 0.8, 1.0, alpha}; // オレンジ色
+
+        const String comboText = U"COMBO × {}"_fmt(m_displayComboCount);
+
+        // 影を描画
+        m_comboFont(comboText).drawAt(comboPos.movedBy(2, 2), ColorF{0, 0, 0, alpha * 0.5});
+        // メインテキスト
+        m_comboFont(comboText).drawAt(comboPos, comboColor);
+
+        // 倍率表示
+        const String multiplierText = U"× {:.1f}"_fmt(m_displayMultiplier);
+        m_multiplierFont(multiplierText).drawAt(comboPos.movedBy(0, 50), ColorF{1.0, 1.0, 0.5, alpha});
+
+        // コンボ期間中の総スコア表示
+        const String scoreText = U"+{} pts"_fmt(m_displayComboScore);
+        const ColorF scoreColor = HSV{120, 0.6, 1.0, alpha}; // 緑色
+        m_scoreFont(scoreText).drawAt(comboPos.movedBy(0, 90), scoreColor);
     }
 }
 
@@ -138,4 +166,12 @@ bool UI::canUseSelectedItem() const
     }
 
     return m_reloadTimers[index] <= 0.0;
+}
+
+void UI::setComboInfo(int comboCount, double multiplier, double remainingTime, int comboScore)
+{
+    m_displayComboCount = comboCount;
+    m_displayMultiplier = multiplier;
+    m_displayRemainingTime = remainingTime;
+    m_displayComboScore = comboScore;
 }

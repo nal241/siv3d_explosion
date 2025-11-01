@@ -23,7 +23,6 @@ class GameObject : public std::enable_shared_from_this<GameObject>
 public:
     using IDType = uint64;
 
-    // 仮想デストラクタは、ポリモーフィズムを安全に使うために必須
     virtual ~GameObject() = default;
 
     // moveのみ許可（コピー禁止）
@@ -53,10 +52,7 @@ public:
 
     PhysicsBody* getPhysicsBody() { return m_physicsBody.get(); }
 
-    void setRenderer(std::unique_ptr<IRenderer> renderer) { m_renderer = std::move(renderer); }
-
     // --- Static Factory Methods ---
-
     // パラメータ構造体
     struct BoxParams
     {

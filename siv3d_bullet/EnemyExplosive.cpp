@@ -58,11 +58,10 @@ std::shared_ptr<EnemyExplosive> EnemyExplosive::Create(PhysicsWorld& world, cons
     // 浮遊している
     body->setGravity({0., 0., 0.});
 
-    // body->setDamping(0.2f, 0.1f);
+    auto renderer = std::make_unique<ModelRenderer>(model);
 
-    auto renderer = std::make_unique<ModelRenderer>(model, params.color);
-
-    auto enemy = std::make_shared<EnemyExplosive>(std::move(body), std::move(renderer), params.maxHealth, params.explosionRadius);
+    auto enemy = std::make_shared<EnemyExplosive>(std::move(body), std::move(renderer), params.maxHealth,
+                                                  params.explosionRadius);
     enemy->getPhysicsBody()->setOwner(enemy->weak_from_this());
     enemy->m_initialX = params.position.x;
     return enemy;
@@ -82,7 +81,6 @@ void EnemyExplosive::applyPDControl()
     float hoverForceY = (error * hoverKpY) - (verticalVelocity * hoverKdY);
 
     // 左右
-
     auto currentX = currentPosition.x;
     auto errorX = m_initialX - currentX;
 

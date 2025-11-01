@@ -35,6 +35,9 @@ public:
 
     bool canUseSelectedItem() const;
 
+    // コンボ表示用（表示のみ担当）
+    void setComboInfo(int comboCount, double multiplier, double remainingTime, int comboScore = 0);
+
 private:
     Rect getButtonRect(int32 index) const;
 
@@ -63,4 +66,15 @@ private:
     static constexpr double ReloadBarHPadding = 5.0;
     static constexpr double ReloadBarVOffsetY = 5.0;
     static constexpr double ReloadBarHeight = 5.0;
+
+    // コンボ表示用のメンバ変数
+    int m_displayComboCount = 0;
+    double m_displayMultiplier = 1.0;
+    double m_displayRemainingTime = 0.0;
+    int m_displayComboScore = 0; // コンボ期間中の総スコア
+
+    // コンボ表示用のフォント
+    Font m_comboFont{40, Typeface::Bold};
+    Font m_multiplierFont{24};
+    Font m_scoreFont{32, Typeface::Bold};
 };

@@ -17,14 +17,24 @@ public:
 
 protected:
     // 更新処理を機能ごとに分割
-    virtual void updateCamera();
     virtual void updateInput();
-    virtual void updatePhysics();
-    virtual void updateGameObjects();
-    virtual void updateParticleSystem();
-    virtual void updateSpawn();
     virtual void updateUI();
-    virtual void updateItems();
+    virtual void updateGameLogic();
+    virtual void updatePhysics();
+    virtual void updateAudio();
+    virtual void updateCamera();
+
+    // updateGameLogic内で呼ばれる内部メソッド
+    void updateItems();
+    void updateGameObjects();
+    void updateSpawn();
+    void updateCombo();
+
+    // updateAudio内で呼ばれる内部メソッド
+    void updateExplosionSound();
+
+    // その他の更新メソッド
+    void updateParticleSystem();
     // ヘルパーメソッド
     void removeObjects();
     void createStage();
@@ -48,6 +58,7 @@ protected:
     // Freezeアイテム
     void updateFreezeField();
     void applyFreezeEffect();
+    void unfreezeObject(std::shared_ptr<GameObject> obj);
 
     // Windアイテム用
     void updateWindField();
@@ -100,10 +111,8 @@ protected:
     double m_shakeNoiseTime = 0.0;
     s3d::Vec3 m_noiseSeeds;
 
-    Texture m_uvChecker{U"example/texture/uv.png", TextureDesc::MippedSRGB};
-    Model m_model{U"model/coin.obj"};
-    s3d::Model m_enemyNormalModel;
-    s3d::Model m_enemyExplosiveModel;
+    s3d::Model m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"};
+    s3d::Model m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"};
 
     Player m_player;
 
@@ -113,20 +122,21 @@ protected:
     Stopwatch m_enemyExplosiveSpawnTimer{StartImmediately::Yes};
     double m_explosiveSpawnInterval = 1.0; // Enemyは低頻度
 
-    double m_spawnInterval = 3.0;
     double m_roadWidth = 0.0;
 
     ParticleSystem m_particleSystem;
     s3d::Audio m_explosionSound{U"example/explosion1.mp3"};
-    s3d::Audio m_launchBombSound;
-    s3d::Audio m_gravitySound;
-    s3d::Audio m_freezeSound;
-    s3d::Audio m_windSound;
-    s3d::Audio m_bgm;
+    s3d::Audio m_launchBombSound{U"LicensedAsset/launchBomb.mp3"};
+    s3d::Audio m_gravitySound{U"LicensedAsset/gravity.mp3"};
+    s3d::Audio m_freezeSound{U"LicensedAsset/freeze.mp3"};
+    s3d::Audio m_windSound{U"LicensedAsset/wind.mp3"};
+    s3d::Audio m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes};
 
-    // UI用フォント
-    s3d::Font m_titleFont{40, s3d::Typeface::Bold};
-    s3d::Font m_instructionFont{24};
+    // 爆発音の管理（うねり防止）
+    Stopwatch m_explosionSoundTimer{StartImmediately::Yes};
+    int m_explosionCountInInterval = 0;     // 間隔内の爆発回数
+    double m_explosionSoundInterval = 0.05; // 音再生の最小間隔（秒）
+
 
     // デバッグ描画の有効/無効
     bool m_debugDrawEnabled = true;
@@ -153,6 +163,7 @@ protected:
         double radius;
     };
     s3d::Optional<FreezeField> m_freezeField;
+    Array<std::weak_ptr<GameObject>> m_frozenObjects;
 
     // 氷柱エフェクト
     struct IceSpike
@@ -184,4 +195,13 @@ protected:
     Texture m_frostTexture;
     Texture m_darknessTexture;
     Texture m_windTexture;
+    // コンボシステム
+    int m_comboCount = 0;           // 現在のコンボ数
+    int m_maxCombo = 0;             // 最大コンボ数
+    int m_comboScore = 0;           // コンボ期間中の総スコア
+    double m_comboTimeWindow = 2.0; // コンボ継続判定時間（秒）
+    Stopwatch m_comboTimer{StartImmediately::No};
+    void incrementCombo();             // コンボをカウントアップ
+    void resetCombo();                 // コンボをリセット
+    double getComboMultiplier() const; // コンボ倍率を取得
 };

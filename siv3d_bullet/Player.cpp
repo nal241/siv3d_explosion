@@ -15,17 +15,9 @@ namespace
     constexpr float DynamicSphereRadius = 0.5f;
     constexpr float DynamicSphereMass = 0.3f;
     constexpr float DynamicSphereRestitution = 0.7f;
-
-    constexpr float CoinRadius = 0.5f;
-    constexpr float CoinHeight = 0.2f;
-    constexpr float CoinMass = 0.3f;
-    constexpr float CoinRestitution = 0.0f;
-    constexpr float CoinFriction = 0.4f;
-    constexpr float CoinLinearDamping = 0.3f;
-    constexpr float CoinAngularDamping = 0.8f;
 } // namespace
 
-Player::Player(BasicCamera3D* camera, Model& coinModel) : m_camera(camera), m_coinModel(coinModel) {}
+Player::Player(BasicCamera3D* camera) : m_camera(camera) {}
 
 void Player::handleInput(PhysicsWorld& world, s3d::Array<std::shared_ptr<GameObject>>& objects)
 {
@@ -39,11 +31,6 @@ void Player::handleInput(PhysicsWorld& world, s3d::Array<std::shared_ptr<GameObj
     if (m_inputs.shootSphere.down())
     {
         launchObject(ObjectType::Sphere, world, objects);
-    }
-
-    if (m_inputs.shootCoin.down())
-    {
-        launchObject(ObjectType::Coin, world, objects);
     }
 }
 
@@ -79,19 +66,6 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world, s3d::Array<std::
                                                                      .restitution = DynamicSphereRestitution,
                                                                      .group = GROUP_ATTRACTABLE});
         break;
-    case ObjectType::Coin:
-        newGameObject = GameObject::CreateCylinder(world,
-                                                   GameObject::CylinderParams{.radius = CoinRadius,
-                                                                              .height = CoinHeight,
-                                                                              .position = initialPos,
-                                                                              .mass = CoinMass,
-                                                                              .restitution = CoinRestitution,
-                                                                              .friction = CoinFriction,
-                                                                              .group = GROUP_ATTRACTABLE},
-                                                   std::make_unique<ModelRenderer>(m_coinModel));
-        // 追加設定: damping
-        newGameObject->getPhysicsBody()->setDamping(CoinLinearDamping, CoinAngularDamping);
-        break;
     }
 
     // 前方へインパルスを加える
@@ -99,7 +73,5 @@ void Player::launchObject(ObjectType type, PhysicsWorld& world, s3d::Array<std::
     {
         newGameObject->getPhysicsBody()->applyImpulse(camForward * LaunchImpulse);
         objects.push_back(std::move(newGameObject));
-        // 発射音を再生
-        m_shootSound.playOneShot();
     }
 }

@@ -136,6 +136,22 @@ void PhysicsBody::setCollisionCallback(std::function<void()> callback)
     m_body->setCollisionFlags(flags);
 }
 
+void PhysicsBody::setKinematic(bool kinematic)
+{
+    if (!m_body)
+        return;
+
+    int flags = m_body->getCollisionFlags();
+    if (kinematic)
+    {
+        flags |= btCollisionObject::CF_KINEMATIC_OBJECT;
+    }
+    else
+    {
+        flags &= ~btCollisionObject::CF_KINEMATIC_OBJECT;
+    }
+    m_body->setCollisionFlags(flags);
+}
 // 質量を取得
 float PhysicsBody::getMass() const
 {

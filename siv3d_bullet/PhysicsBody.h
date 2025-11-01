@@ -83,6 +83,7 @@ public:
     void setAngularFactor(const s3d::Vec3& ang);
     void setGravity(const s3d::Vec3& gravity);
     void setCollisionCallback(std::function<void()> callback);
+    void setKinematic(bool kinematic);
 
     float getMass() const;
 

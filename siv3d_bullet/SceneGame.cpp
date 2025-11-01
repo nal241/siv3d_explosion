@@ -11,7 +11,6 @@ namespace
     constexpr double WallThickness = 1.0;
 
     // Camera settings
-
     constexpr double CameraSpeed = 20.0;
     constexpr s3d::Vec3 CameraInitialPosition{0, 10, -5};
     constexpr s3d::Vec3 CameraInitialLookAt{0, 0, 40};
@@ -62,6 +61,7 @@ namespace
     constexpr double WindBoxDepth = 30.0;
     constexpr double WindForce = 15.0;
     constexpr double WindDuration = 3.0;
+    constexpr double airResistance = 0.2;
 
     // === 爆発パーティクル設定 ===
     constexpr int32 ParticleCount = 50;
@@ -91,6 +91,13 @@ namespace
     constexpr double ExplosionBasePower = 10.0;
     constexpr double ExplosionMinDistance = 0.01;
 
+    // === 爆発ダメージ設定 ===
+    constexpr int ExplosionBaseDamage = 100; // 爆発の基本ダメージ
+
+    // === 敵の体力設定 ===
+    constexpr int NormalEnemyMaxHealth = 100;    // ノーマル敵の体力
+    constexpr int ExplosiveEnemyMaxHealth = 100; // 爆発敵の体力
+
     // === 画面揺れ設定 ===
     constexpr double ShakeSpeed = 10.0;
     constexpr double ExplosionShakeDuration = 0.5;
@@ -99,20 +106,15 @@ namespace
 
 SceneGame::SceneGame(const InitData& init)
     : IScene(init), m_renderTexture{Scene::Size(), TextureFormat::R8G8B8A8_Unorm_SRGB, HasDepth::Yes},
-      m_player(&m_camera, m_model),
-      m_enemyNormalModel{U"LicensedAsset/normalEnemy.obj"},
-      m_enemyExplosiveModel{U"LicensedAsset/enemyExplosive.obj"},
-      m_launchBombSound{U"LicensedAsset/launchBomb.mp3"},
-      m_gravitySound{U"LicensedAsset/gravity.mp3"},
-      m_freezeSound{U"LicensedAsset/freeze.mp3"},
-      m_windSound{U"LicensedAsset/wind.mp3"},
-      m_bgm{U"LicensedAsset/BGM_LessVolume.m4a", Loop::Yes},
-      m_frostTexture{U"LicensedAsset/Snow.jpg", TextureDesc::MippedSRGB},
-      m_darknessTexture{U"LicensedAsset/darkness.jpg", TextureDesc::MippedSRGB},
-      m_windTexture{U"LicensedAsset/wind.jpg", TextureDesc::MippedSRGB}
+      m_player(&m_camera)
 {
     Model::RegisterDiffuseTextures(m_enemyNormalModel, TextureDesc::MippedSRGB);
     Model::RegisterDiffuseTextures(m_enemyExplosiveModel, TextureDesc::MippedSRGB);
+
+    // テクスチャの読み込み
+    m_frostTexture = Texture{U"LicensedAsset/frost.png"};
+    m_darknessTexture = Texture{U"LicensedAsset/darkness.png"};
+    m_windTexture = Texture{U"LicensedAsset/wind.png"};
 
     // stage作成
     createStage();
@@ -136,15 +138,22 @@ SceneGame::SceneGame(const InitData& init)
 
 void SceneGame::update()
 {
-    updateCamera();
     updateInput();
     updateUI();
+    updateGameLogic();
+    updatePhysics();
+    updateParticleSystem();
+    updateAudio();
+    updateCamera();
+}
+
+void SceneGame::updateGameLogic()
+{
     updateItems();
     updateGameObjects();
-    updatePhysics();
-    updateBombSmoke();
-    updateParticleSystem();
     updateSpawn();
+    updateCombo();
+    updateBombSmoke();
     removeObjects();
 }
 
@@ -176,9 +185,6 @@ void SceneGame::updateCamera()
 
 void SceneGame::updateInput()
 {
-    Logger << U"Object num:{}"_fmt(m_gameObjects.size());
-    Logger << Profiler::FPS();
-
     // プレイヤー入力
     m_player.handleInput(m_world, m_gameObjects);
 
@@ -290,8 +296,14 @@ void SceneGame::removeObjects()
 
             if (shouldRemove)
             {
-                // オブジェクト削除時にスコア加算
-                getData().score += 10;
+                // オブジェクト削除時にスコア加算（コンボ倍率適用）
+                const int baseScore = 10;
+                const double multiplier = getComboMultiplier();
+                const int finalScore = static_cast<int>(baseScore * multiplier);
+                getData().score += finalScore;
+
+                // コンボ期間中の総スコアに加算
+                m_comboScore += finalScore;
             }
 
             return shouldRemove;
@@ -305,9 +317,6 @@ void SceneGame::draw() const
     // [3D rendering]
     {
         const ScopedRenderTarget3D target{m_renderTexture.clear(m_backgroundColor)};
-
-        // for debug
-        // Plane{64}.draw(uvChecker);
 
         for (const auto& object : m_gameObjects)
         {
@@ -372,37 +381,40 @@ void SceneGame::draw() const
             const Vec3& targetPos = m_raycastResult.hitPoint;
 
             // インジケータのアルファ値を時間で変化させる
-            const double alpha = Periodic::Sine0_1(IndicatorPulseDuration) * (IndicatorPulseMaxAlpha - IndicatorPulseMinAlpha) + IndicatorPulseMinAlpha;
+            const double alpha =
+                Periodic::Sine0_1(IndicatorPulseDuration) * (IndicatorPulseMaxAlpha - IndicatorPulseMinAlpha) +
+                IndicatorPulseMinAlpha;
 
             // 中心のマーカー
             Sphere{targetPos, 0.1}.draw(Palette::Red);
 
-            const ScopedRenderStates3D blend{ BlendState::Additive };
+            const ScopedRenderStates3D blend{BlendState::Additive};
 
             switch (selectedItem)
             {
-                case ItemType::Bomb:
-                {
-                    Cylinder{targetPos, 5.0f, IndicatorHeight}.draw(BombIndicatorColor.withA(alpha));
-                    break;
-                }
-                case ItemType::Gravity:
-                {
-                    Cylinder{targetPos, AttractionRadius, IndicatorHeight}.draw(GravityEffectColor.withA(alpha));
-                    break;
-                }
-                case ItemType::Freeze:
-                {
-                    Cylinder{targetPos, FreezeRadius, IndicatorHeight}.draw(FreezeEffectColor.withA(alpha));
-                    break;
-                }
-                case ItemType::Wind:
-                {
-                    Box{targetPos, Vec3{WindBoxWidth, IndicatorHeight, WindBoxDepth}}.draw(WindEffectColor.withA(alpha));
-                    break;
-                }
+            case ItemType::Bomb:
+            {
+                Cylinder{targetPos, 5.0f, IndicatorHeight}.draw(BombIndicatorColor.withA(alpha));
+                break;
+            }
+            case ItemType::Gravity:
+            {
+                Cylinder{targetPos, AttractionRadius, IndicatorHeight}.draw(GravityEffectColor.withA(alpha));
+                break;
+            }
+            case ItemType::Freeze:
+            {
+                Cylinder{targetPos, FreezeRadius, IndicatorHeight}.draw(FreezeEffectColor.withA(alpha));
+                break;
+            }
+            case ItemType::Wind:
+            {
+                Box{targetPos, Vec3{WindBoxWidth, IndicatorHeight, WindBoxDepth}}.draw(WindEffectColor.withA(alpha));
+                break;
+            }
             }
         }
+
         // 10x10のグリッド、1マス1.0単位 （デバッグ）
         for (int i = -15; i <= 15; ++i)
         {
@@ -424,13 +436,6 @@ void SceneGame::draw() const
 
         // Transfer renderTexture to the current 2D scene (default scene)
         Shader::LinearToScreen(m_renderTexture);
-
-        // UI を描画
-        {
-            m_instructionFont(U"D：デバッグ描画 [{}]"_fmt(m_debugDrawEnabled ? U"ON" : U"OFF"))
-                .draw(30, 85, ColorF{1.0, 1.0, 1.0});
-            m_instructionFont(U"T：タイトルへ戻る").draw(30, 115, ColorF{1.0, 1.0, 1.0});
-        }
 
         // UIを描画
         m_ui.draw();
@@ -502,7 +507,7 @@ void SceneGame::spawnEnemy()
                                          EnemyExplosive::EnemyExplosiveParams{.position = Vec3{x, y, z},
                                                                               .radius = 0.5f,
                                                                               .mass = 2.0f,
-                                                                              .maxHealth = 50,
+                                                                              .maxHealth = ExplosiveEnemyMaxHealth,
                                                                               .color = HSV{0, 0.7, 0.9},
                                                                               .group = GROUP_ATTRACTABLE,
                                                                               .mask = MASK_ALL,
@@ -523,7 +528,7 @@ void SceneGame::spawnEnemyNormal()
                                       EnemyNormal::EnemyNormalParams{.position = Vec3{x, y, z},
                                                                      .radius = 1.0f,
                                                                      .mass = 1.0f,
-                                                                     .maxHealth = 50,
+                                                                     .maxHealth = NormalEnemyMaxHealth,
                                                                      .color = HSV{120, 0.7, 0.9},
                                                                      .group = GROUP_ATTRACTABLE,
                                                                      .mask = MASK_ALL},
@@ -532,12 +537,15 @@ void SceneGame::spawnEnemyNormal()
 
 void SceneGame::handleExplosion(const ExplosionRequest& request)
 {
+    // コンボをインクリメント
+    incrementCombo();
+
     // 爆発を実行（パーティクル + 物理的な力）
     createExplosionParticles(request.position, request.radius);
     applyExplosionForce(request);
 
-    // サウンド再生
-    m_explosionSound.playOneShot();
+    // 爆発回数をカウント（音は後で再生）
+    m_explosionCountInInterval++;
 
     // 画面揺れを開始
     shake(ExplosionShakeDuration, ExplosionShakeMagnitude);
@@ -574,11 +582,8 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
     const double radius = request.radius;
     auto explosionSource = request.source.lock();
 
-    s3d::Logger << U"   Applying force to objects...";
-
     // 範囲内のオブジェクトを取得して力を加える
     auto nearbyResult = m_world.overlapSphere(center, radius, MASK_ALL);
-    int32 hitCount = 0;
 
     for (auto weakObj : nearbyResult.hitObjects)
     {
@@ -603,132 +608,28 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         if (distanceSq <= minDistSq)
             continue;
 
-        // ここで一度だけ平方根を計算
+        // 方向ベクトルを正規化
         double distance = s3d::Math::Sqrt(distanceSq);
-        s3d::Vec3 normalizedDirection = direction / distance; // 手動で正規化
+        s3d::Vec3 normalizedDirection = direction / distance;
 
+        // 距離に応じた吹き飛ばし力を計算
         double falloff = 1.0 - (distance / radius);
         double explosionForce = ExplosionBasePower * falloff;
         s3d::Vec3 force = normalizedDirection * explosionForce;
 
         body->applyImpulse(force);
-        hitCount++;
 
         // エネミーにダメージを与える
         if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
         {
-            int damage = static_cast<int>(falloff * 100);
-            enemy->takeDamage(damage);
-            Logger << U"  → Hit Enemy: distance {:.2f}, damage {}"_fmt(distance, damage);
+            enemy->takeDamage(ExplosionBaseDamage);
+            unfreezeObject(object);
         }
         else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
         {
-            int damage = static_cast<int>(falloff * 100);
-            enemyNormal->takeDamage(damage);
-            Logger << U"  → Hit EnemyNormal: distance {:.2f}, damage {}"_fmt(distance, damage);
+            enemyNormal->takeDamage(ExplosionBaseDamage);
+            unfreezeObject(object);
         }
-        else
-        {
-            Logger << U"  → Hit: distance {:.2f}, force {:.2f}"_fmt(distance, explosionForce);
-        }
-    }
-    s3d::Logger << U"   Hit {} objects"_fmt(hitCount);
-}
-
-void SceneGame::createGravityParticles(const Vec3& center, double radius)
-{
-    // 3～5個のパーティクルを生成
-    const int count = Random(3, 5);
-    for (int i = 0; i < count; ++i)
-    {
-        // 円周上のランダムな点（水平方向のみ）
-        const double angle = Random(0.0, Math::TwoPi);
-        const Vec3 startPos = center + Vec3{
-            Math::Cos(angle) * radius,
-            Random(-0.3, 0.3), // わずかな高さのばらつき
-            Math::Sin(angle) * radius
-        };
-
-        // 中心に向かう速度（主に水平方向）
-        const Vec3 velocity = (center - startPos).normalized() * 2.5;
-        const Vec3 acceleration = (center - startPos).normalized() * 5.0;
-
-        m_particleSystem.add(Particle3D{
-            .position = startPos,
-            .velocity = velocity,
-            .acceleration = acceleration,
-            .color = ColorF{0.8, 0.4, 1.0}, // 紫色
-            .size = Random(0.15, 0.25),
-            .life = Random(1.0, 1.5),
-            .active = true,
-            .killZone = Sphere{center, 0.2}
-        });
-    }
-}
-
-void SceneGame::createFreezeParticles(const Vec3& center)
-{
-    for (int i = 0; i < FreezeParticleCount; ++i)
-    {
-        const Vec2 horizontal = RandomVec2(Circle{FreezeParticleHorizontalRadius}); // 横方向のランダム
-        const Vec3 velocity{horizontal.x, Random(FreezeParticleMinSpeedY, FreezeParticleMaxSpeedY), horizontal.y};
-
-        m_particleSystem.add(Particle3D{
-            .position = center,
-            .velocity = velocity,
-            .acceleration = Vec3{0, -5.0, 0},
-            .color = FreezeParticleColor,
-            .size = Random(FreezeParticleMinSize, FreezeParticleMaxSize),
-            .life = Random(FreezeParticleMinLife, FreezeParticleMaxLife),
-            .active = true
-        });
-    }
-}
-
-void SceneGame::createWindParticles(const Vec3& center, const Vec3& boxSize)
-{
-    const int count = Random(5, 10);
-    for (int i = 0; i < count; ++i)
-    {
-        const double x = Random(-boxSize.x / 2.0, boxSize.x / 2.0);
-        const double y = Random(0.0, boxSize.y);
-        const double z = -boxSize.z / 2.0;
-        const Vec3 startPos = center + Vec3{x, y, z};
-
-        const Vec3 velocity = Vec3{0, 0, Random(8.0, 12.0)};
-
-        m_particleSystem.add(Particle3D{
-            .position = startPos,
-            .velocity = velocity,
-            .acceleration = Vec3{0, 0, 0},
-            .color = WindEffectColor,
-            .size = Random(0.05, 0.15),
-            .life = Random(2.0, 3.0),
-            .active = true
-        });
-    }
-}
-
-void SceneGame::createBombSmokeParticles(const Vec3& position)
-{
-    const int count = Random(1, 2);
-    for (int i = 0; i < count; ++i)
-    {
-        const double offsetX = Random(-0.1, 0.1);
-        const double offsetZ = Random(-0.1, 0.1);
-        const Vec3 startPos = position + Vec3{offsetX, 0.5, offsetZ};
-
-        const Vec3 velocity = Vec3{Random(-0.2, 0.2), Random(0.5, 1.5), Random(-0.2, 0.2)};
-
-        m_particleSystem.add(Particle3D{
-            .position = startPos,
-            .velocity = velocity,
-            .acceleration = Vec3{0, -0.5, 0},
-            .color = ColorF{0.3, 0.3, 0.3},
-            .size = Random(0.08, 0.15),
-            .life = Random(0.8, 1.2),
-            .active = true
-        });
     }
 }
 
@@ -844,6 +745,20 @@ void SceneGame::applyGravityFieldForce()
     {
         if (auto body = object->getPhysicsBody(); body && body->getGroup() == GROUP_ATTRACTABLE)
         {
+            // Aliveの敵のみ吸引
+            bool isEnemyAlive = true;
+            if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+            {
+                isEnemyAlive = enemy->isAlive();
+            }
+            else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+            {
+                isEnemyAlive = enemyNormal->isAlive();
+            }
+
+            if (!isEnemyAlive)
+                continue;
+
             const Vec3 objPos = object->getPosition();
             const Vec3 direction = (hitPoint - objPos);
             const double distanceSq = direction.lengthSq();
@@ -893,6 +808,18 @@ void SceneGame::updateFreezeField()
     if (!m_freezeField)
     {
         m_iceSpikes.clear(); // Freeze終了時に氷柱をクリア
+        // 凍結解除
+        for (auto weakObj : m_frozenObjects)
+        {
+            if (auto obj = weakObj.lock())
+            {
+                if (auto body = obj->getPhysicsBody())
+                {
+                    body->setKinematic(false);
+                }
+            }
+        }
+        m_frozenObjects.clear();
         return;
     }
 
@@ -913,18 +840,55 @@ void SceneGame::applyFreezeEffect()
 
     for (const auto& object : m_gameObjects)
     {
-        if (auto body = object->getPhysicsBody();
-            body && body->getGroup() == GROUP_ATTRACTABLE)
-        {
-            const Vec3 objPos = object->getPosition();
-            const double distanceSq = (centerPos - objPos).lengthSq();
+        // 既に凍結済みか確認
+        bool alreadyFrozen =
+            std::any_of(m_frozenObjects.begin(), m_frozenObjects.end(),
+                        [&object](const std::weak_ptr<GameObject>& weakObj) { return weakObj.lock() == object; });
 
-            if (distanceSq < (m_freezeField->radius * m_freezeField->radius))
-            {
-                body->setLinearVelocity(Vec3::Zero());
-                body->setAngularVelocity(Vec3::Zero());
-            }
+        if (alreadyFrozen)
+            continue;
+
+        auto body = object->getPhysicsBody();
+        if (!body || body->getGroup() != GROUP_ATTRACTABLE)
+            continue;
+
+        // Aliveの敵のみ凍結
+        bool isEnemyAlive = true;
+        if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+        {
+            isEnemyAlive = enemy->isAlive();
         }
+        else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+        {
+            isEnemyAlive = enemyNormal->isAlive();
+        }
+
+        if (!isEnemyAlive)
+            continue;
+
+        const Vec3 objPos = object->getPosition();
+        const double distanceSq = (centerPos - objPos).lengthSq();
+
+        if (distanceSq < (m_freezeField->radius * m_freezeField->radius))
+        {
+            body->setKinematic(true);
+            m_frozenObjects.push_back(object);
+        }
+    }
+}
+
+void SceneGame::unfreezeObject(std::shared_ptr<GameObject> obj)
+{
+    auto it = std::find_if(m_frozenObjects.begin(), m_frozenObjects.end(),
+                           [&obj](const std::weak_ptr<GameObject>& weakObj) { return weakObj.lock() == obj; });
+
+    if (it != m_frozenObjects.end())
+    {
+        if (auto body = obj->getPhysicsBody())
+        {
+            body->setKinematic(false);
+        }
+        m_frozenObjects.erase(it);
     }
 }
 
@@ -974,12 +938,31 @@ void SceneGame::applyWindEffect()
 
     for (const auto& object : m_gameObjects)
     {
-        if (auto body = object->getPhysicsBody();
-            body && body->getGroup() == GROUP_ATTRACTABLE)
+        if (auto body = object->getPhysicsBody(); body && body->getGroup() == GROUP_ATTRACTABLE)
         {
+            // Aliveの敵のみ風の影響を受ける
+            bool isEnemyAlive = true;
+            if (auto enemy = std::dynamic_pointer_cast<EnemyExplosive>(object))
+            {
+                isEnemyAlive = enemy->isAlive();
+            }
+            else if (auto enemyNormal = std::dynamic_pointer_cast<EnemyNormal>(object))
+            {
+                isEnemyAlive = enemyNormal->isAlive();
+            }
+
+            if (!isEnemyAlive)
+                continue;
+
             if (m_windField->area.contains(object->getPosition()))
             {
-                body->applyForce(windForce);
+                const Vec3 currentVelocity = body->getLinearVelocity();
+                const double vz = currentVelocity.z;
+
+                // 空気抵抗
+                const Vec3 dragForce = Vec3(0, 0, -airResistance * Abs(vz));
+
+                body->applyForce(windForce + dragForce);
             }
         }
     }
@@ -1005,4 +988,180 @@ void SceneGame::updateBombSmoke()
 
     // 無効になったBombを削除
     m_smokingBombs.remove_if([](const std::weak_ptr<Bomb>& weakBomb) { return weakBomb.expired(); });
+}
+
+// コンボシステム
+
+void SceneGame::updateCombo()
+{
+    // コンボタイマーが動いていて、タイムアウトしたらコンボリセット
+    if (m_comboTimer.isStarted() && m_comboTimer.sF() >= m_comboTimeWindow)
+    {
+        resetCombo();
+    }
+
+    // UIにコンボ情報を渡す
+    if (m_comboCount > 0)
+    {
+        const double remainingTime = m_comboTimeWindow - m_comboTimer.sF();
+        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime, m_comboScore);
+    }
+    else
+    {
+        m_ui.setComboInfo(0, 1.0, 0.0, 0);
+    }
+}
+
+void SceneGame::incrementCombo()
+{
+    m_comboCount++;
+    m_comboTimer.restart();
+
+    // 最大コンボを更新
+    if (m_comboCount > m_maxCombo)
+    {
+        m_maxCombo = m_comboCount;
+    }
+
+    Print << U"COMBO: {}"_fmt(m_comboCount);
+}
+
+void SceneGame::resetCombo()
+{
+    if (m_comboCount > 0)
+    {
+        Print << U"Combo ended: {}"_fmt(m_comboCount);
+    }
+    m_comboCount = 0;
+    m_comboScore = 0; // コンボスコアもリセット
+    m_comboTimer.reset();
+}
+
+double SceneGame::getComboMultiplier() const
+{
+    if (m_comboCount <= 1)
+    {
+        return 1.0;
+    }
+    return 1.0 + (m_comboCount - 1) * 0.5;
+}
+
+// 音響管理
+
+void SceneGame::updateAudio() { updateExplosionSound(); }
+
+void SceneGame::updateExplosionSound()
+{
+    // 時間経過をチェック
+    if (m_explosionSoundTimer.sF() >= m_explosionSoundInterval)
+    {
+        // 間隔内に爆発があれば音を再生
+        if (m_explosionCountInInterval > 0)
+        {
+            // 爆発回数に応じて音量を調整（上限は1.0）
+            const double volume = Math::Min(1.0, 0.3 + m_explosionCountInInterval * 0.2);
+            m_explosionSound.playOneShot(volume);
+
+            // カウンタをリセット
+            m_explosionCountInInterval = 0;
+        }
+
+        // タイマーをリセット
+        m_explosionSoundTimer.restart();
+    }
+}
+
+// パーティクル生成関数
+
+void SceneGame::createGravityParticles(const Vec3& center, double radius)
+{
+    constexpr int32 ParticleCount = 10;
+    for (int32 i = 0; i < ParticleCount; ++i)
+    {
+        const Vec2 offset = RandomVec2(Circle(radius));
+        const Vec3 particlePos = center + Vec3{offset.x, Random(-1.0, 1.0), offset.y};
+        const Vec3 direction = (center - particlePos).normalized();
+        const double speed = Random(2.0, 4.0);
+
+        Particle3D particle{
+            .position = particlePos,
+            .velocity = direction * speed,
+            .acceleration = Vec3{0, 0, 0},
+            .color = GravityEffectColor,
+            .size = Random(0.05, 0.1),
+            .life = Random(0.5, 1.0),
+            .active = true
+        };
+        m_particleSystem.add(particle);
+    }
+}
+
+void SceneGame::createFreezeParticles(const Vec3& center)
+{
+    for (int32 i = 0; i < FreezeParticleCount; ++i)
+    {
+        const Vec2 offset = RandomVec2(Circle(FreezeParticleHorizontalRadius));
+        const Vec3 particlePos = center + Vec3{offset.x, 0, offset.y};
+        const double speedY = Random(FreezeParticleMinSpeedY, FreezeParticleMaxSpeedY);
+
+        Particle3D particle{
+            .position = particlePos,
+            .velocity = Vec3{0, speedY, 0},
+            .acceleration = Vec3{0, 0, 0},
+            .color = FreezeParticleColor,
+            .size = Random(FreezeParticleMinSize, FreezeParticleMaxSize),
+            .life = Random(FreezeParticleMinLife, FreezeParticleMaxLife),
+            .active = true
+        };
+        m_particleSystem.add(particle);
+    }
+}
+
+void SceneGame::createWindParticles(const Vec3& center, const Vec3& boxSize)
+{
+    constexpr int32 ParticleCount = 20;
+    for (int32 i = 0; i < ParticleCount; ++i)
+    {
+        const Vec3 randomOffset{
+            Random(-boxSize.x / 2, boxSize.x / 2),
+            Random(0.0, boxSize.y),
+            -boxSize.z / 2
+        };
+        const Vec3 particlePos = center + randomOffset;
+
+        Particle3D particle{
+            .position = particlePos,
+            .velocity = Vec3{0, 0, Random(10.0, 15.0)},
+            .acceleration = Vec3{0, 0, 0},
+            .color = WindEffectColor,
+            .size = Random(0.05, 0.15),
+            .life = Random(1.0, 2.0),
+            .active = true
+        };
+        m_particleSystem.add(particle);
+    }
+}
+
+void SceneGame::createBombSmokeParticles(const Vec3& position)
+{
+    constexpr int32 ParticleCount = 5;
+    for (int32 i = 0; i < ParticleCount; ++i)
+    {
+        const Vec3 randomVelocity{
+            Random(-0.5, 0.5),
+            Random(1.0, 2.0),
+            Random(-0.5, 0.5)
+        };
+
+        Particle3D particle{
+            .position = position,
+            .velocity = randomVelocity,
+            .acceleration = Vec3{0, 0, 0},
+            .color = ColorF{0.3, 0.3, 0.3, 0.5},
+            .size = Random(0.1, 0.2),
+            .life = Random(0.5, 1.0),
+            .active = true
+        };
+        m_particleSystem.add(particle);
+    }
 }
