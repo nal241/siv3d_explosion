@@ -116,6 +116,11 @@ void UI::draw() const
         // 倍率表示
         const String multiplierText = U"× {:.1f}"_fmt(m_displayMultiplier);
         m_multiplierFont(multiplierText).drawAt(comboPos.movedBy(0, 50), ColorF{1.0, 1.0, 0.5, alpha});
+
+        // コンボ期間中の総スコア表示
+        const String scoreText = U"+{} pts"_fmt(m_displayComboScore);
+        const ColorF scoreColor = HSV{120, 0.6, 1.0, alpha}; // 緑色
+        m_scoreFont(scoreText).drawAt(comboPos.movedBy(0, 90), scoreColor);
     }
 }
 
@@ -161,9 +166,10 @@ bool UI::canUseSelectedItem() const
     return m_reloadTimers[index] <= 0.0;
 }
 
-void UI::setComboInfo(int comboCount, double multiplier, double remainingTime)
+void UI::setComboInfo(int comboCount, double multiplier, double remainingTime, int comboScore)
 {
     m_displayComboCount = comboCount;
     m_displayMultiplier = multiplier;
     m_displayRemainingTime = remainingTime;
+    m_displayComboScore = comboScore;
 }
