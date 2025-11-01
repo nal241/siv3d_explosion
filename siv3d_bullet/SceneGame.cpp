@@ -552,6 +552,7 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, double radius)
 
         Particle3D particle{.position = center,
                             .velocity = direction * speed,
+                            .acceleration = Vec3{0, -5.0, 0},
                             .color = s3d::HSV{s3d::Random(MinParticleHue, MaxParticleHue),
                                               s3d::Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
                             .size = s3d::Random(MinParticleSize, MaxParticleSize),
@@ -644,10 +645,12 @@ void SceneGame::createGravityParticles(const Vec3& center, double radius)
 
         // 中心に向かう速度（主に水平方向）
         const Vec3 velocity = (center - startPos).normalized() * 2.5;
+        const Vec3 acceleration = (center - startPos).normalized() * 5.0;
 
         m_particleSystem.add(Particle3D{
             .position = startPos,
             .velocity = velocity,
+            .acceleration = acceleration,
             .color = ColorF{0.8, 0.4, 1.0}, // 紫色
             .size = Random(0.15, 0.25),
             .life = Random(1.0, 1.5),
@@ -666,6 +669,7 @@ void SceneGame::createFreezeParticles(const Vec3& center)
         m_particleSystem.add(Particle3D{
             .position = center,
             .velocity = velocity,
+            .acceleration = Vec3{0, -5.0, 0},
             .color = FreezeParticleColor,
             .size = Random(FreezeParticleMinSize, FreezeParticleMaxSize),
             .life = Random(FreezeParticleMinLife, FreezeParticleMaxLife),
