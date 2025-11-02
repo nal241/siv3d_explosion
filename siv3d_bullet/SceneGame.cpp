@@ -118,6 +118,9 @@ namespace
     constexpr int NormalEnemyMaxHealth = 100;
     constexpr int ExplosiveEnemyMaxHealth = 100;
 
+    // === スコア設定 ===
+    constexpr int EnemyBaseScore = 10; // 敵撃破時の基礎スコア
+
     // === 画面揺れ設定 ===
     constexpr double ShakeSpeed = 10.0;
     constexpr double ExplosionShakeDuration = 0.5;
@@ -158,6 +161,13 @@ SceneGame::SceneGame(const InitData& init)
 
 void SceneGame::update()
 {
+    // update()が最初に呼ばれたときにゲームタイマーを開始
+    if (!m_gameTimer.isStarted())
+    {
+        m_gameTimer.start();
+    }
+
+    beginFrame(); // フレーム開始
     updateInput();
     updateUI();
     updateGameLogic();
@@ -166,10 +176,31 @@ void SceneGame::update()
     updateParticleSystem();
     updateAudio();
     updateCamera();
+    endFrame(); // フレーム終了
+}
+
+void SceneGame::checkGameOver()
+{
+    // 時間切れチェック
+    const double elapsedTime = m_gameTimer.sF();
+    if (elapsedTime >= m_gameDuration && !m_isGameOver)
+    {
+        // ゲーム終了フラグを立て、通知を表示
+        m_isGameOver = true;
+        m_ui.showGameOver();
+        m_gameOverDisplayTimer.start();
+    }
+
+    // ゲーム終了通知を一定時間表示してからシーン遷移
+    if (m_isGameOver && m_gameOverDisplayTimer.sF() >= m_gameOverDisplayDuration)
+    {
+        changeScene(State::Result, 2.0s);
+    }
 }
 
 void SceneGame::updateGameLogic()
 {
+    checkGameOver();
     updateItems();
     updateGameObjects();
     updateSpawn();
@@ -230,7 +261,15 @@ void SceneGame::updateInput()
 
 void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTime())); }
 
-void SceneGame::updateUI() { m_ui.update(Scene::DeltaTime()); }
+void SceneGame::updateUI()
+{
+    m_ui.update(Scene::DeltaTime());
+
+    // スコアと残り時間
+    const double elapsedTime = m_gameTimer.sF();
+    const double remainingTime = Math::Max(0.0, m_gameDuration - elapsedTime);
+    m_ui.setGameInfo(getData().score, remainingTime);
+}
 
 void SceneGame::updateItems()
 {
@@ -280,7 +319,11 @@ void SceneGame::updateGameObjects()
                     {
                         handleExplosion(e);
                     }
-                    // 将来: 他のイベント型を追加
+                    else if constexpr (std::is_same_v<T, EnemyDefeatedEvent>)
+                    {
+                        // 敵撃破時: フレーム内の基礎スコアに加算（同フレームの得点をまとめる）
+                        addScoreInFrame(e.baseScore);
+                    }
                 },
                 event);
         }
@@ -309,24 +352,10 @@ void SceneGame::updateSpawn()
 void SceneGame::removeObjects()
 {
     m_gameObjects.remove_if(
-        [this](const std::shared_ptr<GameObject>& obj)
+        [](const std::shared_ptr<GameObject>& obj)
         {
             // 範囲外チェック
-            bool shouldRemove = obj->getPosition().y < -10.0 || obj->shouldBeRemoved();
-
-            if (shouldRemove)
-            {
-                // オブジェクト削除時にスコア加算（コンボ倍率適用）
-                const int baseScore = 10;
-                const double multiplier = getComboMultiplier();
-                const int finalScore = static_cast<int>(baseScore * multiplier);
-                getData().score += finalScore;
-
-                // コンボ期間中の総スコアに加算
-                m_comboScore += finalScore;
-            }
-
-            return shouldRemove;
+            return obj->getPosition().y < -10.0 || obj->shouldBeRemoved();
         });
 }
 
@@ -1204,11 +1233,12 @@ void SceneGame::updateCombo()
     if (m_comboCount > 0)
     {
         const double remainingTime = m_comboTimeWindow - m_comboTimer.sF();
-        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime, m_comboScore);
+        m_ui.setComboInfo(m_comboCount, getComboMultiplier(), remainingTime, m_comboScore, m_latestFrameScore);
     }
     else
     {
-        m_ui.setComboInfo(0, 1.0, 0.0, 0);
+        // コンボがない場合は空の情報を渡す
+        m_ui.setComboInfo(0, 1.0, 0.0, 0, ComboScoreInfo{});
     }
 }
 
@@ -1222,15 +1252,19 @@ void SceneGame::incrementCombo()
     {
         m_maxCombo = m_comboCount;
     }
-
-    Print << U"COMBO: {}"_fmt(m_comboCount);
 }
 
 void SceneGame::resetCombo()
 {
     if (m_comboCount > 0)
     {
-        Print << U"Combo ended: {}"_fmt(m_comboCount);
+        Logger << U"Combo ended: {}"_fmt(m_comboCount);
+
+        // コンボ終了をUIに通知
+        m_ui.showComboResult(m_comboScore, m_comboCount);
+
+        // コンボ終了時に総スコアに加算
+        getData().score += m_comboScore;
     }
     m_comboCount = 0;
     m_comboScore = 0; // コンボスコアもリセット
@@ -1291,4 +1325,38 @@ void SceneGame::updateBombSmoke()
 
     // 無効になったBombを削除
     m_smokingBombs.remove_if([](const std::weak_ptr<Bomb>& weakBomb) { return weakBomb.expired(); });
+}
+
+// フレーム管理システム
+
+void SceneGame::beginFrame()
+{
+    // フレーム開始時に前フレームのスコア情報をリセット
+    m_frameBaseScore = 0;
+}
+
+void SceneGame::addScoreInFrame(int baseScore)
+{
+    // フレーム内の基礎スコアを累積
+    m_frameBaseScore += baseScore;
+}
+
+void SceneGame::endFrame()
+{
+    // フレーム終了時に、このフレームで獲得したスコアを処理
+    if (m_frameBaseScore > 0)
+    {
+        const double multiplier = getComboMultiplier();
+        const int finalScore = static_cast<int>(m_frameBaseScore * multiplier);
+
+        // コンボスコアに加算
+        m_comboScore += finalScore;
+
+        // 最新のフレームスコア情報を更新
+        m_latestFrameScore = ComboScoreInfo{
+            .baseScore = m_frameBaseScore,
+            .multiplier = multiplier,
+            .finalScore = finalScore
+        };
+    }
 }

@@ -30,6 +30,9 @@ protected:
     void updateSpawn();
     void updateCombo();
 
+    // ゲーム終了条件チェック
+    void checkGameOver();
+
     // updateAudio内で呼ばれる内部メソッド
     void updateExplosionSound();
 
@@ -207,4 +210,18 @@ protected:
     void incrementCombo();             // コンボをカウントアップ
     void resetCombo();                 // コンボをリセット
     double getComboMultiplier() const; // コンボ倍率を取得
+
+    // フレームごとのスコア集計（同一フレームでの得点をまとめる）
+    int m_frameBaseScore = 0;        // 現フレームで獲得した基礎スコアの合計
+    ComboScoreInfo m_latestFrameScore = {}; // 最新フレームのスコア情報
+    void beginFrame();                 // フレーム開始時の初期化
+    void addScoreInFrame(int baseScore); // フレーム内スコアの加算
+    void endFrame();                   // フレーム終了時の処理
+
+    // ゲーム時間管理
+    Stopwatch m_gameTimer{StartImmediately::No}; // ゲーム開始からの経過時間（フェード完了後に開始）
+    double m_gameDuration = 100.0;               // ゲームの制限時間（秒）
+    Stopwatch m_gameOverDisplayTimer{StartImmediately::No}; // ゲーム終了通知の表示時間
+    double m_gameOverDisplayDuration = 2.0;      // ゲーム終了通知を表示する時間（秒）
+    bool m_isGameOver = false;                   // ゲーム終了フラグ
 };

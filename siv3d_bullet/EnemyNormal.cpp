@@ -3,6 +3,8 @@
 
 namespace
 {
+    constexpr int EnemyBaseScore = 10; // 敵撃破時の基礎スコア
+
     // --- 形状パラメータ ---
     constexpr float SHAPE_ELLIPSOID_RATIO_X = 0.48f; // 楕円体のX軸比率
     constexpr float SHAPE_ELLIPSOID_RATIO_Y = 0.36f; // 楕円体のY軸比率
@@ -58,6 +60,9 @@ void EnemyNormal::takeDamage(int damage)
         m_state = State::Dying;
         m_deathTimer.start();
         Logger << U"[EnemyNormal ID:" << getID() << U"] 死亡状態に移行";
+
+        // 撃破時のスコアイベントを発行
+        emitEvent(EnemyDefeatedEvent{EnemyBaseScore});
     }
 }
 

@@ -104,24 +104,91 @@ void UI::draw() const
         const double alpha = Math::Min(1.0, m_displayRemainingTime / 0.5); // 最後の0.5秒でフェードアウト
 
         // コンボ数を大きく表示
-        const Vec2 comboPos{Scene::Center().x, 120};
+        const Vec2 comboPos{Scene::Center().x, 100};
         const ColorF comboColor = HSV{30, 0.8, 1.0, alpha}; // オレンジ色
 
-        const String comboText = U"COMBO × {}"_fmt(m_displayComboCount);
+        const String comboText = U"{} COMBO"_fmt(m_displayComboCount);
 
         // 影を描画
         m_comboFont(comboText).drawAt(comboPos.movedBy(2, 2), ColorF{0, 0, 0, alpha * 0.5});
         // メインテキスト
         m_comboFont(comboText).drawAt(comboPos, comboColor);
 
-        // 倍率表示
-        const String multiplierText = U"× {:.1f}"_fmt(m_displayMultiplier);
-        m_multiplierFont(multiplierText).drawAt(comboPos.movedBy(0, 50), ColorF{1.0, 1.0, 0.5, alpha});
+        // 最新のコンボで得たスコア
+        if (m_latestComboScore.baseScore > 0)
+        {
+            const String scoreText = U"{} pts"_fmt(m_latestComboScore.finalScore);
+            const ColorF scoreColor = HSV{60, 0.8, 1.0, alpha}; // 黄色
+            m_multiplierFont(scoreText).drawAt(comboPos.movedBy(0, 50), scoreColor);
+        }
+    }
 
-        // コンボ期間中の総スコア表示
-        const String scoreText = U"+{} pts"_fmt(m_displayComboScore);
-        const ColorF scoreColor = HSV{120, 0.6, 1.0, alpha}; // 緑色
-        m_scoreFont(scoreText).drawAt(comboPos.movedBy(0, 90), scoreColor);
+    // スコアと残り時間の表示（画面上部）
+    {
+        // スコア表示（左上）
+        const String scoreText = U"Score: {}"_fmt(m_displayScore);
+        const Vec2 scorePos{20, 20};
+        const ColorF scoreColor{1.0, 1.0, 1.0};
+
+        // 影を描画
+        m_gameInfoFont(scoreText).draw(scorePos.movedBy(2, 2), ColorF{0, 0, 0, 0.5});
+        // メインテキスト
+        m_gameInfoFont(scoreText).draw(scorePos, scoreColor);
+
+        // 残り時間の表示（右上）
+        const int seconds = static_cast<int>(m_displayRemainingGameTime);
+        const String timeText = U"Time: {:>3}s"_fmt(seconds);
+        const Vec2 timePos{Scene::Width() - 250, 20};
+
+        // 時間が10秒以下の場合は赤色で警告
+        const ColorF timeColor = (m_displayRemainingGameTime <= 10.0) ? ColorF{1.0, 0.2, 0.2} : ColorF{1.0, 1.0, 1.0};
+
+        // 影を描画
+        m_gameInfoFont(timeText).draw(timePos.movedBy(2, 2), ColorF{0, 0, 0, 0.5});
+        // メインテキスト
+        m_gameInfoFont(timeText).draw(timePos, timeColor);
+    }
+
+    // コンボ終了結果の表示
+    if (m_comboResultTimer.isStarted() && m_comboResultTimer.sF() < m_comboResultDuration)
+    {
+        // 最後の0.5秒でフェードアウト
+        double alpha = 1.0;
+        const double remainingTime = m_comboResultDuration - m_comboResultTimer.sF();
+        const double fadeOutDuration = 0.5;
+        if (remainingTime < fadeOutDuration)
+        {
+            alpha = remainingTime / fadeOutDuration;
+        }
+
+        const Vec2 comboPos{Scene::Center().x, 100}; // m_displayComboCountと同じ位置
+        const ColorF textColor = HSV{200, 0.8, 1.0, alpha}; // 水色
+
+        const String resultText = U"{} COMBO!"_fmt(m_comboResultCount);
+        const String scoreText = U"Total: {} pts"_fmt(m_comboResultScore);
+
+        // 影
+        m_comboFont(resultText).drawAt(comboPos.movedBy(2, 2), ColorF{0, 0, 0, alpha * 0.5});
+        m_scoreFont(scoreText).drawAt(comboPos.movedBy(0, 50).movedBy(2, 2), ColorF{0, 0, 0, alpha * 0.5});
+
+        // テキスト
+        m_comboFont(resultText).drawAt(comboPos, textColor);
+        m_scoreFont(scoreText).drawAt(comboPos.movedBy(0, 50), textColor);
+    }
+
+    // ゲーム終了通知の表示
+    if (m_showGameOver)
+    {
+        const String gameOverText = U"TIME UP!";
+        const Vec2 center = Scene::Center();
+
+        // 背景の半透明黒
+        Scene::Rect().draw(ColorF{0, 0, 0, 0.7});
+
+        // 影を描画
+        m_gameOverFont(gameOverText).drawAt(center.movedBy(3, 3), ColorF{0, 0, 0, 0.8});
+        // メインテキスト
+        m_gameOverFont(gameOverText).drawAt(center, ColorF{1.0, 0.2, 0.2});
     }
 }
 
@@ -167,10 +234,31 @@ bool UI::canUseSelectedItem() const
     return m_reloadTimers[index] <= 0.0;
 }
 
-void UI::setComboInfo(int comboCount, double multiplier, double remainingTime, int comboScore)
+void UI::setComboInfo(int comboCount, double multiplier, double remainingTime, int totalScore,
+                      const ComboScoreInfo& latestScore)
 {
     m_displayComboCount = comboCount;
     m_displayMultiplier = multiplier;
     m_displayRemainingTime = remainingTime;
-    m_displayComboScore = comboScore;
+    m_displayComboScore = totalScore;
+    m_latestComboScore = latestScore;
+}
+
+void UI::setGameInfo(int score, double remainingTime)
+{
+    m_displayScore = score;
+    m_displayRemainingGameTime = remainingTime;
+}
+
+void UI::showGameOver() { m_showGameOver = true; }
+
+void UI::showComboResult(int score, int comboCount)
+{
+    // コンボ数が2以上の場合のみ表示
+    if (comboCount > 1)
+    {
+        m_comboResultScore = score;
+        m_comboResultCount = comboCount;
+        m_comboResultTimer.restart();
+    }
 }
