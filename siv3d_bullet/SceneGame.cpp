@@ -40,10 +40,10 @@ namespace
     constexpr float StaticBoxRestitution = 1.0f;
 
     // === アイテムエフェクト色設定 ===
-    const ColorF GravityEffectColor{0.3, 0.1, 0.5};
-    const ColorF FreezeEffectColor{0.5, 0.8, 1.0};
-    const ColorF WindEffectColor{0.3, 1.0, 0.3};
-    const ColorF BombIndicatorColor{1.0, 0.4, 0.2};
+    const ColorF GravityEffectColor = HSV{270, 1.0, 0.5};
+    const ColorF FreezeEffectColor = HSV{200, 0.5, 1.0};
+    const ColorF WindEffectColor = HSV{120, 0.7, 1.0};
+    const ColorF BombIndicatorColor = HSV{15, 0.8, 1.0};
 
     // === アイテムインジケータ設定 ===
     constexpr double IndicatorHeight = 0.05;
@@ -376,7 +376,7 @@ void SceneGame::draw() const
             // 重力の中心
             const double pulseSize = Periodic::Sine0_1(1.5s) * 0.3 + 0.5;
             const Vec3 centerPos = m_gravityField->position + Vec3{0, 1.0, 0};
-            Sphere{centerPos, pulseSize}.draw(GravityEffectColor.withA(0.8));
+            Sphere{centerPos, pulseSize}.draw(GravityEffectColor.withA(1.0));
 
             const Vec3 pos = m_gravityField->position + Vec3{0, FrostWaveOffsetY, 0};
             Cylinder{pos, m_gravityField->radius, FrostWaveHeight}.draw(m_darknessTexture, ColorF{1.0, 1.0});
