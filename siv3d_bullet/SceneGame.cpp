@@ -97,15 +97,15 @@ namespace
     constexpr double MaxParticleValue = 1.0;
 
     // === 氷結晶パーティクル設定 ===
-    constexpr int32 FreezeParticleCount = 50;
+    constexpr int32 FreezeParticleCount = 150;
     constexpr double FreezeParticleMinSpeedY = 1.0;
     constexpr double FreezeParticleMaxSpeedY = 5.0;
     constexpr double FreezeParticleHorizontalRadius = 5.0;
     const ColorF FreezeParticleColor{0.7, 0.9, 1.0};
-    constexpr double FreezeParticleMinSize = 0.01;
-    constexpr double FreezeParticleMaxSize = 0.05;
-    constexpr double FreezeParticleMinLife = 1.0;
-    constexpr double FreezeParticleMaxLife = 1.5;
+    constexpr double FreezeParticleMinSize = 0.05;
+    constexpr double FreezeParticleMaxSize = 0.15;
+    constexpr double FreezeParticleMinLife = 0.5;
+    constexpr double FreezeParticleMaxLife = 1.0;
 
     // === 爆発の物理パラメータ ===
     constexpr double ExplosionBasePower = 30.0;
@@ -705,6 +705,25 @@ void SceneGame::createFreezeParticles(const Vec3& center)
     }
 }
 
+void SceneGame::createFreezeMistParticles(const Vec3& center)
+{
+    constexpr int32 MistParticleCount = 10;
+    for (int32 i = 0; i < MistParticleCount; ++i)
+    {
+        const Vec2 offset = RandomVec2(Circle(FreezeRadius));
+        const Vec3 particlePos = center + Vec3{offset.x, Random(0.0, 2.0), offset.y};
+
+        Particle3D particle{.position = particlePos,
+                            .velocity = Vec3{Random(-0.2, 0.2), Random(0.1, 0.3), Random(-0.2, 0.2)},
+                            .acceleration = Vec3{0, 0, 0},
+                            .color = ColorF{0.8, 0.9, 1.0, Random(0.3, 0.6)},
+                            .size = Random(0.05, 0.1),
+                            .life = Random(2.0, 4.0),
+                            .active = true};
+        m_particleSystem.add(particle);
+    }
+}
+
 void SceneGame::createWindParticles(const Vec3& center, const Vec3& boxSize)
 {
     const int count = Random(5, 10);
@@ -898,6 +917,8 @@ void SceneGame::throwFreeze(const Vec3& targetPos)
         .radius = FreezeRadius,
     };
 
+    m_freezeMistTimer.restart();
+
     // 氷柱をランダム生成
     const int spikeCount = Random(MinSpikeCount, MaxSpikeCount);
     for (int i = 0; i < spikeCount; ++i)
@@ -921,6 +942,7 @@ void SceneGame::updateFreezeField()
     if (!m_freezeField)
     {
         m_iceSpikes.clear(); // Freeze終了時に氷柱をクリア
+        m_freezeMistTimer.reset();
         {
             // 凍結解除
             for (auto weakObj : m_frozenObjects)
@@ -947,6 +969,13 @@ void SceneGame::updateFreezeField()
     }
 
     applyFreezeEffect();
+
+    // ミストの定期生成
+    if (m_freezeMistTimer.sF() >= 0.1)
+    {
+        createFreezeMistParticles(m_freezeField->position);
+        m_freezeMistTimer.restart();
+    }
 }
 
 void SceneGame::applyFreezeEffect()

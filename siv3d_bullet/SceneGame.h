@@ -75,6 +75,7 @@ protected:
     void createGravityParticles(const Vec3& center, double radius);
 
     void createFreezeParticles(const Vec3& center);
+    void createFreezeMistParticles(const Vec3& center);
 
     void createWindParticles(const Vec3& center, const Vec3& boxSize);
 
@@ -164,6 +165,7 @@ protected:
     };
     s3d::Optional<FreezeField> m_freezeField;
     s3d::Array<std::weak_ptr<GameObject>> m_frozenObjects;
+    Stopwatch m_freezeMistTimer;
 
     // 氷柱エフェクト
     struct IceSpike
