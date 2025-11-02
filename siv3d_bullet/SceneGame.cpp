@@ -562,33 +562,91 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
 
 void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused]] double radius)
 {
-    s3d::Logger << U"   Creating {} particles"_fmt(ParticleCount);
+    // 閃光
+    constexpr int32 FlashCount = 10;
+    for (int32 i = 0; i < FlashCount; ++i)
+    {
+        const double theta = s3d::Random(0.0, s3d::Math::TwoPi);
+        const double phi = s3d::Random(0.0, s3d::Math::Pi);
+        const double speed = s3d::Random(2.0, 5.0);
 
-    for (int32 i = 0; i < ParticleCount; ++i)
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
+                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+                            s3d::Math::Cos(phi)};
+
+        const double life = s3d::Random(0.1, 0.2);
+        Particle3D particle{.position = center,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, -5.0, 0},
+                            .color = ColorF{1.0, 1.0, 1.0},
+                            .startColor = HSV{50, 0.2, 1.0},  // 淡い黄色
+                            .endColor = HSV{40, 0.6, 0.8},    // 明るい黄色
+                            .size = s3d::Random(0.6, 1.0),
+                            .life = life,
+                            .maxLife = life,
+                            .active = true,
+                            .useAdditive = true};
+        m_particleSystem.add(particle);
+    }
+
+    // 炎
+    constexpr int32 MainFireCount = 50;
+    for (int32 i = 0; i < MainFireCount; ++i)
     {
         const double theta = s3d::Random(0.0, s3d::Math::TwoPi);
         const double phi = s3d::Random(0.0, s3d::Math::Pi);
         const double speed = s3d::Random(MinParticleSpeed, MaxParticleSpeed);
 
-        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta), s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
+                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
                             s3d::Math::Cos(phi)};
 
+        const double life = s3d::Random(0.6, 1.2);
         Particle3D particle{.position = center,
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, -5.0, 0},
-                            .color = s3d::HSV{s3d::Random(MinParticleHue, MaxParticleHue),
-                                              s3d::Random(MinParticleSaturation, MaxParticleSaturation),
-                                              s3d::Random(MinParticleValue, MaxParticleValue)},
+                            .color = ColorF{1.0, 0.5, 0.0},
+                            .startColor = HSV{45, 0.9, 1.0},  // 明るい黄色
+                            .endColor = HSV{0, 0.8, 0.4},     // 暗い赤
                             .size = s3d::Random(MinParticleSize, MaxParticleSize),
-                            .life = s3d::Random(MinParticleLife, MaxParticleLife),
-                            .active = true};
+                            .life = life,
+                            .maxLife = life,
+                            .active = true,
+                            .useAdditive = true};
+        m_particleSystem.add(particle);
+    }
+
+    // 火花
+    constexpr int32 SparkCount = 40;
+    for (int32 i = 0; i < SparkCount; ++i)
+    {
+        const double theta = s3d::Random(0.0, s3d::Math::TwoPi);
+        const double phi = s3d::Random(0.0, s3d::Math::Pi);
+        const double speed = s3d::Random(8.0, 12.0);
+
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
+                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+                            s3d::Math::Cos(phi)};
+
+        const double life = s3d::Random(0.3, 0.8);
+        Particle3D particle{.position = center,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, -8.0, 0},
+                            .color = ColorF{1.0, 0.3, 0.0},
+                            .startColor = HSV{30, 0.9, 1.0},  // オレンジ
+                            .endColor = HSV{0, 0.7, 0.3},     // 暗い赤
+                            .size = s3d::Random(0.1, 0.25),
+                            .life = life,
+                            .maxLife = life,
+                            .active = true,
+                            .useAdditive = true};
         m_particleSystem.add(particle);
     }
 }
 
 void SceneGame::createExplosionSmokeParticles(const Vec3& center, [[maybe_unused]] double radius)
 {
-    constexpr int32 SmokeParticleCount = 30;
+    constexpr int32 SmokeParticleCount = 50;
     for (int32 i = 0; i < SmokeParticleCount; ++i)
     {
         const double theta = Random(0.0, Math::TwoPi);
@@ -597,13 +655,18 @@ void SceneGame::createExplosionSmokeParticles(const Vec3& center, [[maybe_unused
 
         Vec3 direction{Math::Sin(phi) * Math::Cos(theta), Math::Sin(phi) * Math::Sin(theta), Math::Cos(phi)};
 
+        const double life = Random(1.5, 3.0);
         Particle3D particle{.position = center,
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, 0.5, 0},
-                            .color = HSV{Random(0.0, 0.0), Random(0.0, 0.0), Random(0.0, 0.2), Random(0.5, 0.8)},
-                            .size = Random(0.3, 0.8),
-                            .life = Random(0.5, 1.0),
-                            .active = true};
+                            .color = ColorF{0.4, 0.4, 0.4, 0.6},
+                            .startColor = HSV{0, 0.1, 0.4, 0.5},  // 明るいグレー
+                            .endColor = HSV{0, 0.0, 0.1, 0.8},    // 暗い黒
+                            .size = Random(0.4, 1.0),
+                            .life = life,
+                            .maxLife = life,
+                            .active = true,
+                            .useAdditive = false};
         m_particleSystem.add(particle);
     }
 }
