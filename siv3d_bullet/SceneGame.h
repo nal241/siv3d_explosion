@@ -69,11 +69,13 @@ protected:
 
     // 爆発処理
     void createExplosionParticles(const s3d::Vec3& center, double radius);
+    void createExplosionSmokeParticles(const s3d::Vec3& center, double radius);
     void applyExplosionForce(const ExplosionRequest& request);
 
     void createGravityParticles(const Vec3& center, double radius);
 
     void createFreezeParticles(const Vec3& center);
+    void createFreezeMistParticles(const Vec3& center);
 
     void createWindParticles(const Vec3& center, const Vec3& boxSize);
 
@@ -163,6 +165,7 @@ protected:
     };
     s3d::Optional<FreezeField> m_freezeField;
     s3d::Array<std::weak_ptr<GameObject>> m_frozenObjects;
+    Stopwatch m_freezeMistTimer;
 
     // 氷柱エフェクト
     struct IceSpike
@@ -191,9 +194,9 @@ protected:
     Stopwatch m_bombSmokeTimer;
 
     // テクスチャ
-    Texture m_frostTexture;
-    Texture m_darknessTexture;
-    Texture m_windTexture;
+    Texture m_frostTexture=Texture{U"LicensedAsset/snow.jpg"};
+    Texture m_darknessTexture=Texture{U"LicensedAsset/darkness.jpg"};
+    Texture m_windTexture=Texture{U"LicensedAsset/wind.jpg"};
 
     // コンボシステム
     int m_comboCount = 0;           // 現在のコンボ数

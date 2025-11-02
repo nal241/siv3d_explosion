@@ -40,10 +40,10 @@ namespace
     constexpr float StaticBoxRestitution = 1.0f;
 
     // === アイテムエフェクト色設定 ===
-    const ColorF GravityEffectColor{0.3, 0.1, 0.5};
-    const ColorF FreezeEffectColor{0.5, 0.8, 1.0};
-    const ColorF WindEffectColor{0.3, 1.0, 0.3};
-    const ColorF BombIndicatorColor{1.0, 0.4, 0.2};
+    const ColorF GravityEffectColor = HSV{270, 1.0, 0.5};
+    const ColorF FreezeEffectColor = HSV{200, 0.5, 1.0};
+    const ColorF WindEffectColor = HSV{120, 0.7, 1.0};
+    const ColorF BombIndicatorColor = HSV{15, 0.8, 1.0};
 
     // === アイテムインジケータ設定 ===
     constexpr double IndicatorHeight = 0.05;
@@ -69,7 +69,7 @@ namespace
     constexpr double MaxSpikeRadius = 0.4;
     constexpr double SpikeGrowDuration = 0.5;
     constexpr double SpikeDirectionRandomness = 0.5;
-    constexpr double SpikeAlpha = 0.6;
+    constexpr double SpikeAlpha = 0.8;
     constexpr double FrostWaveHeight = 0.01;
     constexpr double FrostWaveOffsetY = 0.01;
 
@@ -90,20 +90,22 @@ namespace
     constexpr double MinParticleLife = 0.8;
     constexpr double MaxParticleLife = 1.5;
     constexpr double MinParticleHue = 0.0;
-    constexpr double MaxParticleHue = 60.0;
-    constexpr double MinParticleSaturation = 0.7;
+    constexpr double MaxParticleHue = 20.0;
+    constexpr double MinParticleSaturation = 0.9;
     constexpr double MaxParticleSaturation = 1.0;
+    constexpr double MinParticleValue = 0.8;
+    constexpr double MaxParticleValue = 1.0;
 
     // === 氷結晶パーティクル設定 ===
-    constexpr int32 FreezeParticleCount = 50;
+    constexpr int32 FreezeParticleCount = 150;
     constexpr double FreezeParticleMinSpeedY = 1.0;
     constexpr double FreezeParticleMaxSpeedY = 5.0;
     constexpr double FreezeParticleHorizontalRadius = 5.0;
     const ColorF FreezeParticleColor{0.7, 0.9, 1.0};
-    constexpr double FreezeParticleMinSize = 0.01;
-    constexpr double FreezeParticleMaxSize = 0.05;
-    constexpr double FreezeParticleMinLife = 1.0;
-    constexpr double FreezeParticleMaxLife = 1.5;
+    constexpr double FreezeParticleMinSize = 0.05;
+    constexpr double FreezeParticleMaxSize = 0.15;
+    constexpr double FreezeParticleMinLife = 0.5;
+    constexpr double FreezeParticleMaxLife = 1.0;
 
     // === 爆発の物理パラメータ ===
     constexpr double ExplosionBasePower = 30.0;
@@ -548,6 +550,7 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
 
     // 爆発を実行（パーティクル + 物理的な力）
     createExplosionParticles(request.position, request.radius);
+    createExplosionSmokeParticles(request.position, request.radius);
     applyExplosionForce(request);
 
     // 爆発回数をカウント（音は後で再生）
@@ -559,25 +562,111 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
 
 void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused]] double radius)
 {
-    s3d::Logger << U"   Creating {} particles"_fmt(ParticleCount);
+    // 閃光
+    constexpr int32 FlashCount = 10;
+    for (int32 i = 0; i < FlashCount; ++i)
+    {
+        const double theta = s3d::Random(0.0, s3d::Math::TwoPi);
+        const double phi = s3d::Random(0.0, s3d::Math::Pi);
+        const double speed = s3d::Random(2.0, 5.0);
 
-    for (int32 i = 0; i < ParticleCount; ++i)
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
+                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+                            s3d::Math::Cos(phi)};
+
+        const double life = s3d::Random(0.1, 0.2);
+        Particle3D particle{.position = center,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, -5.0, 0},
+                            .color = ColorF{1.0, 1.0, 1.0},
+                            .startColor = HSV{50, 0.2, 1.0},  // 淡い黄色
+                            .endColor = HSV{40, 0.6, 0.8},    // 明るい黄色
+                            .size = s3d::Random(0.6, 1.0),
+                            .life = life,
+                            .maxLife = life,
+                            .active = true,
+                            .useAdditive = true};
+        m_particleSystem.add(particle);
+    }
+
+    // 炎
+    constexpr int32 MainFireCount = 50;
+    for (int32 i = 0; i < MainFireCount; ++i)
     {
         const double theta = s3d::Random(0.0, s3d::Math::TwoPi);
         const double phi = s3d::Random(0.0, s3d::Math::Pi);
         const double speed = s3d::Random(MinParticleSpeed, MaxParticleSpeed);
 
-        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta), s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
+                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
                             s3d::Math::Cos(phi)};
 
+        const double life = s3d::Random(0.6, 1.2);
         Particle3D particle{.position = center,
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, -5.0, 0},
-                            .color = s3d::HSV{s3d::Random(MinParticleHue, MaxParticleHue),
-                                              s3d::Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
+                            .color = ColorF{1.0, 0.5, 0.0},
+                            .startColor = HSV{45, 0.9, 1.0},  // 明るい黄色
+                            .endColor = HSV{0, 0.8, 0.4},     // 暗い赤
                             .size = s3d::Random(MinParticleSize, MaxParticleSize),
-                            .life = s3d::Random(MinParticleLife, MaxParticleLife),
-                            .active = true};
+                            .life = life,
+                            .maxLife = life,
+                            .active = true,
+                            .useAdditive = true};
+        m_particleSystem.add(particle);
+    }
+
+    // 火花
+    constexpr int32 SparkCount = 40;
+    for (int32 i = 0; i < SparkCount; ++i)
+    {
+        const double theta = s3d::Random(0.0, s3d::Math::TwoPi);
+        const double phi = s3d::Random(0.0, s3d::Math::Pi);
+        const double speed = s3d::Random(8.0, 12.0);
+
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
+                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+                            s3d::Math::Cos(phi)};
+
+        const double life = s3d::Random(0.3, 0.8);
+        Particle3D particle{.position = center,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, -8.0, 0},
+                            .color = ColorF{1.0, 0.3, 0.0},
+                            .startColor = HSV{30, 0.9, 1.0},  // オレンジ
+                            .endColor = HSV{0, 0.7, 0.3},     // 暗い赤
+                            .size = s3d::Random(0.1, 0.25),
+                            .life = life,
+                            .maxLife = life,
+                            .active = true,
+                            .useAdditive = true};
+        m_particleSystem.add(particle);
+    }
+}
+
+void SceneGame::createExplosionSmokeParticles(const Vec3& center, [[maybe_unused]] double radius)
+{
+    constexpr int32 SmokeParticleCount = 50;
+    for (int32 i = 0; i < SmokeParticleCount; ++i)
+    {
+        const double theta = Random(0.0, Math::TwoPi);
+        const double phi = Random(0.0, Math::Pi);
+        const double speed = Random(1.0, 3.0);
+
+        Vec3 direction{Math::Sin(phi) * Math::Cos(theta), Math::Sin(phi) * Math::Sin(theta), Math::Cos(phi)};
+
+        const double life = Random(1.5, 3.0);
+        Particle3D particle{.position = center,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, 0.5, 0},
+                            .color = ColorF{0.4, 0.4, 0.4, 0.6},
+                            .startColor = HSV{0, 0.1, 0.4, 0.5},  // 明るいグレー
+                            .endColor = HSV{0, 0.0, 0.1, 0.8},    // 暗い黒
+                            .size = Random(0.4, 1.0),
+                            .life = life,
+                            .maxLife = life,
+                            .active = true,
+                            .useAdditive = false};
         m_particleSystem.add(particle);
     }
 }
@@ -618,10 +707,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         double distance = s3d::Math::Sqrt(distanceSq);
         s3d::Vec3 normalizedDirection = direction / distance;
 
-        // 距離に応じた吹き飛ばし力を計算
-        double falloff = 1.0 - (distance / radius);
-        double explosionForce = ExplosionBasePower * falloff;
-        s3d::Vec3 force = normalizedDirection * explosionForce;
+        s3d::Vec3 force = normalizedDirection * ExplosionBasePower;
 
         body->applyImpulse(force);
 
@@ -641,27 +727,42 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
 
 void SceneGame::createGravityParticles(const Vec3& center, double radius)
 {
-    // 3～5個のパーティクルを生成
-    const int count = Random(3, 5);
-    for (int i = 0; i < count; ++i)
+    constexpr int32 ParticleCount = 10;
+    for (int32 i = 0; i < ParticleCount; ++i)
     {
-        // 円周上のランダムな点（水平方向のみ）
-        const double angle = Random(0.0, Math::TwoPi);
-        const Vec3 startPos = center + Vec3{Math::Cos(angle) * radius, Random(-0.3, 0.3), // わずかな高さのばらつき
-                                            Math::Sin(angle) * radius};
+        const Vec2 offset = RandomVec2(Circle(radius));
+        const Vec3 particlePos = center + Vec3{offset.x, Random(-1.0, 1.0), offset.y};
+        const Vec3 direction = (center - particlePos).normalized();
+        const double speed = Random(2.0, 4.0);
 
-        // 中心に向かう速度（主に水平方向）
-        const Vec3 velocity = (center - startPos).normalized() * 2.5;
-        const Vec3 acceleration = (center - startPos).normalized() * 5.0;
+        // パーティクルを3種類に分ける
+        const int type = Random(0, 2);
+        double size;
 
-        m_particleSystem.add(Particle3D{.position = startPos,
-                                        .velocity = velocity,
-                                        .acceleration = acceleration,
-                                        .color = ColorF{0.8, 0.4, 1.0}, // 紫色
-                                        .size = Random(0.15, 0.25),
-                                        .life = Random(1.0, 1.5),
-                                        .active = true,
-                                        .killZone = Sphere{center, 0.2}});
+        if (type == 0)
+        {
+            // 細かい粒子
+            size = Random(0.02, 0.05);
+        }
+        else if (type == 1)
+        {
+            // 中サイズ粒子
+            size = Random(0.1, 0.1);
+        }
+        else
+        {
+            // 大きめの粒子
+            size = Random(0.3, 0.5);
+        }
+
+        Particle3D particle{.position = particlePos,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, 0, 0},
+                            .color = GravityEffectColor.withA(0.8),
+                            .size = size,
+                            .life = Random(0.5, 1.0),
+                            .active = true};
+        m_particleSystem.add(particle);
     }
 }
 
@@ -679,6 +780,25 @@ void SceneGame::createFreezeParticles(const Vec3& center)
                                         .size = Random(FreezeParticleMinSize, FreezeParticleMaxSize),
                                         .life = Random(FreezeParticleMinLife, FreezeParticleMaxLife),
                                         .active = true});
+    }
+}
+
+void SceneGame::createFreezeMistParticles(const Vec3& center)
+{
+    constexpr int32 MistParticleCount = 10;
+    for (int32 i = 0; i < MistParticleCount; ++i)
+    {
+        const Vec2 offset = RandomVec2(Circle(FreezeRadius));
+        const Vec3 particlePos = center + Vec3{offset.x, Random(0.0, 2.0), offset.y};
+
+        Particle3D particle{.position = particlePos,
+                            .velocity = Vec3{Random(-0.2, 0.2), Random(0.1, 0.3), Random(-0.2, 0.2)},
+                            .acceleration = Vec3{0, 0, 0},
+                            .color = ColorF{0.8, 0.9, 1.0, Random(0.3, 0.6)},
+                            .size = Random(0.05, 0.1),
+                            .life = Random(2.0, 4.0),
+                            .active = true};
+        m_particleSystem.add(particle);
     }
 }
 
@@ -875,6 +995,8 @@ void SceneGame::throwFreeze(const Vec3& targetPos)
         .radius = FreezeRadius,
     };
 
+    m_freezeMistTimer.restart();
+
     // 氷柱をランダム生成
     const int spikeCount = Random(MinSpikeCount, MaxSpikeCount);
     for (int i = 0; i < spikeCount; ++i)
@@ -898,6 +1020,7 @@ void SceneGame::updateFreezeField()
     if (!m_freezeField)
     {
         m_iceSpikes.clear(); // Freeze終了時に氷柱をクリア
+        m_freezeMistTimer.reset();
         {
             // 凍結解除
             for (auto weakObj : m_frozenObjects)
@@ -924,6 +1047,13 @@ void SceneGame::updateFreezeField()
     }
 
     applyFreezeEffect();
+
+    // ミストの定期生成
+    if (m_freezeMistTimer.sF() >= 0.1)
+    {
+        createFreezeMistParticles(m_freezeField->position);
+        m_freezeMistTimer.restart();
+    }
 }
 
 void SceneGame::applyFreezeEffect()
