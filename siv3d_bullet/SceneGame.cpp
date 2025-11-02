@@ -664,27 +664,42 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
 
 void SceneGame::createGravityParticles(const Vec3& center, double radius)
 {
-    // 3～5個のパーティクルを生成
-    const int count = Random(3, 5);
-    for (int i = 0; i < count; ++i)
+    constexpr int32 ParticleCount = 10;
+    for (int32 i = 0; i < ParticleCount; ++i)
     {
-        // 円周上のランダムな点（水平方向のみ）
-        const double angle = Random(0.0, Math::TwoPi);
-        const Vec3 startPos = center + Vec3{Math::Cos(angle) * radius, Random(-0.3, 0.3), // わずかな高さのばらつき
-                                            Math::Sin(angle) * radius};
+        const Vec2 offset = RandomVec2(Circle(radius));
+        const Vec3 particlePos = center + Vec3{offset.x, Random(-1.0, 1.0), offset.y};
+        const Vec3 direction = (center - particlePos).normalized();
+        const double speed = Random(2.0, 4.0);
 
-        // 中心に向かう速度（主に水平方向）
-        const Vec3 velocity = (center - startPos).normalized() * 2.5;
-        const Vec3 acceleration = (center - startPos).normalized() * 5.0;
+        // パーティクルを3種類に分ける
+        const int type = Random(0, 2);
+        double size;
 
-        m_particleSystem.add(Particle3D{.position = startPos,
-                                        .velocity = velocity,
-                                        .acceleration = acceleration,
-                                        .color = ColorF{0.8, 0.4, 1.0}, // 紫色
-                                        .size = Random(0.15, 0.25),
-                                        .life = Random(1.0, 1.5),
-                                        .active = true,
-                                        .killZone = Sphere{center, 0.2}});
+        if (type == 0)
+        {
+            // 細かい粒子
+            size = Random(0.02, 0.05);
+        }
+        else if (type == 1)
+        {
+            // 中サイズ粒子
+            size = Random(0.1, 0.1);
+        }
+        else
+        {
+            // 大きめの粒子
+            size = Random(0.3, 0.5);
+        }
+
+        Particle3D particle{.position = particlePos,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, 0, 0},
+                            .color = GravityEffectColor,
+                            .size = size,
+                            .life = Random(0.5, 1.0),
+                            .active = true};
+        m_particleSystem.add(particle);
     }
 }
 
