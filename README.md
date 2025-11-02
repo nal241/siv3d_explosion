@@ -37,7 +37,21 @@ Siv3D ゲームジャム 2025 参加作品
 
 ## 使用ライブラリ・アセット
 
-モデル、アセットを追加
+### フレームワーク・ライブラリ
+- **Siv3D (v0.6.16)**: [https://siv3d.github.io/](https://siv3d.github.io/)
+- **Bullet Physics**: [https://pybullet.org/wordpress/](https://pybullet.org/wordpress/)
+
+### 3Dモデル
+- **RPG Monster Duo PBR Polyart**: [Unity Asset Store](https://assetstore.unity.com/packages/3d/characters/creatures/rpg-monster-duo-pbr-polyart-157762)
+- **Bomb Cute Series**: [Unity Asset Store](https://assetstore.unity.com/packages/3d/characters/bomb-cute-series-173253)
+
+### テクスチャ
+- **sozaino.site**: [https://sozaino.site/archives/5722](https://sozaino.site/archives/5722)
+- **ShareTextures**: [https://www.sharetextures.com/](https://www.sharetextures.com/)
+
+### サウンド
+- **魔王魂**: [https://maou.audio/](https://maou.audio/)
+- **効果音ラボ**: [https://soundeffect-lab.info/](https://soundeffect-lab.info/)
 
 ## ライセンス
 ライセンスを記載
