@@ -191,9 +191,9 @@ protected:
     Stopwatch m_bombSmokeTimer;
 
     // テクスチャ
-    Texture m_frostTexture;
-    Texture m_darknessTexture;
-    Texture m_windTexture;
+    Texture m_frostTexture=Texture{U"LicensedAsset/snow.jpg"};
+    Texture m_darknessTexture=Texture{U"LicensedAsset/darkness.jpg"};
+    Texture m_windTexture=Texture{U"LicensedAsset/wind.jpg"};
 
     // コンボシステム
     int m_comboCount = 0;           // 現在のコンボ数
