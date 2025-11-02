@@ -69,7 +69,7 @@ namespace
     constexpr double MaxSpikeRadius = 0.4;
     constexpr double SpikeGrowDuration = 0.5;
     constexpr double SpikeDirectionRandomness = 0.5;
-    constexpr double SpikeAlpha = 0.6;
+    constexpr double SpikeAlpha = 0.8;
     constexpr double FrostWaveHeight = 0.01;
     constexpr double FrostWaveOffsetY = 0.01;
 
@@ -376,7 +376,7 @@ void SceneGame::draw() const
             // 重力の中心
             const double pulseSize = Periodic::Sine0_1(1.5s) * 0.3 + 0.5;
             const Vec3 centerPos = m_gravityField->position + Vec3{0, 1.0, 0};
-            Sphere{centerPos, pulseSize}.draw(GravityEffectColor.withA(1.0));
+            Sphere{centerPos, pulseSize}.draw(GravityEffectColor.withA(0.8));
 
             const Vec3 pos = m_gravityField->position + Vec3{0, FrostWaveOffsetY, 0};
             Cylinder{pos, m_gravityField->radius, FrostWaveHeight}.draw(m_darknessTexture, ColorF{1.0, 1.0});
@@ -758,7 +758,7 @@ void SceneGame::createGravityParticles(const Vec3& center, double radius)
         Particle3D particle{.position = particlePos,
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, 0, 0},
-                            .color = GravityEffectColor,
+                            .color = GravityEffectColor.withA(0.8),
                             .size = size,
                             .life = Random(0.5, 1.0),
                             .active = true};
