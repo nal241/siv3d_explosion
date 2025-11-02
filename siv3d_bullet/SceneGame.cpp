@@ -1092,15 +1092,13 @@ void SceneGame::incrementCombo()
     {
         m_maxCombo = m_comboCount;
     }
-
-    Print << U"COMBO: {}"_fmt(m_comboCount);
 }
 
 void SceneGame::resetCombo()
 {
     if (m_comboCount > 0)
     {
-        Print << U"Combo ended: {}"_fmt(m_comboCount);
+        Logger << U"Combo ended: {}"_fmt(m_comboCount);
     }
     m_comboCount = 0;
     m_comboScore = 0; // コンボスコアもリセット
