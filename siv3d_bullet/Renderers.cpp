@@ -22,6 +22,24 @@ void ModelRenderer::drawWireframe(const Vec3& position, const Quaternion& rotati
     m_model.draw(mat);
 }
 
+void ModelRenderer::drawShadow(const Vec3& position, double groundY) const
+{
+    // 影のサイズ（敵のスケールに合わせて小さめに）
+    const double shadowRadius = 0.35 * m_scale;
+
+    // アルファブレンドを有効化
+    const ScopedRenderStates3D blend{BlendState::Default2D};
+
+    // グラデーション効果を作るため、2つの円を重ねて描画（Z競合を避けるため高さをずらす）
+    // 外側の円（薄い）
+    Vec3 shadowPos1(position.x, groundY + 0.01, position.z);
+    Disc(shadowPos1, shadowRadius).draw(ColorF(0, 0, 0, 0.6));
+
+    // 内側の円（濃い）
+    Vec3 shadowPos2(position.x, groundY + 0.011, position.z);
+    Disc(shadowPos2, shadowRadius * 0.8).draw(ColorF(0, 0, 0, 0.3));
+}
+
 // --- PhysicsShapeRenderer ---
 PhysicsShapeRenderer::PhysicsShapeRenderer(const PhysicsBody& physicsBody, const ColorF& color)
     : m_physicsBody(physicsBody), m_color(color)
