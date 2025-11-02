@@ -9,6 +9,8 @@ public:
     virtual ~IRenderer() = default;
     virtual void draw(const Vec3& position, const Quaternion& rotation) const = 0;
     virtual void drawWireframe(const Vec3& position, const Quaternion& rotation) const = 0;
+    // 影を描画する（デフォルトでは何もしない）
+    virtual void drawShadow(const Vec3& position, double groundY = 0.0) const {}
 };
 
 // --- モデル描画 ---
@@ -18,6 +20,7 @@ public:
     ModelRenderer(const Model& model, const ColorF& color = Palette::White, double scale = 1.0);
     void draw(const Vec3& position, const Quaternion& rotation) const override;
     void drawWireframe(const Vec3& position, const Quaternion& rotation) const override;
+    void drawShadow(const Vec3& position, double groundY = 0.0) const override;
 
 private:
     Model m_model;

@@ -20,6 +20,9 @@ void GameObject::draw() const
 {
     if (m_renderer)
     {
+        // 影を描画（地面はY=0と仮定）
+        m_renderer->drawShadow(getPosition(), 0.0);
+        // 本体を描画
         m_renderer->draw(getPosition(), getRotation());
     }
 }
