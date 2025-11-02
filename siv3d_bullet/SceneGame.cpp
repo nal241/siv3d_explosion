@@ -236,27 +236,27 @@ void SceneGame::updateCamera()
 
 void SceneGame::updateInput()
 {
-    // プレイヤー入力
-    m_player.handleInput(m_world, m_gameObjects);
+    // // プレイヤー入力
+    // m_player.handleInput(m_world, m_gameObjects);
 
-    // Dキーでデバッグ描画切り替え
-    if (KeyD.down())
-    {
-        m_debugDrawEnabled = !m_debugDrawEnabled;
-        m_world.setDebugDrawEnabled(m_debugDrawEnabled);
-    }
+    // // Dキーでデバッグ描画切り替え
+    // if (KeyD.down())
+    // {
+    //     m_debugDrawEnabled = !m_debugDrawEnabled;
+    //     m_world.setDebugDrawEnabled(m_debugDrawEnabled);
+    // }
 
-    // Tキーでタイトルへ
-    if (KeyT.down())
-    {
-        changeScene(State::Title, 1.0s);
-    }
+    // // Tキーでタイトルへ
+    // if (KeyT.down())
+    // {
+    //     changeScene(State::Title, 1.0s);
+    // }
 
-    // Rキーでリザルトへ
-    if (KeyR.down())
-    {
-        changeScene(State::Result);
-    }
+    // // Rキーでリザルトへ
+    // if (KeyR.down())
+    // {
+    //     changeScene(State::Result);
+    // }
 }
 
 void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTime())); }
@@ -464,14 +464,14 @@ void SceneGame::draw() const
         }
 
         // 10x10のグリッド、1マス1.0単位 （デバッグ）
-        for (int i = -15; i <= 15; ++i)
-        {
-            s3d::Line3D({i, 1, -15}, {i, 1, 15}).draw(s3d::Palette::Gray);
-            s3d::Line3D({-15, 1, i}, {15, 1, i}).draw(s3d::Palette::Gray);
-        }
+        // for (int i = -15; i <= 15; ++i)
+        // {
+        //     s3d::Line3D({i, 1, -15}, {i, 1, 15}).draw(s3d::Palette::Gray);
+        //     s3d::Line3D({-15, 1, i}, {15, 1, i}).draw(s3d::Palette::Gray);
+        // }
 
         // Bulletデバッグ描画（Dキーでトグル）
-        m_world.debugDraw();
+        // m_world.debugDraw();
     }
 
     // [2D rendering]
@@ -599,8 +599,7 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused
         const double phi = s3d::Random(0.0, s3d::Math::Pi);
         const double speed = s3d::Random(2.0, 5.0);
 
-        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
-                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta), s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
                             s3d::Math::Cos(phi)};
 
         const double life = s3d::Random(0.1, 0.2);
@@ -608,8 +607,8 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, -5.0, 0},
                             .color = ColorF{1.0, 1.0, 1.0},
-                            .startColor = HSV{50, 0.2, 1.0},  // 淡い黄色
-                            .endColor = HSV{40, 0.6, 0.8},    // 明るい黄色
+                            .startColor = HSV{50, 0.2, 1.0}, // 淡い黄色
+                            .endColor = HSV{40, 0.6, 0.8},   // 明るい黄色
                             .size = s3d::Random(0.6, 1.0),
                             .life = life,
                             .maxLife = life,
@@ -626,8 +625,7 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused
         const double phi = s3d::Random(0.0, s3d::Math::Pi);
         const double speed = s3d::Random(MinParticleSpeed, MaxParticleSpeed);
 
-        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
-                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta), s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
                             s3d::Math::Cos(phi)};
 
         const double life = s3d::Random(0.6, 1.2);
@@ -635,8 +633,8 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, -5.0, 0},
                             .color = ColorF{1.0, 0.5, 0.0},
-                            .startColor = HSV{45, 0.9, 1.0},  // 明るい黄色
-                            .endColor = HSV{0, 0.8, 0.4},     // 暗い赤
+                            .startColor = HSV{45, 0.9, 1.0}, // 明るい黄色
+                            .endColor = HSV{0, 0.8, 0.4},    // 暗い赤
                             .size = s3d::Random(MinParticleSize, MaxParticleSize),
                             .life = life,
                             .maxLife = life,
@@ -653,8 +651,7 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused
         const double phi = s3d::Random(0.0, s3d::Math::Pi);
         const double speed = s3d::Random(8.0, 12.0);
 
-        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta),
-                            s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
+        s3d::Vec3 direction{s3d::Math::Sin(phi) * s3d::Math::Cos(theta), s3d::Math::Sin(phi) * s3d::Math::Sin(theta),
                             s3d::Math::Cos(phi)};
 
         const double life = s3d::Random(0.3, 0.8);
@@ -662,8 +659,8 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, -8.0, 0},
                             .color = ColorF{1.0, 0.3, 0.0},
-                            .startColor = HSV{30, 0.9, 1.0},  // オレンジ
-                            .endColor = HSV{0, 0.7, 0.3},     // 暗い赤
+                            .startColor = HSV{30, 0.9, 1.0}, // オレンジ
+                            .endColor = HSV{0, 0.7, 0.3},    // 暗い赤
                             .size = s3d::Random(0.1, 0.25),
                             .life = life,
                             .maxLife = life,
@@ -689,8 +686,8 @@ void SceneGame::createExplosionSmokeParticles(const Vec3& center, [[maybe_unused
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, 0.5, 0},
                             .color = ColorF{0.4, 0.4, 0.4, 0.6},
-                            .startColor = HSV{0, 0.1, 0.4, 0.5},  // 明るいグレー
-                            .endColor = HSV{0, 0.0, 0.1, 0.8},    // 暗い黒
+                            .startColor = HSV{0, 0.1, 0.4, 0.5}, // 明るいグレー
+                            .endColor = HSV{0, 0.0, 0.1, 0.8},   // 暗い黒
                             .size = Random(0.4, 1.0),
                             .life = life,
                             .maxLife = life,

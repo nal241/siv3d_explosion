@@ -12,6 +12,7 @@ public:
     void draw() const override;
 
 private:
+    Font m_largeTitleFont{70, Typeface::Bold};
     Font m_titleFont{60, Typeface::Bold};
     Font m_menuFont{30};
 };
