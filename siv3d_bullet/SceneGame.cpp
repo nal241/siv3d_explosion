@@ -618,10 +618,7 @@ void SceneGame::applyExplosionForce(const ExplosionRequest& request)
         double distance = s3d::Math::Sqrt(distanceSq);
         s3d::Vec3 normalizedDirection = direction / distance;
 
-        // 距離に応じた吹き飛ばし力を計算
-        double falloff = 1.0 - (distance / radius);
-        double explosionForce = ExplosionBasePower * falloff;
-        s3d::Vec3 force = normalizedDirection * explosionForce;
+        s3d::Vec3 force = normalizedDirection * ExplosionBasePower;
 
         body->applyImpulse(force);
 
