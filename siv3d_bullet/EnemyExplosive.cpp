@@ -2,6 +2,11 @@
 #include "PhysicsWorld.h"
 #include "Renderers.h"
 
+namespace
+{
+    constexpr int EnemyBaseScore = 10; // 敵撃破時の基礎スコア
+}
+
 EnemyExplosive::EnemyExplosive(std::unique_ptr<PhysicsBody> physicsBody, std::unique_ptr<IRenderer> renderer,
                                int maxHealth, double explosionRadius)
     : GameObject(std::move(physicsBody), std::move(renderer)), m_health(maxHealth), m_maxHealth(maxHealth),
@@ -22,6 +27,9 @@ void EnemyExplosive::takeDamage(int damage)
         m_health = 0;
         m_state = State::Dying;
         m_deathTimer.start();
+
+        // 撃破時のスコアイベントを発行
+        emitEvent(EnemyDefeatedEvent{EnemyBaseScore});
     }
 }
 
