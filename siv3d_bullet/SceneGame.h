@@ -69,6 +69,7 @@ protected:
 
     // 爆発処理
     void createExplosionParticles(const s3d::Vec3& center, double radius);
+    void createExplosionSmokeParticles(const s3d::Vec3& center, double radius);
     void applyExplosionForce(const ExplosionRequest& request);
 
     void createGravityParticles(const Vec3& center, double radius);

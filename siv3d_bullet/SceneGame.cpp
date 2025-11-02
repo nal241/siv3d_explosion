@@ -90,9 +90,11 @@ namespace
     constexpr double MinParticleLife = 0.8;
     constexpr double MaxParticleLife = 1.5;
     constexpr double MinParticleHue = 0.0;
-    constexpr double MaxParticleHue = 60.0;
-    constexpr double MinParticleSaturation = 0.7;
+    constexpr double MaxParticleHue = 20.0;
+    constexpr double MinParticleSaturation = 0.9;
     constexpr double MaxParticleSaturation = 1.0;
+    constexpr double MinParticleValue = 0.8;
+    constexpr double MaxParticleValue = 1.0;
 
     // === 氷結晶パーティクル設定 ===
     constexpr int32 FreezeParticleCount = 50;
@@ -548,6 +550,7 @@ void SceneGame::handleExplosion(const ExplosionRequest& request)
 
     // 爆発を実行（パーティクル + 物理的な力）
     createExplosionParticles(request.position, request.radius);
+    createExplosionSmokeParticles(request.position, request.radius);
     applyExplosionForce(request);
 
     // 爆発回数をカウント（音は後で再生）
@@ -574,9 +577,32 @@ void SceneGame::createExplosionParticles(const s3d::Vec3& center, [[maybe_unused
                             .velocity = direction * speed,
                             .acceleration = Vec3{0, -5.0, 0},
                             .color = s3d::HSV{s3d::Random(MinParticleHue, MaxParticleHue),
-                                              s3d::Random(MinParticleSaturation, MaxParticleSaturation), 1.0},
+                                              s3d::Random(MinParticleSaturation, MaxParticleSaturation),
+                                              s3d::Random(MinParticleValue, MaxParticleValue)},
                             .size = s3d::Random(MinParticleSize, MaxParticleSize),
                             .life = s3d::Random(MinParticleLife, MaxParticleLife),
+                            .active = true};
+        m_particleSystem.add(particle);
+    }
+}
+
+void SceneGame::createExplosionSmokeParticles(const Vec3& center, [[maybe_unused]] double radius)
+{
+    constexpr int32 SmokeParticleCount = 30;
+    for (int32 i = 0; i < SmokeParticleCount; ++i)
+    {
+        const double theta = Random(0.0, Math::TwoPi);
+        const double phi = Random(0.0, Math::Pi);
+        const double speed = Random(1.0, 3.0);
+
+        Vec3 direction{Math::Sin(phi) * Math::Cos(theta), Math::Sin(phi) * Math::Sin(theta), Math::Cos(phi)};
+
+        Particle3D particle{.position = center,
+                            .velocity = direction * speed,
+                            .acceleration = Vec3{0, 0.5, 0},
+                            .color = HSV{Random(0.0, 0.0), Random(0.0, 0.0), Random(0.0, 0.2), Random(0.5, 0.8)},
+                            .size = Random(0.3, 0.8),
+                            .life = Random(0.5, 1.0),
                             .active = true};
         m_particleSystem.add(particle);
     }
