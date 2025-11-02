@@ -123,6 +123,47 @@ void UI::draw() const
         const ColorF scoreColor = HSV{120, 0.6, 1.0, alpha}; // 緑色
         m_scoreFont(scoreText).drawAt(comboPos.movedBy(0, 90), scoreColor);
     }
+
+    // スコアと残り時間の表示（画面上部）
+    {
+        // スコア表示（左上）
+        const String scoreText = U"Score: {}"_fmt(m_displayScore);
+        const Vec2 scorePos{20, 20};
+        const ColorF scoreColor{1.0, 1.0, 1.0};
+
+        // 影を描画
+        m_gameInfoFont(scoreText).draw(scorePos.movedBy(2, 2), ColorF{0, 0, 0, 0.5});
+        // メインテキスト
+        m_gameInfoFont(scoreText).draw(scorePos, scoreColor);
+
+        // 残り時間の表示（右上）
+        const int seconds = static_cast<int>(m_displayRemainingGameTime);
+        const String timeText = U"Time: {}s"_fmt(seconds);
+        const Vec2 timePos{Scene::Width() - 250, 20};
+
+        // 時間が10秒以下の場合は赤色で警告
+        const ColorF timeColor = (m_displayRemainingGameTime <= 10.0) ? ColorF{1.0, 0.2, 0.2} : ColorF{1.0, 1.0, 1.0};
+
+        // 影を描画
+        m_gameInfoFont(timeText).draw(timePos.movedBy(2, 2), ColorF{0, 0, 0, 0.5});
+        // メインテキスト
+        m_gameInfoFont(timeText).draw(timePos, timeColor);
+    }
+
+    // ゲーム終了通知の表示
+    if (m_showGameOver)
+    {
+        const String gameOverText = U"TIME UP!";
+        const Vec2 center = Scene::Center();
+
+        // 背景の半透明黒
+        Scene::Rect().draw(ColorF{0, 0, 0, 0.7});
+
+        // 影を描画
+        m_gameOverFont(gameOverText).drawAt(center.movedBy(3, 3), ColorF{0, 0, 0, 0.8});
+        // メインテキスト
+        m_gameOverFont(gameOverText).drawAt(center, ColorF{1.0, 0.2, 0.2});
+    }
 }
 
 bool UI::handleClick()
@@ -173,4 +214,15 @@ void UI::setComboInfo(int comboCount, double multiplier, double remainingTime, i
     m_displayMultiplier = multiplier;
     m_displayRemainingTime = remainingTime;
     m_displayComboScore = comboScore;
+}
+
+void UI::setGameInfo(int score, double remainingTime)
+{
+    m_displayScore = score;
+    m_displayRemainingGameTime = remainingTime;
+}
+
+void UI::showGameOver()
+{
+    m_showGameOver = true;
 }

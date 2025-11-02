@@ -156,6 +156,12 @@ SceneGame::SceneGame(const InitData& init)
 
 void SceneGame::update()
 {
+    // update()が最初に呼ばれたときにゲームタイマーを開始
+    if (!m_gameTimer.isStarted())
+    {
+        m_gameTimer.start();
+    }
+
     updateInput();
     updateUI();
     updateGameLogic();
@@ -166,8 +172,28 @@ void SceneGame::update()
     updateCamera();
 }
 
+void SceneGame::checkGameOver()
+{
+    // 時間切れチェック
+    const double elapsedTime = m_gameTimer.sF();
+    if (elapsedTime >= m_gameDuration && !m_isGameOver)
+    {
+        // ゲーム終了フラグを立て、通知を表示
+        m_isGameOver = true;
+        m_ui.showGameOver();
+        m_gameOverDisplayTimer.start();
+    }
+
+    // ゲーム終了通知を一定時間表示してからシーン遷移
+    if (m_isGameOver && m_gameOverDisplayTimer.sF() >= m_gameOverDisplayDuration)
+    {
+        changeScene(State::Result, 2.0s);
+    }
+}
+
 void SceneGame::updateGameLogic()
 {
+    checkGameOver();
     updateItems();
     updateGameObjects();
     updateSpawn();
@@ -228,7 +254,15 @@ void SceneGame::updateInput()
 
 void SceneGame::updatePhysics() { m_world.step(static_cast<float>(Scene::DeltaTime())); }
 
-void SceneGame::updateUI() { m_ui.update(Scene::DeltaTime()); }
+void SceneGame::updateUI()
+{
+    m_ui.update(Scene::DeltaTime());
+
+    // スコアと残り時間
+    const double elapsedTime = m_gameTimer.sF();
+    const double remainingTime = Math::Max(0.0, m_gameDuration - elapsedTime);
+    m_ui.setGameInfo(getData().score, remainingTime);
+}
 
 void SceneGame::updateItems()
 {

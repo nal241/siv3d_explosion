@@ -38,6 +38,12 @@ public:
     // コンボ表示用（表示のみ担当）
     void setComboInfo(int comboCount, double multiplier, double remainingTime, int comboScore = 0);
 
+    // スコアと残り時間の表示用
+    void setGameInfo(int score, double remainingTime);
+
+    // ゲーム終了通知の表示
+    void showGameOver();
+
 private:
     Rect getButtonRect(int32 index) const;
 
@@ -77,4 +83,13 @@ private:
     Font m_comboFont{40, Typeface::Bold};
     Font m_multiplierFont{24};
     Font m_scoreFont{32, Typeface::Bold};
+
+    // ゲーム情報表示用
+    int m_displayScore = 0;          // 表示するスコア
+    double m_displayRemainingGameTime = 100.0; // 表示する残り時間（初期値100秒）
+    Font m_gameInfoFont{40, Typeface::Bold};   // フォントサイズを大きく
+
+    // ゲーム終了通知用
+    bool m_showGameOver = false;     // ゲーム終了通知を表示するか
+    Font m_gameOverFont{60, Typeface::Bold};
 };
